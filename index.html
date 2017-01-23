@@ -17,26 +17,33 @@
     </div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script>
-    Vue.component('enact-shape',{
-        props: ["topValue","leftValue","widthValue","heightValue"],
+
+    var Shape = Vue.extend({
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
             return {
-                topValue:0,
-                leftValue:0,
-                widthValue:0,
-                heightValue:0,
-                styleObject: {
+                startingPosition: {x:0,y:0},
+                topValue: 0,
+                leftValue: 0,
+                widthValue: 0,
+                heightValue: 0
+            }
+        },
+        computed: {
+            styleObject: function() {
+                return {
                     'background-color': 'white',
-                    'position':'absolute',
-                    'top': topValue + 'px',
-                    'left': leftValue + 'px',
-                    'width': widthValue + 'px',
-                    'height': heightValue + 'px'
+                    'position': 'absolute',
+                    'top': this.topValue + ' px',
+                    'left': this.leftValue + ' px',
+                    'width': this.widthValue + ' px',
+                    'height': this.heightValue + ' px',
+                    'border':'1px solid gray'
                 }
             }
         }
-    })
+    });
+
     var toolbarVM = new Vue({
         el: '#toolbar',
         data: {
@@ -67,10 +74,10 @@
                 if (toolbarVM.selectionMode) {
                     // drawings at e.x,e.y
                     var selectedDrawings = this.drawings.reverse().filter(function(each) {
-                        let topValue = parseInt(each.style.top.split('px')[0],10);
-                        let leftValue = parseInt(each.style.left.split('px')[0],10);
-                        let widthValue = parseInt(each.style.width.split('px')[0],10);
-                        let heightValue = parseInt(each.style.height.split('px')[0],10);
+                        let topValue = parseInt(each.style.top.split('px')[0], 10);
+                        let leftValue = parseInt(each.style.left.split('px')[0], 10);
+                        let widthValue = parseInt(each.style.width.split('px')[0], 10);
+                        let heightValue = parseInt(each.style.height.split('px')[0], 10);
 
                         return topValue < e.y && leftValue < e.x && e.x < leftValue + widthValue && e.y < topValue + heightValue;
                     });
@@ -84,14 +91,20 @@
                 }
             },
             drawingStarted: function(e) {
-                var newDiv = document.createElement("div");
-                document.getElementById("drawingArea").appendChild(newDiv);
+
+                // var newDiv = document.createElement("div");
+                // document.getElementById("drawingArea").appendChild(newDiv);
+
+                var newDiv = new Shape().$mount()
+                // drawingAreaVM.$el.appendChild(newDiv.$el)
+                document.getElementById('drawingArea').appendChild(newDiv.$el)
+
 
                 drawingAreaVM.$el.addEventListener('mousemove', this.drawingChanged, false);
                 drawingAreaVM.$el.addEventListener('mouseup', this.drawingEnded, false);
 
-                this.startingPosition.x = e.x;
-                this.startingPosition.y = e.y;
+                newDiv.startingPosition.x = e.x;
+                newDiv.startingPosition.y = e.y;
                 this.drawings.push(newDiv);
 
                 this.updateDrawnDivStyle(e, newDiv);
@@ -108,26 +121,36 @@
             },
 
             updateDrawnDivStyle: function(e, drawnDiv) {
-                var topValue = this.startingPosition.y
-                if (e.y < this.startingPosition.y) {
+                var topValue = drawnDiv.startingPosition.y
+                if (e.y < drawnDiv.startingPosition.y) {
                     topValue = e.y;
                 }
 
-                var leftValue = this.startingPosition.x
-                if (e.x < this.startingPosition.x) {
+                var leftValue = drawnDiv.startingPosition.x
+                if (e.x < drawnDiv.startingPosition.x) {
                     leftValue = e.x;
                 }
-                var widthValue = Math.abs(e.x - this.startingPosition.x);
-                var heightValue = Math.abs(e.y - this.startingPosition.y)
+                var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
+                var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
 
-                drawnDiv.style = "position: absolute; top: " + topValue + "px; left: " + leftValue + "px; height: " + heightValue + "px; width: " + widthValue + "px; background-color: white; border:1px solid gray";
+                drawnDiv.topValue = topValue;
+                drawnDiv.leftValue = leftValue;
+                drawnDiv.widthValue = widthValue;
+                drawnDiv.heightValue = heightValue;
+
+                console.log("drawnDiv.topValue " +drawnDiv.topValue);
+                console.log("drawnDiv.leftValue " +drawnDiv.leftValue);
+                console.log("drawnDiv.widthValue " +drawnDiv.widthValue);
+                console.log("drawnDiv.heightValue " +drawnDiv.heightValue);
+
+                console.log("drawnDiv.style" + JSON.stringify(drawnDiv.styleObject));
             },
 
             moveStarted: function(e, selectedDrawing) {
-                let topValue = parseInt(selectedDrawing.style.top.split('px')[0],10);
-                let leftValue = parseInt(selectedDrawing.style.left.split('px')[0],10);
-                let widthValue = parseInt(selectedDrawing.style.width.split('px')[0],10);
-                let heightValue = parseInt(selectedDrawing.style.height.split('px')[0],10);
+                let topValue = parseInt(selectedDrawing.style.top.split('px')[0], 10);
+                let leftValue = parseInt(selectedDrawing.style.left.split('px')[0], 10);
+                let widthValue = parseInt(selectedDrawing.style.width.split('px')[0], 10);
+                let heightValue = parseInt(selectedDrawing.style.height.split('px')[0], 10);
                 var offsetX = e.x - leftValue;
                 var offsetY = e.y - topValue;
 
