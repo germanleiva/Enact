@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Enact</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.3.1/css/bulma.min.css">
+</head>
+
+<body>
+    <div id="toolbar">
+        <div class="block">
+            <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected">Draw</a>
+            <a class="button">Measure</a>
+        </div>
+    </div>
+    <div id="drawingArea" v-on:mousedown="actionStarted" style="background-color:red; height: 500px">
+    </div>
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <script>
+    Vue.component('enact-shape',{
+        props: ["topValue","leftValue","widthValue","heightValue"],
+        template: "<div v-bind:style='styleObject'></div>",
+        data: function() {
+            return {
+                topValue:0,
+                leftValue:0,
+                widthValue:0,
+                heightValue:0,
+                styleObject: {
+                    'background-color': 'white',
+                    'position':'absolute',
+                    'top': topValue + 'px',
+                    'left': leftValue + 'px',
+                    'width': widthValue + 'px',
+                    'height': heightValue + 'px'
+                }
+            }
+        }
+    })
+    var toolbarVM = new Vue({
+        el: '#toolbar',
+        data: {
+            drawMode: false,
+            selectionMode: true
+        },
+        methods: {
+            drawSelected() {
+                this.drawMode = !this.drawMode;
+                this.selectionMode = !this.drawMode;
+            }
+        }
+    });
+    var drawingAreaVM = new Vue({
+        el: '#drawingArea',
+        data: {
+            drawings: [],
+            startingPosition: {
+                x: 0,
+                y: 0
+            }
+        },
+        methods: {
+            actionStarted: function(e) {
+                if (toolbarVM.drawMode) {
+                    this.drawingStarted(e);
+                }
+                if (toolbarVM.selectionMode) {
+                    // drawings at e.x,e.y
+                    var selectedDrawings = this.drawings.reverse().filter(function(each) {
+                        let topValue = parseInt(each.style.top.split('px')[0],10);
+                        let leftValue = parseInt(each.style.left.split('px')[0],10);
+                        let widthValue = parseInt(each.style.width.split('px')[0],10);
+                        let heightValue = parseInt(each.style.height.split('px')[0],10);
+
+                        return topValue < e.y && leftValue < e.x && e.x < leftValue + widthValue && e.y < topValue + heightValue;
+                    });
+                    if (selectedDrawings.length > 0) {
+                        console.log("Object selected")
+
+                        this.moveStarted(e, selectedDrawings[0]);
+                    } else {
+                        console.log("No object selected")
+                    }
+                }
+            },
+            drawingStarted: function(e) {
+                var newDiv = document.createElement("div");
+                document.getElementById("drawingArea").appendChild(newDiv);
+
+                drawingAreaVM.$el.addEventListener('mousemove', this.drawingChanged, false);
+                drawingAreaVM.$el.addEventListener('mouseup', this.drawingEnded, false);
+
+                this.startingPosition.x = e.x;
+                this.startingPosition.y = e.y;
+                this.drawings.push(newDiv);
+
+                this.updateDrawnDivStyle(e, newDiv);
+            },
+
+            drawingChanged: function(e) {
+                this.updateDrawnDivStyle(e, this.drawings[this.drawings.length - 1]);
+            },
+
+            drawingEnded: function(e) {
+                drawingAreaVM.$el.removeEventListener('mousemove', this.drawingChanged, false);
+                drawingAreaVM.$el.removeEventListener('mouseup', this.drawingEnded, false);
+
+            },
+
+            updateDrawnDivStyle: function(e, drawnDiv) {
+                var topValue = this.startingPosition.y
+                if (e.y < this.startingPosition.y) {
+                    topValue = e.y;
+                }
+
+                var leftValue = this.startingPosition.x
+                if (e.x < this.startingPosition.x) {
+                    leftValue = e.x;
+                }
+                var widthValue = Math.abs(e.x - this.startingPosition.x);
+                var heightValue = Math.abs(e.y - this.startingPosition.y)
+
+                drawnDiv.style = "position: absolute; top: " + topValue + "px; left: " + leftValue + "px; height: " + heightValue + "px; width: " + widthValue + "px; background-color: white; border:1px solid gray";
+            },
+
+            moveStarted: function(e, selectedDrawing) {
+                let topValue = parseInt(selectedDrawing.style.top.split('px')[0],10);
+                let leftValue = parseInt(selectedDrawing.style.left.split('px')[0],10);
+                let widthValue = parseInt(selectedDrawing.style.width.split('px')[0],10);
+                let heightValue = parseInt(selectedDrawing.style.height.split('px')[0],10);
+                var offsetX = e.x - leftValue;
+                var offsetY = e.y - topValue;
+
+                var moveHanlder = function(e) {
+                    this.moveChanged(e, selectedDrawing, offsetX, offsetY);
+                }.bind(this);
+                drawingAreaVM.$el.addEventListener('mousemove', moveHanlder, false);
+                var upHandler = function(e) {
+                    drawingAreaVM.$el.removeEventListener('mousemove', moveHanlder, false);
+                    drawingAreaVM.$el.removeEventListener('mouseup', this, false);
+                };
+                drawingAreaVM.$el.addEventListener('mouseup', upHandler, false);
+            },
+
+            moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
+                selectedDrawing.style.top = Math.abs(initialOffsetY - e.y) + "px";
+                selectedDrawing.style.left = Math.abs(initialOffsetX - e.x) + "px";
+            }
+
+
+
+        }
+    });
+    </script>
+</body>
+
+</html>
