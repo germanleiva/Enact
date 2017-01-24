@@ -39,7 +39,7 @@
         methods: {
             selectedShapes: function() {
                 return this.shapes.filter(function(each) {
-                    each.isSelected
+                    return each.isSelected;
                 });
             },
             actionStarted: function(e) {
@@ -129,7 +129,7 @@
             },
             propertyChanged: function(cssStyle) {
                 _.each(this.selectedShapes(),function(shape){
-                    shape.color = cssTextStyle['background-color'];
+                    shape.color = cssStyle['background-color'];
                 });
             }
         }
@@ -143,7 +143,7 @@
         },
         methods: {
             propertyChangedOnSelectedShape: function(cssStyle) {
-                _.each(visualOutputs,function(each){
+                _.each(this.visualOutputs,function(each){
                     each.propertyChanged(cssStyle);
                 });
             }
