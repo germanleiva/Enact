@@ -16,13 +16,17 @@
     <div id="drawingArea" v-on:mousedown="actionStarted" style="background-color:red; height: 500px">
     </div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
-    <script>
+    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
 
+    <script>
     var Shape = Vue.extend({
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
             return {
-                startingPosition: {x:0,y:0},
+                startingPosition: {
+                    x: 0,
+                    y: 0
+                },
                 topValue: 0,
                 leftValue: 0,
                 widthValue: 0,
@@ -32,14 +36,20 @@
         computed: {
             styleObject: function() {
                 return {
-                    'background-color': 'white',
+                    'backgroundColor': 'white',
                     'position': 'absolute',
-                    'top': this.topValue + ' px',
-                    'left': this.leftValue + ' px',
-                    'width': this.widthValue + ' px',
-                    'height': this.heightValue + ' px',
-                    'border':'1px solid gray'
+                    'top': this.topValue + 'px',
+                    'left': this.leftValue + 'px',
+                    'width': this.widthValue + 'px',
+                    'height': this.heightValue + 'px',
+                    'border': '1px solid gray'
                 }
+            }
+        },
+        methods: {
+            isPointInside: function(x, y) {
+                return this.topValue < y && this.leftValue < x && x < this.leftValue + this.widthValue && y < this.topValue + this.heightValue;
+
             }
         }
     });
@@ -73,32 +83,20 @@
                 }
                 if (toolbarVM.selectionMode) {
                     // drawings at e.x,e.y
-                    var selectedDrawings = this.drawings.reverse().filter(function(each) {
-                        let topValue = parseInt(each.style.top.split('px')[0], 10);
-                        let leftValue = parseInt(each.style.left.split('px')[0], 10);
-                        let widthValue = parseInt(each.style.width.split('px')[0], 10);
-                        let heightValue = parseInt(each.style.height.split('px')[0], 10);
-
-                        return topValue < e.y && leftValue < e.x && e.x < leftValue + widthValue && e.y < topValue + heightValue;
-                    });
-                    if (selectedDrawings.length > 0) {
-                        console.log("Object selected")
-
-                        this.moveStarted(e, selectedDrawings[0]);
-                    } else {
-                        console.log("No object selected")
+                    for (var i = 0; i < this.drawings.length; i++) {
+                        var each = this.drawings[i];
+                        if (each.isPointInside(e.x, e.y)) {
+                            this.moveStarted(e, each);
+                            return;
+                        }
                     }
                 }
             },
+
+            //DRAWING METHODS
             drawingStarted: function(e) {
-
-                // var newDiv = document.createElement("div");
-                // document.getElementById("drawingArea").appendChild(newDiv);
-
                 var newDiv = new Shape().$mount()
-                // drawingAreaVM.$el.appendChild(newDiv.$el)
-                document.getElementById('drawingArea').appendChild(newDiv.$el)
-
+                    drawingAreaVM.$el.appendChild(newDiv.$el)
 
                 drawingAreaVM.$el.addEventListener('mousemove', this.drawingChanged, false);
                 drawingAreaVM.$el.addEventListener('mouseup', this.drawingEnded, false);
@@ -117,7 +115,6 @@
             drawingEnded: function(e) {
                 drawingAreaVM.$el.removeEventListener('mousemove', this.drawingChanged, false);
                 drawingAreaVM.$el.removeEventListener('mouseup', this.drawingEnded, false);
-
             },
 
             updateDrawnDivStyle: function(e, drawnDiv) {
@@ -137,22 +134,16 @@
                 drawnDiv.leftValue = leftValue;
                 drawnDiv.widthValue = widthValue;
                 drawnDiv.heightValue = heightValue;
-
-                console.log("drawnDiv.topValue " +drawnDiv.topValue);
-                console.log("drawnDiv.leftValue " +drawnDiv.leftValue);
-                console.log("drawnDiv.widthValue " +drawnDiv.widthValue);
-                console.log("drawnDiv.heightValue " +drawnDiv.heightValue);
-
-                console.log("drawnDiv.style" + JSON.stringify(drawnDiv.styleObject));
             },
 
+
+            //MOVING METHODS
             moveStarted: function(e, selectedDrawing) {
-                let topValue = parseInt(selectedDrawing.style.top.split('px')[0], 10);
-                let leftValue = parseInt(selectedDrawing.style.left.split('px')[0], 10);
-                let widthValue = parseInt(selectedDrawing.style.width.split('px')[0], 10);
-                let heightValue = parseInt(selectedDrawing.style.height.split('px')[0], 10);
-                var offsetX = e.x - leftValue;
-                var offsetY = e.y - topValue;
+                var offsetX = e.x - selectedDrawing.leftValue;
+                var offsetY = e.y - selectedDrawing.topValue;
+
+                var parentElement = selectedDrawing.$el.parentNode;
+                parentElement.insertBefore(selectedDrawing.$el, null);
 
                 var moveHanlder = function(e) {
                     this.moveChanged(e, selectedDrawing, offsetX, offsetY);
@@ -166,11 +157,9 @@
             },
 
             moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
-                selectedDrawing.style.top = Math.abs(initialOffsetY - e.y) + "px";
-                selectedDrawing.style.left = Math.abs(initialOffsetX - e.x) + "px";
+                selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
+                selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
             }
-
-
 
         }
     });
