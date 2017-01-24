@@ -143,6 +143,7 @@
                 var offsetY = e.y - selectedDrawing.topValue;
 
                 var parentElement = selectedDrawing.$el.parentNode;
+                //When the second parameter is null in insertBefore the element is added as the last child
                 parentElement.insertBefore(selectedDrawing.$el, null);
 
                 var moveHanlder = function(e) {
