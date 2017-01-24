@@ -5,6 +5,7 @@
     border: 2px solid black;
     float:left;
     margin: 10px;
+    position: relative;
 }
 
 .outputArea {

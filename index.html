@@ -18,13 +18,11 @@
             <a class="button" v-on:click="addVisualOuput">Add VisualState</a>
         </div>
     </div>
-    <div id="outputArea" class="outputArea">
-    </div>
-    <!--     <div id="drawingArea" v-on:mousedown="actionStarted" style="background-color:red; height: 500px">
-    </div> -->
+    <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script>
+
     window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
             toolbarVM.multiSelectionMode = true;
@@ -83,29 +81,42 @@
 
             //DRAWING METHODS
             drawingStarted: function(e) {
-                var newDiv = new Shape().$mount()
-                this.$el.appendChild(newDiv.$el)
+                var newShape = new Shape().$mount()
+                this.$el.appendChild(newShape.$el)
 
-                this.$el.addEventListener('mousemove', this.drawingChanged, false);
-                this.$el.addEventListener('mouseup', this.drawingEnded, false);
+                var mouseMoveHandler
 
-                newDiv.startingPosition.x = e.x;
-                newDiv.startingPosition.y = e.y;
-                this.shapes.push(newDiv);
+                mouseMoveHandler = function(e) {
+                    this.drawingChanged(e, newShape)
+                }.bind(this)
 
-                this.updateDrawnDivStyle(e, newDiv);
+                var mouseUpHandler
+                mouseUpHandler = function(e) {
+                    this.drawingEnded(e, newShape)
+                    this.$el.removeEventListener('mousemove', mouseMoveHandler, false);
+                    this.$el.removeEventListener('mouseup', mouseUpHandler, false);
+                }.bind(this)
+
+                this.$el.addEventListener('mousemove', mouseMoveHandler, false);
+                this.$el.addEventListener('mouseup', mouseUpHandler, false);
+
+                newShape.startingPosition.x = e.x;
+                newShape.startingPosition.y = e.y;
+                this.shapes.push(newShape);
+
+                this.updateDrawnDivStyle(e, newShape);
             },
 
-            drawingChanged: function(e) {
-                this.updateDrawnDivStyle(e, this.shapes[this.shapes.length - 1]);
+            drawingChanged: function(e, drawnShape) {
+                this.updateDrawnDivStyle(e, drawnShape);
             },
 
-            drawingEnded: function(e) {
-                this.$el.removeEventListener('mousemove', this.drawingChanged, false);
-                this.$el.removeEventListener('mouseup', this.drawingEnded, false);
+            drawingEnded: function(e, drawnShape) {
+                outputAreaVM.$emit('didCreateShape', drawnShape,this);
             },
 
             updateDrawnDivStyle: function(e, drawnDiv) {
+                //Maybe this should go in Shape
                 var topValue = drawnDiv.startingPosition.y
                 if (e.y < drawnDiv.startingPosition.y) {
                     topValue = e.y;
@@ -118,8 +129,8 @@
                 var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
                 var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
 
-                drawnDiv.topValue = topValue;
-                drawnDiv.leftValue = leftValue;
+                drawnDiv.topValue = topValue  - this.$el.offsetTop;
+                drawnDiv.leftValue = leftValue - this.$el.offsetLeft;
                 drawnDiv.widthValue = widthValue;
                 drawnDiv.heightValue = heightValue;
             },
@@ -135,14 +146,17 @@
                 //When the second parameter is null in insertBefore the element is added as the last child
                 parentElement.insertBefore(selectedDrawing.$el, null);
 
-                var moveHanlder = function(e) {
+                var moveHandler = function(e) {
                     this.moveChanged(e, selectedDrawing, offsetX, offsetY);
                 }.bind(this);
-                this.$el.addEventListener('mousemove', moveHanlder, false);
-                var upHandler = function(e) {
-                    this.$el.removeEventListener('mousemove', moveHanlder, false);
-                    this.$el.removeEventListener('mouseup', this, false);
-                }.bind(this);
+                this.$el.addEventListener('mousemove', moveHandler, false);
+
+                var visualOuputElement = this.$el;
+                var upHandler
+                upHandler = function(e) {
+                    visualOuputElement.removeEventListener('mousemove', moveHandler, false);
+                    visualOuputElement.removeEventListener('mouseup', upHandler, false);
+                }
                 this.$el.addEventListener('mouseup', upHandler, false);
             },
 
@@ -155,6 +169,19 @@
                 _.each(this.selectedShapes(), function(shape) {
                     shape.color = cssStyle['background-color'];
                 });
+            },
+
+            addShape(oldShape) {
+                var newShape = new Shape().$mount();
+                this.$el.appendChild(newShape.$el);
+
+                newShape.color = oldShape.color
+                newShape.isSelected = oldShape.isSelected
+                newShape.startingPosition = oldShape.startingPosition
+                newShape.topValue = oldShape.topValue
+                newShape.leftValue = oldShape.leftValue
+                newShape.widthValue = oldShape.widthValue
+                newShape.heightValue = oldShape.heightValue
             }
         }
     });
@@ -189,7 +216,9 @@
             }
         },
         methods: {
-            isPointInside: function(x, y) {
+            isPointInside: function(windowX, windowY) {
+                let x = windowX - this.$el.parentElement.offsetLeft;
+                let y = windowY - this.$el.parentElement.offsetTop;
                 return this.topValue < y && this.leftValue < x && x < this.leftValue + this.widthValue && y < this.topValue + this.heightValue;
 
             },
@@ -208,7 +237,8 @@
     var outputAreaVM = new Vue({
         el: '#outputArea',
         data: {
-            visualOutputs: []
+            visualOutputs: [],
+            cursorType: 'auto'
         },
         methods: {
             propertyChangedOnSelectedShape: function(cssStyle) {
@@ -216,6 +246,17 @@
                     each.propertyChanged(cssStyle);
                 });
             }
+        },
+        created: function() {
+            this.$on('didCreateShape', function(newShape,currentVisualState) {
+                var currentVisualStateIndex = this.visualOutputs.indexOf(currentVisualState);
+                for (var i = 0; i < this.visualOutputs.length; i++) {
+                    if (i > currentVisualStateIndex) {
+                        var futureVisualState = this.visualOutputs[i];
+                        futureVisualState.addShape(newShape);
+                    }
+                }
+            })
         }
     });
 
@@ -230,11 +271,12 @@
             drawSelected() {
                 this.drawMode = true;
                 this.selectionMode = false;
+                outputAreaVM.cursorType = "crosshair";
             },
-
             selectionSelected() {
                 this.drawMode = false;
                 this.selectionMode = true;
+                outputAreaVM.cursorType = "default";
             },
             changeToBlue() {
                 outputAreaVM.propertyChangedOnSelectedShape({
