@@ -1,0 +1,13 @@
+.visualState {
+    width: 250px;
+    height: 400px;
+    background-color:white;
+    border: 2px solid black;
+    float:left;
+    margin: 10px;
+}
+
+.outputArea {
+    height: 500px;
+    background-color:red;
+}

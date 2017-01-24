@@ -4,6 +4,7 @@
 <head>
     <title>Enact</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bulma/0.3.1/css/bulma.min.css">
+    <link rel="stylesheet" type="text/css" href="index.css">
 </head>
 
 <body>
@@ -13,12 +14,122 @@
             <a class="button">Measure</a>
         </div>
     </div>
-    <div id="drawingArea" v-on:mousedown="actionStarted" style="background-color:red; height: 500px">
+    <div id="outputArea" class="outputArea">
+        <enact-visual-state></enact-visual-state>
+        <enact-visual-state></enact-visual-state>
+        <enact-visual-state></enact-visual-state>
+        <enact-visual-state></enact-visual-state>
     </div>
+    <!--     <div id="drawingArea" v-on:mousedown="actionStarted" style="background-color:red; height: 500px">
+    </div> -->
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
-
     <script>
+    Vue.component('enact-visual-state', {
+        template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
+        data: function() {
+            return {
+                drawings: [],
+                startingPosition: {
+                    x: 0,
+                    y: 0
+                }
+            }
+        },
+        methods: {
+            actionStarted: function(e) {
+                if (toolbarVM.drawMode) {
+                    this.drawingStarted(e);
+                }
+                if (toolbarVM.selectionMode) {
+                    //We traverse the shapes in backward order
+                    for (var i = this.drawings.length - 1; i >= 0; i--) {
+                        var each = this.drawings[i];
+                        if (each.isPointInside(e.x, e.y)) {
+                            this.moveStarted(e, each);
+                            return;
+                        }
+                    }
+                }
+            },
+
+            //DRAWING METHODS
+            drawingStarted: function(e) {
+                var newDiv = new Shape().$mount()
+                this.$el.appendChild(newDiv.$el)
+
+                this.$el.addEventListener('mousemove', this.drawingChanged, false);
+                this.$el.addEventListener('mouseup', this.drawingEnded, false);
+
+                newDiv.startingPosition.x = e.x;
+                newDiv.startingPosition.y = e.y;
+                this.drawings.push(newDiv);
+
+                this.updateDrawnDivStyle(e, newDiv);
+            },
+
+            drawingChanged: function(e) {
+                this.updateDrawnDivStyle(e, this.drawings[this.drawings.length - 1]);
+            },
+
+            drawingEnded: function(e) {
+                this.$el.removeEventListener('mousemove', this.drawingChanged, false);
+                this.$el.removeEventListener('mouseup', this.drawingEnded, false);
+            },
+
+            updateDrawnDivStyle: function(e, drawnDiv) {
+                var topValue = drawnDiv.startingPosition.y
+                if (e.y < drawnDiv.startingPosition.y) {
+                    topValue = e.y;
+                }
+
+                var leftValue = drawnDiv.startingPosition.x
+                if (e.x < drawnDiv.startingPosition.x) {
+                    leftValue = e.x;
+                }
+                var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
+                var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
+
+                drawnDiv.topValue = topValue;
+                drawnDiv.leftValue = leftValue;
+                drawnDiv.widthValue = widthValue;
+                drawnDiv.heightValue = heightValue;
+            },
+
+
+            //MOVING METHODS
+            moveStarted: function(e, selectedDrawing) {
+                var offsetX = e.x - selectedDrawing.leftValue;
+                var offsetY = e.y - selectedDrawing.topValue;
+
+                var parentElement = selectedDrawing.$el.parentNode;
+                //When the second parameter is null in insertBefore the element is added as the last child
+                parentElement.insertBefore(selectedDrawing.$el, null);
+
+                var moveHanlder = function(e) {
+                    this.moveChanged(e, selectedDrawing, offsetX, offsetY);
+                }.bind(this);
+                this.$el.addEventListener('mousemove', moveHanlder, false);
+                var upHandler = function(e) {
+                    this.$el.removeEventListener('mousemove', moveHanlder, false);
+                    this.$el.removeEventListener('mouseup', this, false);
+                }.bind(this);
+                this.$el.addEventListener('mouseup', upHandler, false);
+            },
+
+            moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
+                selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
+                selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
+            }
+
+        }
+    });
+
+    // create a new Vue instance and mount it to our div element above with the id of app
+    var outputAreaVM = new Vue({
+        el: '#outputArea'
+    });
+
     var Shape = Vue.extend({
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
@@ -67,103 +178,103 @@
             }
         }
     });
-    var drawingAreaVM = new Vue({
-        el: '#drawingArea',
-        data: {
-            drawings: [],
-            startingPosition: {
-                x: 0,
-                y: 0
-            }
-        },
-        methods: {
-            actionStarted: function(e) {
-                if (toolbarVM.drawMode) {
-                    this.drawingStarted(e);
-                }
-                if (toolbarVM.selectionMode) {
-                    // drawings at e.x,e.y
-                    for (var i = 0; i < this.drawings.length; i++) {
-                        var each = this.drawings[i];
-                        if (each.isPointInside(e.x, e.y)) {
-                            this.moveStarted(e, each);
-                            return;
-                        }
-                    }
-                }
-            },
+    // var drawingAreaVM = new Vue({
+    //     el: '#drawingArea',
+    //     data: {
+    //         drawings: [],
+    //         startingPosition: {
+    //             x: 0,
+    //             y: 0
+    //         }
+    //     },
+    //     methods: {
+    //         actionStarted: function(e) {
+    //             if (toolbarVM.drawMode) {
+    //                 this.drawingStarted(e);
+    //             }
+    //             if (toolbarVM.selectionMode) {
+    //                 // drawings at e.x,e.y
+    //                 for (var i = 0; i < this.drawings.length; i++) {
+    //                     var each = this.drawings[i];
+    //                     if (each.isPointInside(e.x, e.y)) {
+    //                         this.moveStarted(e, each);
+    //                         return;
+    //                     }
+    //                 }
+    //             }
+    //         },
 
-            //DRAWING METHODS
-            drawingStarted: function(e) {
-                var newDiv = new Shape().$mount()
-                    drawingAreaVM.$el.appendChild(newDiv.$el)
+    //         //DRAWING METHODS
+    //         drawingStarted: function(e) {
+    //             var newDiv = new Shape().$mount()
+    //             drawingAreaVM.$el.appendChild(newDiv.$el)
 
-                drawingAreaVM.$el.addEventListener('mousemove', this.drawingChanged, false);
-                drawingAreaVM.$el.addEventListener('mouseup', this.drawingEnded, false);
+    //             drawingAreaVM.$el.addEventListener('mousemove', this.drawingChanged, false);
+    //             drawingAreaVM.$el.addEventListener('mouseup', this.drawingEnded, false);
 
-                newDiv.startingPosition.x = e.x;
-                newDiv.startingPosition.y = e.y;
-                this.drawings.push(newDiv);
+    //             newDiv.startingPosition.x = e.x;
+    //             newDiv.startingPosition.y = e.y;
+    //             this.drawings.push(newDiv);
 
-                this.updateDrawnDivStyle(e, newDiv);
-            },
+    //             this.updateDrawnDivStyle(e, newDiv);
+    //         },
 
-            drawingChanged: function(e) {
-                this.updateDrawnDivStyle(e, this.drawings[this.drawings.length - 1]);
-            },
+    //         drawingChanged: function(e) {
+    //             this.updateDrawnDivStyle(e, this.drawings[this.drawings.length - 1]);
+    //         },
 
-            drawingEnded: function(e) {
-                drawingAreaVM.$el.removeEventListener('mousemove', this.drawingChanged, false);
-                drawingAreaVM.$el.removeEventListener('mouseup', this.drawingEnded, false);
-            },
+    //         drawingEnded: function(e) {
+    //             drawingAreaVM.$el.removeEventListener('mousemove', this.drawingChanged, false);
+    //             drawingAreaVM.$el.removeEventListener('mouseup', this.drawingEnded, false);
+    //         },
 
-            updateDrawnDivStyle: function(e, drawnDiv) {
-                var topValue = drawnDiv.startingPosition.y
-                if (e.y < drawnDiv.startingPosition.y) {
-                    topValue = e.y;
-                }
+    //         updateDrawnDivStyle: function(e, drawnDiv) {
+    //             var topValue = drawnDiv.startingPosition.y
+    //             if (e.y < drawnDiv.startingPosition.y) {
+    //                 topValue = e.y;
+    //             }
 
-                var leftValue = drawnDiv.startingPosition.x
-                if (e.x < drawnDiv.startingPosition.x) {
-                    leftValue = e.x;
-                }
-                var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
-                var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
+    //             var leftValue = drawnDiv.startingPosition.x
+    //             if (e.x < drawnDiv.startingPosition.x) {
+    //                 leftValue = e.x;
+    //             }
+    //             var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
+    //             var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
 
-                drawnDiv.topValue = topValue;
-                drawnDiv.leftValue = leftValue;
-                drawnDiv.widthValue = widthValue;
-                drawnDiv.heightValue = heightValue;
-            },
+    //             drawnDiv.topValue = topValue;
+    //             drawnDiv.leftValue = leftValue;
+    //             drawnDiv.widthValue = widthValue;
+    //             drawnDiv.heightValue = heightValue;
+    //         },
 
 
-            //MOVING METHODS
-            moveStarted: function(e, selectedDrawing) {
-                var offsetX = e.x - selectedDrawing.leftValue;
-                var offsetY = e.y - selectedDrawing.topValue;
+    //         //MOVING METHODS
+    //         moveStarted: function(e, selectedDrawing) {
+    //             var offsetX = e.x - selectedDrawing.leftValue;
+    //             var offsetY = e.y - selectedDrawing.topValue;
 
-                var parentElement = selectedDrawing.$el.parentNode;
-                //When the second parameter is null in insertBefore the element is added as the last child
-                parentElement.insertBefore(selectedDrawing.$el, null);
+    //             var parentElement = selectedDrawing.$el.parentNode;
+    //             //When the second parameter is null in insertBefore the element is added as the last child
+    //             parentElement.insertBefore(selectedDrawing.$el, null);
 
-                var moveHanlder = function(e) {
-                    this.moveChanged(e, selectedDrawing, offsetX, offsetY);
-                }.bind(this);
-                drawingAreaVM.$el.addEventListener('mousemove', moveHanlder, false);
-                var upHandler = function(e) {
-                    drawingAreaVM.$el.removeEventListener('mousemove', moveHanlder, false);
-                    drawingAreaVM.$el.removeEventListener('mouseup', this, false);
-                };
-                drawingAreaVM.$el.addEventListener('mouseup', upHandler, false);
-            },
+    //             var moveHanlder = function(e) {
+    //                 this.moveChanged(e, selectedDrawing, offsetX, offsetY);
+    //             }.bind(this);
+    //             drawingAreaVM.$el.addEventListener('mousemove', moveHanlder, false);
+    //             var upHandler = function(e) {
+    //                 drawingAreaVM.$el.removeEventListener('mousemove', moveHanlder, false);
+    //                 drawingAreaVM.$el.removeEventListener('mouseup', this, false);
+    //             };
+    //             drawingAreaVM.$el.addEventListener('mouseup', upHandler, false);
+    //         },
 
-            moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
-                selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
-                selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
-            }
+    //         moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
+    //             selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
+    //             selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
+    //         }
 
-        }
-    });
+    //     }
+    // });
     </script>
 </body>
 
