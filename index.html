@@ -25,6 +25,17 @@
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script>
+    window.addEventListener('keydown',function(e){
+        e.preventDefault();
+        if (e.code === 'AltLeft' || e.code === 'AltRight') {
+            toolbarVM.multiSelectionMode = true;
+        }
+    });
+    window.addEventListener('keyup',function(e){
+        e.preventDefault();
+        toolbarVM.multiSelectionMode = false;
+    });
+
     var VisualOuput = Vue.extend({
         template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
         data: function() {
@@ -48,13 +59,25 @@
                 }
                 if (toolbarVM.selectionMode) {
                     //We traverse the shapes in backward order
+                    var selectedShape = null;
                     for (var i = this.shapes.length - 1; i >= 0; i--) {
                         var each = this.shapes[i];
                         if (each.isPointInside(e.x, e.y)) {
-                            each.isSelected = !each.isSelected;
+                            each.toggleSelection();
+                            if (each.isSelected) {
+                                selectedShape = each;
+                            }
                             this.moveStarted(e, each);
-                            return;
+                            continue;
                         }
+                    }
+
+                    if (!toolbarVM.multiSelectionMode) {
+                        _.each(this.selectedShapes(),function(previouslySelectedShape) {
+                            if (previouslySelectedShape !== selectedShape) {
+                                previouslySelectedShape.deselect();
+                            }
+                        });
                     }
                 }
             },
@@ -183,6 +206,14 @@
             isPointInside: function(x, y) {
                 return this.topValue < y && this.leftValue < x && x < this.leftValue + this.widthValue && y < this.topValue + this.heightValue;
 
+            },
+            toggleSelection() {
+                this.isSelected = !this.isSelected;
+            },
+            deselect() {
+                if (this.isSelected) {
+                    this.isSelected = false;
+                }
             }
         }
     });
@@ -191,7 +222,8 @@
         el: '#toolbar',
         data: {
             drawMode: false,
-            selectionMode: true
+            selectionMode: true,
+            multiSelectionMode:false
         },
         methods: {
             drawSelected() {
