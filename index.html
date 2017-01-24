@@ -25,14 +25,12 @@
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script>
-    window.addEventListener('keydown',function(e){
-        e.preventDefault();
+    window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
             toolbarVM.multiSelectionMode = true;
         }
     });
-    window.addEventListener('keyup',function(e){
-        e.preventDefault();
+    window.addEventListener('keyup', function(e) {
         toolbarVM.multiSelectionMode = false;
     });
 
@@ -71,14 +69,15 @@
                             continue;
                         }
                     }
-
                     if (!toolbarVM.multiSelectionMode) {
-                        _.each(this.selectedShapes(),function(previouslySelectedShape) {
+
+                        _.each(this.selectedShapes(), function(previouslySelectedShape) {
                             if (previouslySelectedShape !== selectedShape) {
                                 previouslySelectedShape.deselect();
                             }
                         });
                     }
+
                 }
             },
 
@@ -128,6 +127,7 @@
 
             //MOVING METHODS
             moveStarted: function(e, selectedDrawing) {
+
                 var offsetX = e.x - selectedDrawing.leftValue;
                 var offsetY = e.y - selectedDrawing.topValue;
 
@@ -147,11 +147,12 @@
             },
 
             moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
+                selectedDrawing.isSelected = true;
                 selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
                 selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
             },
             propertyChanged: function(cssStyle) {
-                _.each(this.selectedShapes(),function(shape){
+                _.each(this.selectedShapes(), function(shape) {
                     shape.color = cssStyle['background-color'];
                 });
             }
@@ -162,11 +163,11 @@
     var outputAreaVM = new Vue({
         el: '#outputArea',
         data: {
-            visualOutputs:[]
+            visualOutputs: []
         },
         methods: {
             propertyChangedOnSelectedShape: function(cssStyle) {
-                _.each(this.visualOutputs,function(each){
+                _.each(this.visualOutputs, function(each) {
                     each.propertyChanged(cssStyle);
                 });
             }
@@ -198,7 +199,7 @@
                     'left': this.leftValue + 'px',
                     'width': this.widthValue + 'px',
                     'height': this.heightValue + 'px',
-                    'border': (this.isSelected ? '4px':'1px') + ' solid gray'
+                    'border': (this.isSelected ? '4px' : '1px') + ' solid gray'
                 }
             }
         },
@@ -223,7 +224,7 @@
         data: {
             drawMode: false,
             selectionMode: true,
-            multiSelectionMode:false
+            multiSelectionMode: false
         },
         methods: {
             drawSelected() {
@@ -236,10 +237,14 @@
                 this.selectionMode = true;
             },
             changeToBlue() {
-                outputAreaVM.propertyChangedOnSelectedShape({'background-color':'blue'});
+                outputAreaVM.propertyChangedOnSelectedShape({
+                    'background-color': 'blue'
+                });
             },
             changeToRed() {
-                outputAreaVM.propertyChangedOnSelectedShape({'background-color':'red'});
+                outputAreaVM.propertyChangedOnSelectedShape({
+                    'background-color': 'red'
+                });
             },
 
             addVisualOuput() {
