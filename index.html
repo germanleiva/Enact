@@ -159,21 +159,6 @@
         }
     });
 
-    // create a new Vue instance and mount it to our div element above with the id of app
-    var outputAreaVM = new Vue({
-        el: '#outputArea',
-        data: {
-            visualOutputs: []
-        },
-        methods: {
-            propertyChangedOnSelectedShape: function(cssStyle) {
-                _.each(this.visualOutputs, function(each) {
-                    each.propertyChanged(cssStyle);
-                });
-            }
-        }
-    });
-
     var Shape = Vue.extend({
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
@@ -219,6 +204,21 @@
         }
     });
 
+    // create a new Vue instance and mount it to our div element above with the id of app
+    var outputAreaVM = new Vue({
+        el: '#outputArea',
+        data: {
+            visualOutputs: []
+        },
+        methods: {
+            propertyChangedOnSelectedShape: function(cssStyle) {
+                _.each(this.visualOutputs, function(each) {
+                    each.propertyChanged(cssStyle);
+                });
+            }
+        }
+    });
+
     var toolbarVM = new Vue({
         el: '#toolbar',
         data: {
@@ -253,7 +253,11 @@
 
                 outputAreaVM.$data.visualOutputs.push(newVisualOuput);
             }
+        },
+        created: function() {
+            this.addVisualOuput();
         }
+
     });
     </script>
 </body>
