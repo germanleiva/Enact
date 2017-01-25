@@ -15,14 +15,13 @@
             <a class="button">Measure</a>
             <a class="button" v-on:click="changeToBlue">Change to blue</a>
             <a class="button" v-on:click="changeToRed">Change to red</a>
-            <a class="button" v-on:click="addVisualOuput">Add VisualState</a>
+            <a class="button" v-on:click="addVisualOutput">Add VisualState</a>
         </div>
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script>
-
     window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
             toolbarVM.multiSelectionMode = true;
@@ -32,7 +31,18 @@
         toolbarVM.multiSelectionMode = false;
     });
 
-    var VisualOuput = Vue.extend({
+    class ShapeModel {
+        constructor(color, top, left, height, width) {
+            this.id = 'Polygon';
+            this.top = top;
+            this.left = left;
+            this.height = height;
+            this.width = width;
+            this.color = color;
+        }
+    }
+
+    var VisualOutput = Vue.extend({
         template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
         data: function() {
             return {
@@ -68,7 +78,6 @@
                         }
                     }
                     if (!toolbarVM.multiSelectionMode) {
-
                         _.each(this.selectedShapes(), function(previouslySelectedShape) {
                             if (previouslySelectedShape !== selectedShape) {
                                 previouslySelectedShape.deselect();
@@ -108,7 +117,7 @@
             },
 
             drawingEnded: function(e, drawnShape) {
-                outputAreaVM.$emit('didCreateShape', drawnShape,this);
+                outputAreaVM.$emit('didCreateShape', drawnShape, this);
             },
 
             updateDrawnDivStyle: function(e, drawnDiv) {
@@ -125,18 +134,18 @@
                 var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
                 var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
 
-                drawnDiv.topValue = topValue  - this.$el.offsetTop;
-                drawnDiv.leftValue = leftValue - this.$el.offsetLeft;
-                drawnDiv.widthValue = widthValue;
-                drawnDiv.heightValue = heightValue;
+                drawnDiv.shapeModel.top = topValue - this.$el.offsetTop;
+                drawnDiv.shapeModel.left = leftValue - this.$el.offsetLeft;
+                drawnDiv.shapeModel.width = widthValue;
+                drawnDiv.shapeModel.height = heightValue;
             },
 
 
             //MOVING METHODS
             moveStarted: function(e, selectedDrawing) {
 
-                var offsetX = e.x - selectedDrawing.leftValue;
-                var offsetY = e.y - selectedDrawing.topValue;
+                var offsetY = e.y - selectedDrawing.shapeModel.top;
+                var offsetX = e.x - selectedDrawing.shapeModel.left;
 
                 var parentElement = selectedDrawing.$el.parentNode;
                 //When the second parameter is null in insertBefore the element is added as the last child
@@ -158,33 +167,38 @@
 
             moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
                 selectedDrawing.isSelected = true;
-                selectedDrawing.topValue = Math.abs(initialOffsetY - e.y);
-                selectedDrawing.leftValue = Math.abs(initialOffsetX - e.x);
+                selectedDrawing.shapeModel.top = Math.abs(initialOffsetY - e.y);
+                selectedDrawing.shapeModel.left = Math.abs(initialOffsetX - e.x);
             },
             propertyChanged: function(cssStyle) {
-                _.each(this.selectedShapes(), function(shape) {
-                    shape.color = cssStyle['background-color'];
+                _.each(this.selectedShapes(), function(shapeVM) {
+                    shapeVM.shapeModel.color = cssStyle['background-color'];
                 });
             },
-            addNewShape(oldShape){
-                var newShape = new Shape().$mount();
+            addNewShape(oldShape) {
+                var newShape = new ShapeVM();
+
+                if (oldShape) {
+                    newShape.shapeModel = oldShape.shapeModel;
+                } else {
+                    newShape.shapeModel = new ShapeModel('white', 0, 0, 0, 0)
+                }
+
+                if (oldShape) {
+                    newShape.isSelected = oldShape.isSelected
+                    newShape.startingPosition = oldShape.startingPosition
+                }
+
+                newShape.$mount();
                 this.$el.appendChild(newShape.$el);
                 this.shapes.push(newShape);
-                if (oldShape) {
-                    newShape.color = oldShape.color
-                newShape.isSelected = oldShape.isSelected
-                newShape.startingPosition = oldShape.startingPosition
-                newShape.topValue = oldShape.topValue
-                newShape.leftValue = oldShape.leftValue
-                newShape.widthValue = oldShape.widthValue
-                newShape.heightValue = oldShape.heightValue
-                }
+
                 return newShape;
             }
         }
     });
 
-    var Shape = Vue.extend({
+    var ShapeVM = Vue.extend({
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
             return {
@@ -194,21 +208,18 @@
                     x: 0,
                     y: 0
                 },
-                topValue: 0,
-                leftValue: 0,
-                widthValue: 0,
-                heightValue: 0
+                shapeModel: undefined
             }
         },
         computed: {
             styleObject: function() {
                 return {
-                    'backgroundColor': this.color,
+                    'backgroundColor': this.shapeModel.color,
                     'position': 'absolute',
-                    'top': this.topValue + 'px',
-                    'left': this.leftValue + 'px',
-                    'width': this.widthValue + 'px',
-                    'height': this.heightValue + 'px',
+                    'top': this.shapeModel.top + 'px',
+                    'left': this.shapeModel.left + 'px',
+                    'width': this.shapeModel.width + 'px',
+                    'height': this.shapeModel.height + 'px',
                     'border': (this.isSelected ? '4px' : '1px') + ' solid gray'
                 }
             }
@@ -217,7 +228,7 @@
             isPointInside: function(windowX, windowY) {
                 let x = windowX - this.$el.parentElement.offsetLeft;
                 let y = windowY - this.$el.parentElement.offsetTop;
-                return this.topValue < y && this.leftValue < x && x < this.leftValue + this.widthValue && y < this.topValue + this.heightValue;
+                return this.shapeModel.top < y && this.shapeModel.left < x && x < this.shapeModel.left + this.shapeModel.width && y < this.shapeModel.top + this.shapeModel.height;
 
             },
             toggleSelection() {
@@ -246,7 +257,7 @@
             }
         },
         created: function() {
-            this.$on('didCreateShape', function(createdShape,currentVisualState) {
+            this.$on('didCreateShape', function(createdShape, currentVisualState) {
                 var currentVisualStateIndex = this.visualOutputs.indexOf(currentVisualState);
                 for (var i = 0; i < this.visualOutputs.length; i++) {
                     if (i > currentVisualStateIndex) {
@@ -287,15 +298,25 @@
                 });
             },
 
-            addVisualOuput() {
-                var newVisualOuput = new VisualOuput().$mount()
-                outputAreaVM.$el.appendChild(newVisualOuput.$el)
+            addVisualOutput() {
+                var allTheVisualOutputs = outputAreaVM.$data.visualOutputs;
+                var newVisualOutput = new VisualOutput().$mount()
 
-                outputAreaVM.$data.visualOutputs.push(newVisualOuput);
+                if (allTheVisualOutputs.length > 0) {
+                    var previousVisualOutput = _.last(allTheVisualOutputs);
+
+                    _.each(previousVisualOutput.shapes, function(previousShape) {
+                        newVisualOutput.addNewShape(previousShape);
+                    });
+                }
+
+                outputAreaVM.$el.appendChild(newVisualOutput.$el)
+
+                allTheVisualOutputs.push(newVisualOutput);
             }
         },
         created: function() {
-            this.addVisualOuput();
+            this.addVisualOutput();
         }
 
     });
