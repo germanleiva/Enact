@@ -81,8 +81,7 @@
 
             //DRAWING METHODS
             drawingStarted: function(e) {
-                var newShape = new Shape().$mount()
-                this.$el.appendChild(newShape.$el)
+                var newShape = this.addNewShape();
 
                 var mouseMoveHandler
 
@@ -102,9 +101,6 @@
 
                 newShape.startingPosition.x = e.x;
                 newShape.startingPosition.y = e.y;
-                this.shapes.push(newShape);
-
-                this.updateDrawnDivStyle(e, newShape);
             },
 
             drawingChanged: function(e, drawnShape) {
@@ -170,18 +166,20 @@
                     shape.color = cssStyle['background-color'];
                 });
             },
-
-            addShape(oldShape) {
+            addNewShape(oldShape){
                 var newShape = new Shape().$mount();
                 this.$el.appendChild(newShape.$el);
-
-                newShape.color = oldShape.color
+                this.shapes.push(newShape);
+                if (oldShape) {
+                    newShape.color = oldShape.color
                 newShape.isSelected = oldShape.isSelected
                 newShape.startingPosition = oldShape.startingPosition
                 newShape.topValue = oldShape.topValue
                 newShape.leftValue = oldShape.leftValue
                 newShape.widthValue = oldShape.widthValue
                 newShape.heightValue = oldShape.heightValue
+                }
+                return newShape;
             }
         }
     });
@@ -248,12 +246,12 @@
             }
         },
         created: function() {
-            this.$on('didCreateShape', function(newShape,currentVisualState) {
+            this.$on('didCreateShape', function(createdShape,currentVisualState) {
                 var currentVisualStateIndex = this.visualOutputs.indexOf(currentVisualState);
                 for (var i = 0; i < this.visualOutputs.length; i++) {
                     if (i > currentVisualStateIndex) {
                         var futureVisualState = this.visualOutputs[i];
-                        futureVisualState.addShape(newShape);
+                        futureVisualState.addNewShape(createdShape);
                     }
                 }
             })
