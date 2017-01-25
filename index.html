@@ -15,7 +15,7 @@
             <a class="button">Measure</a>
             <a class="button" v-on:click="changeToBlue">Change to blue</a>
             <a class="button" v-on:click="changeToRed">Change to red</a>
-            <a class="button" v-on:click="addVisualOutput">Add VisualState</a>
+            <a class="button" v-on:click="addVisualState">Add VisualState</a>
         </div>
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
@@ -32,21 +32,64 @@
     });
 
     class ShapeModel {
-        constructor(color, top, left, height, width) {
+        constructor(color, top, left, width, height) {
             this.id = 'Polygon';
+
+            let firstVersion = new ShapeModelVersion(this, color, top, left, width, height)
+            this.versions = [firstVersion];
+        }
+        get lastVersion() {
+            return _.last(this.versions);
+        }
+        get top() {
+            return this.lastVersion.top;
+        }
+        get left() {
+            return this.lastVersion.left;
+        }
+        get width() {
+            return this.lastVersion.width;
+        }
+        get height() {
+            return this.lastVersion.height;
+        }
+        get color() {
+            return this.lastVersion.color;
+        }
+        set top(value) {
+            this.lastVersion.top = value;
+        }
+        set left(value) {
+            this.lastVersion.left = value;
+        }
+        set width(value) {
+            this.lastVersion.width = value;
+        }
+        set height(value) {
+            this.lastVersion.height = value;
+        }
+        set color(value) {
+            this.lastVersion.color = value;
+        }
+
+    }
+
+    class ShapeModelVersion {
+        constructor(model, color, top, left, width, height) {
+            this.model = model;
             this.top = top;
             this.left = left;
-            this.height = height;
             this.width = width;
+            this.height = height;
             this.color = color;
         }
     }
 
-    var VisualOutput = Vue.extend({
+    var VisualState = Vue.extend({
         template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
         data: function() {
             return {
-                shapes: [],
+                shapes: [], //[{aShape:aVersion},{aShape:aVersion}]
                 startingPosition: {
                     x: 0,
                     y: 0
@@ -54,6 +97,9 @@
             }
         },
         methods: {
+            shapes() {
+                return
+            },
             selectedShapes: function() {
                 return this.shapes.filter(function(each) {
                     return each.isSelected;
@@ -134,7 +180,8 @@
                 var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
                 var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
 
-                drawnDiv.shapeModel.top = topValue - this.$el.offsetTop;
+                drawnDiv.shapeModel
+                    .top = topValue - this.$el.offsetTop;
                 drawnDiv.shapeModel.left = leftValue - this.$el.offsetLeft;
                 drawnDiv.shapeModel.width = widthValue;
                 drawnDiv.shapeModel.height = heightValue;
@@ -171,8 +218,12 @@
                 selectedDrawing.shapeModel.left = Math.abs(initialOffsetX - e.x);
             },
             propertyChanged: function(cssStyle) {
+
+
+
                 _.each(this.selectedShapes(), function(shapeVM) {
-                    shapeVM.shapeModel.color = cssStyle['background-color'];
+                                    shapeVM.shapeModel.color = cssStyle['background-color'];
+
                 });
             },
             addNewShape(oldShape) {
@@ -238,6 +289,14 @@
                 if (this.isSelected) {
                     this.isSelected = false;
                 }
+            },
+            propertyChanged(cssStyle) {
+                let newVersion = new ShapeModelVersion()
+
+                this.shapeModel.versions
+
+
+
             }
         }
     });
@@ -246,22 +305,22 @@
     var outputAreaVM = new Vue({
         el: '#outputArea',
         data: {
-            visualOutputs: [],
+            visualStates: [],
             cursorType: 'auto'
         },
         methods: {
             propertyChangedOnSelectedShape: function(cssStyle) {
-                _.each(this.visualOutputs, function(each) {
+                _.each(this.visualStates, function(each) {
                     each.propertyChanged(cssStyle);
                 });
             }
         },
         created: function() {
             this.$on('didCreateShape', function(createdShape, currentVisualState) {
-                var currentVisualStateIndex = this.visualOutputs.indexOf(currentVisualState);
-                for (var i = 0; i < this.visualOutputs.length; i++) {
+                var currentVisualStateIndex = this.visualStates.indexOf(currentVisualState);
+                for (var i = 0; i < this.visualStates.length; i++) {
                     if (i > currentVisualStateIndex) {
-                        var futureVisualState = this.visualOutputs[i];
+                        var futureVisualState = this.visualStates[i];
                         futureVisualState.addNewShape(createdShape);
                     }
                 }
@@ -298,25 +357,25 @@
                 });
             },
 
-            addVisualOutput() {
-                var allTheVisualOutputs = outputAreaVM.$data.visualOutputs;
-                var newVisualOutput = new VisualOutput().$mount()
+            addVisualState() {
+                var allTheVisualStates = outputAreaVM.$data.visualStates;
+                var newVisualState = new VisualState().$mount()
 
-                if (allTheVisualOutputs.length > 0) {
-                    var previousVisualOutput = _.last(allTheVisualOutputs);
+                if (allTheVisualStates.length > 0) {
+                    var previousVisualState = _.last(allTheVisualStates);
 
-                    _.each(previousVisualOutput.shapes, function(previousShape) {
-                        newVisualOutput.addNewShape(previousShape);
+                    _.each(previousVisualState.shapes, function(previousShape) {
+                        newVisualState.addNewShape(previousShape);
                     });
                 }
 
-                outputAreaVM.$el.appendChild(newVisualOutput.$el)
+                outputAreaVM.$el.appendChild(newVisualState.$el)
 
-                allTheVisualOutputs.push(newVisualOutput);
+                allTheVisualStates.push(newVisualState);
             }
         },
         created: function() {
-            this.addVisualOutput();
+            this.addVisualState();
         }
 
     });
