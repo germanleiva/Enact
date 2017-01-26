@@ -32,70 +32,72 @@
     });
 
     class ShapeModel {
-        constructor(color, top, left, width, height) {
-            this.id = 'Polygon';
-
-            this.currentVersion = new ShapeModelVersion(this, {
-                value: color
-            }, {
-                x: left,
-                y: top
-            }, {
-                w: width,
-                h: height
-            })
+        constructor(anId) {
+            this.id = anId;
         }
     }
 
     class ShapeModelVersion {
-        constructor(model, color, translation, scaling) {
+        constructor(model, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
             this.model = model;
-            this.backgroundColor = color;
-            this.translation = translation;
-            this.scaling = scaling;
-            this.masterVersion = undefined;
+            this.backgroundColor = {
+                value: aColor
+            };
+            this.translation = {
+                value: {
+                    x: left,
+                    y: top
+                }
+            };
+            this.scaling = {
+                value: {
+                    w: width,
+                    h: height
+                }
+            };
+            this.masterVersion = aMasterVersion;
         }
         get top() {
-            if (this.masterVersion) {
+            if (this.translation.value.y == null) {
                 return this.masterVersion.top;
             }
-            return this.translation.y;
+            return this.translation.value.y;
         }
         get left() {
-            if (this.masterVersion) {
+            if (this.translation.value.x == null) {
                 return this.masterVersion.left;
             }
-            return this.translation.x;
+            return this.translation.value.x;
         }
         get width() {
-            if (this.masterVersion) {
+            if (this.scaling.value.w == null) {
                 return this.masterVersion.width;
             }
-            return this.scaling.w;
+            return this.scaling.value.w;
         }
         get height() {
-            if (this.masterVersion) {
+            if (this.scaling.value.h == null) {
                 return this.masterVersion.height;
             }
-            return this.scaling.h;
+            return this.scaling.value.h;
         }
         get color() {
-            if (this.masterVersion) {
-                return this.masterVersion.color;
+            if (this.backgroundColor.value == '') {
+                return this.masterVersion.backgroundColor.value;
             }
             return this.backgroundColor.value;
         }
         set top(value) {
-            this.translation.y = value;
+            this.translation.value.y = value;
         }
         set left(value) {
-            this.translation.x = value;
+            this.translation.value.x = value;
         }
         set width(value) {
-            this.scaling.w = value;
+            this.scaling.value.w = value;
         }
         set height(value) {
-            this.scaling.h = value;
+            this.scaling.value.h = value;
         }
         set color(value) {
             this.backgroundColor.value = value;
@@ -181,7 +183,9 @@
             },
 
             drawingEnded: function(e, newShapeVM) {
-                outputAreaVM.$emit('didCreateShape', newShapeVM, this);
+                if (this.nextState) {
+                    this.nextState.didCreateShape(newShapeVM, this);
+                }
             },
 
             updateShapeProperties: function(e, newShapeVM) {
@@ -231,19 +235,44 @@
 
             moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
                 selectedShapeVM.isSelected = true;
-                selectedShapeVM.version.top = Math.abs(initialOffsetY - e.y);
-                selectedShapeVM.version.left = Math.abs(initialOffsetX - e.x);
-                selectedShapeVM.version.masterVersion = undefined;
-                // if (this.nextState) {
-                // this.nextState.somethingChanged(selectedShapeVM.version, selectedShapeVM);
-                // }
+                var previousValue = selectedShapeVM.version.translation.value //{x:43,y:40}
+                selectedShapeVM.version.left = Math.abs(initialOffsetX - e.x)
+                selectedShapeVM.version.top = Math.abs(initialOffsetY - e.y)
+
+                if (this.nextState) {
+                    this.nextState.somethingChangedPreviousState(previousValue, selectedShapeVM.version, 'translation', selectedShapeVM);
+                }
             },
-            somethingChanged(version, shapeVM) {
-                this.$forceUpdate();
+            somethingChangedPreviousState(previousValue, changedVersion, changedPropertyName, changedShapeVM) {
+                let that = this;
+                _.each(this.shapes, function(eachShape) {
+
+                    if (eachShape.version.model === changedVersion.model) {
+                        if (eachShape.version[changedPropertyName].value == previousValue) {
+                            //Nothing to do, this shape should keep following the master
+                            // that.$forceUpdate();
+
+                        } else {
+                            //Shape is getting it s own value, so its not following the materVersion anymore
+                            if (eachShape.version[changedPropertyName].value == '') {
+                                eachShape.version[changedPropertyName].value = eachShape.version.masterVersion[changedPropertyName].value;
+                            } else {
+                                eachShape.version[changedPropertyName].value = changedVersion[changedPropertyName].value;
+                            }
+                        }
+                    }
+                });
+
             },
-            propertyChanged: function(cssStyle) {
-                _.each(this.selectedShapes(), function(shapeVM) {
-                    shapeVM.version.color = cssStyle['background-color'];
+            changeColorOnSelection: function(cssStyle) {
+                var currentVisualStateVM = this;
+                _.each(this.selectedShapes(), function(selectedShapeVM) {
+                    var previousValue = selectedShapeVM.version.backgroundColor.value;
+                    selectedShapeVM.version.color = cssStyle['background-color'];
+
+                    if (currentVisualStateVM.nextState) {
+                        currentVisualStateVM.nextState.somethingChangedPreviousState(previousValue, selectedShapeVM.version, 'backgroundColor', selectedShapeVM);
+                    }
                 });
             },
             addNewShape(oldShapeVM) {
@@ -251,22 +280,9 @@
 
                 if (oldShapeVM) {
                     //Cheap way of cloning the version
-                    newShapeVM.version = new ShapeModelVersion(oldShapeVM.version.model, {
-                        value: oldShapeVM.version.backgroundColor.value
-                    }, {
-                        x: oldShapeVM.version.translation.x,
-                        y: oldShapeVM.version.translation.y
-                    }, {
-                        w: oldShapeVM.version.scaling.w,
-                        h: oldShapeVM.version.scaling.h
-                    });
-
-
-
-                    newShapeVM.version.masterVersion = oldShapeVM.version;
+                    newShapeVM.version = new ShapeModelVersion(oldShapeVM.version.model, oldShapeVM.version);
                 } else {
-                    let newShape = new ShapeModel('white', 0, 0, 0, 0);
-                    newShapeVM.version = newShape.currentVersion;
+                    newShapeVM.version = new ShapeModelVersion(new ShapeModel('Polygon'), undefined, 'white', 0, 0, 0, 0);
                 }
 
                 if (oldShapeVM) {
@@ -282,6 +298,17 @@
                 this.shapes.push(newShapeVM);
 
                 return newShapeVM;
+            },
+
+            didCreateShape(newlyCreatedShape, previousState) {
+                if (this.previousState !== previousState) {
+                    console.log("WARNING: THIS SHOULDN'T HAPPEN");
+                }
+
+                let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
+                if (this.nextState) {
+                    this.nextState.didCreateShape(ourNewlyCreatedShape, this);
+                }
             }
         }
     });
@@ -326,10 +353,6 @@
                 if (this.isSelected) {
                     this.isSelected = false;
                 }
-            },
-            propertyChanged(cssStyle) {
-
-
             }
         }
     });
@@ -342,22 +365,11 @@
             cursorType: 'auto'
         },
         methods: {
-            propertyChangedOnSelectedShape: function(cssStyle) {
+            changeColorOfSelectedShapes: function(cssStyle) {
                 _.each(this.visualStates, function(each) {
-                    each.propertyChanged(cssStyle);
+                    each.changeColorOnSelection(cssStyle);
                 });
             }
-        },
-        created: function() {
-            this.$on('didCreateShape', function(createdShape, currentVisualState) {
-                var currentVisualStateIndex = this.visualStates.indexOf(currentVisualState);
-                for (var i = 0; i < this.visualStates.length; i++) {
-                    if (i > currentVisualStateIndex) {
-                        var futureVisualState = this.visualStates[i];
-                        futureVisualState.addNewShape(createdShape);
-                    }
-                }
-            })
         }
     });
 
@@ -380,12 +392,12 @@
                 outputAreaVM.cursorType = "default";
             },
             changeToBlue() {
-                outputAreaVM.propertyChangedOnSelectedShape({
+                outputAreaVM.changeColorOfSelectedShapes({
                     'background-color': 'blue'
                 });
             },
             changeToRed() {
-                outputAreaVM.propertyChangedOnSelectedShape({
+                outputAreaVM.changeColorOfSelectedShapes({
                     'background-color': 'red'
                 });
             },
@@ -400,6 +412,8 @@
                     _.each(previousVisualState.shapes, function(previousShape) {
                         newVisualState.addNewShape(previousShape);
                     });
+
+                    //TODO: Should we send didCreateShape?
 
                     previousVisualState.nextState = newVisualState;
                     newVisualState.previousState = previousVisualState;
