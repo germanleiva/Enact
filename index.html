@@ -99,8 +99,61 @@
         set height(value) {
             this.scaling.value.h = value;
         }
+        get position() {
+            if (this.isFollowingMaster('translation')) {
+                return this.masterVersion.position;
+            }
+            return this.translation.value;
+        }
+        get scale() {
+            if (this.isFollowingMaster('scaling')) {
+                return this.masterVersion.scale;
+            }
+            return this.scaling.value;
+        }
         set color(value) {
             this.backgroundColor.value = value;
+        }
+        followMaster(property) {
+            switch (property) {
+                case 'backgroundColor':
+                    this.backgroundColor.value = '';
+                    break;
+                case 'translation':
+                    this.translation.value.x = null;
+                    this.translation.value.y = null;
+                    break;
+                case 'scaling':
+                    this.translation.value.w = null;
+                    this.translation.value.h = null;
+                    break;
+            }
+        }
+        isFollowingMaster(property) {
+            switch (property) {
+                case 'backgroundColor':
+                    return this.backgroundColor.value == '';
+                    break;
+                case 'translation':
+                    return this.translation.value.x == null && this.translation.value.y == null;
+                    break;
+                case 'scaling':
+                    return this.scaling.value.w == null && this.scaling.value.h == null;
+                    break;
+            }
+        }
+        nonZeroValue(property) {
+            switch (property) {
+                case 'backgroundColor':
+                    return this.color;
+                    break;
+                case 'translation':
+                    return this.position;
+                    break;
+                case 'scaling':
+                    return this.scale;
+                    break;
+            }
         }
     }
 
@@ -211,7 +264,6 @@
 
             //MOVING METHODS
             moveStarted: function(e, selectedShapeVM) {
-
                 var offsetY = e.y - selectedShapeVM.version.top;
                 var offsetX = e.x - selectedShapeVM.version.left;
 
@@ -240,33 +292,42 @@
                 selectedShapeVM.version.top = Math.abs(initialOffsetY - e.y)
 
                 if (this.nextState) {
-                    this.nextState.somethingChangedPreviousState(previousValue, selectedShapeVM.version, 'translation', selectedShapeVM);
+                    this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, selectedShapeVM.version.translation.value, 'translation');
                 }
             },
-            somethingChangedPreviousState(previousValue, changedVersion, changedPropertyName, changedShapeVM) {
-                let that = this;
+            somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
+                var that = this;
                 _.each(this.shapes, function(eachShape) {
+                    //First we check the shapes with the changed model
+                    if (eachShape.version.model === model) {
+                        let shouldPropagate = false;
+                        let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
+                        // let newChangedValue
 
-                    if (eachShape.version.model === changedVersion.model) {
-                        let newValue
-                        if (eachShape.version[changedPropertyName].value == previousValue) {
+                        if (newPreviousValue == previousValue) {
                             //Nothing to do, this shape should keep following the master
                             // that.$forceUpdate();
-                            newValue = '';
-
+                            eachShape.version.followMaster(changedPropertyName);
+                            // newChangedValue = changedValue
+                            shouldPropagate = true;
                         } else {
                             //Shape is getting it s own value, so its not following the materVersion anymore
-                            if (eachShape.version[changedPropertyName].value == '') {
-                                newValue = eachShape.version.masterVersion[changedPropertyName].value;
+                            // if (newPreviousValue == '') {
+                            // newChangedValue = changedValue;
+                            // } else {
+                            // newChangedValue = changedValue;
+                            // }
+                            if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
+                                //We shouldn't change because we are NOT following master
                             } else {
-                                newValue = changedVersion[changedPropertyName].value;
+                                eachShape.version[changedPropertyName].value = changedValue
                             }
                         }
 
-                        eachShape.version[changedPropertyName].value = newValue
-
-                        if (that.nextState) {
-                            that.nextState.somethingChangedPreviousState(newValue, eachShape.version, changedPropertyName, that);
+                        if (shouldPropagate) {
+                            if (that.nextState) {
+                                that.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
+                            }
                         }
                     }
                 });
@@ -275,12 +336,21 @@
             changeColorOnSelection: function(cssStyle) {
                 var currentVisualStateVM = this;
                 _.each(this.selectedShapes(), function(selectedShapeVM) {
-                    var previousValue = selectedShapeVM.version.backgroundColor.value;
-                    selectedShapeVM.version.color = cssStyle['background-color'];
+                    //The first previousValue needs to be an actualValue
+                    let previousValue = selectedShapeVM.version.color;
+                    let newValue = cssStyle['background-color'];
 
-                    if (currentVisualStateVM.nextState) {
-                        currentVisualStateVM.nextState.somethingChangedPreviousState(previousValue, selectedShapeVM.version, 'backgroundColor', selectedShapeVM);
+                    //First we need to check if we are followingMaster in that property
+                    if (selectedShapeVM.version.isFollowingMaster('backgroundColor') && previousValue == newValue) {
+                        //Don't do anything, keep following master and do not propagate
+                    } else {
+                        if (currentVisualStateVM.nextState) {
+                            currentVisualStateVM.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'backgroundColor');
+                        }
+                        selectedShapeVM.version.color = newValue;
                     }
+
+
                 });
             },
             addNewShape(oldShapeVM) {
@@ -290,7 +360,8 @@
                     //Cheap way of cloning the version
                     newShapeVM.version = new ShapeModelVersion(oldShapeVM.version.model, oldShapeVM.version);
                 } else {
-                    newShapeVM.version = new ShapeModelVersion(new ShapeModel('Polygon'), undefined, 'white', 0, 0, 0, 0);
+                    let newId = outputAreaVM.shapeCounter++;
+                    newShapeVM.version = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
                 }
 
                 if (oldShapeVM) {
@@ -370,7 +441,8 @@
         el: '#outputArea',
         data: {
             visualStates: [],
-            cursorType: 'auto'
+            cursorType: 'auto',
+            shapeCounter: 0
         },
         methods: {
             changeColorOfSelectedShapes: function(cssStyle) {
