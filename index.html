@@ -35,53 +35,70 @@
         constructor(color, top, left, width, height) {
             this.id = 'Polygon';
 
-            let firstVersion = new ShapeModelVersion(this, color, top, left, width, height)
-            this.versions = [firstVersion];
+            this.currentVersion = new ShapeModelVersion(this, {
+                value: color
+            }, {
+                x: left,
+                y: top
+            }, {
+                w: width,
+                h: height
+            })
         }
-        get lastVersion() {
-            return _.last(this.versions);
-        }
-        get top() {
-            return this.lastVersion.top;
-        }
-        get left() {
-            return this.lastVersion.left;
-        }
-        get width() {
-            return this.lastVersion.width;
-        }
-        get height() {
-            return this.lastVersion.height;
-        }
-        get color() {
-            return this.lastVersion.color;
-        }
-        set top(value) {
-            this.lastVersion.top = value;
-        }
-        set left(value) {
-            this.lastVersion.left = value;
-        }
-        set width(value) {
-            this.lastVersion.width = value;
-        }
-        set height(value) {
-            this.lastVersion.height = value;
-        }
-        set color(value) {
-            this.lastVersion.color = value;
-        }
-
     }
 
     class ShapeModelVersion {
-        constructor(model, color, top, left, width, height) {
+        constructor(model, color, translation, scaling) {
             this.model = model;
-            this.top = top;
-            this.left = left;
-            this.width = width;
-            this.height = height;
-            this.color = color;
+            this.backgroundColor = color;
+            this.translation = translation;
+            this.scaling = scaling;
+            this.masterVersion = undefined;
+        }
+        get top() {
+            if (this.masterVersion) {
+                return this.masterVersion.top;
+            }
+            return this.translation.y;
+        }
+        get left() {
+            if (this.masterVersion) {
+                return this.masterVersion.left;
+            }
+            return this.translation.x;
+        }
+        get width() {
+            if (this.masterVersion) {
+                return this.masterVersion.width;
+            }
+            return this.scaling.w;
+        }
+        get height() {
+            if (this.masterVersion) {
+                return this.masterVersion.height;
+            }
+            return this.scaling.h;
+        }
+        get color() {
+            if (this.masterVersion) {
+                return this.masterVersion.color;
+            }
+            return this.backgroundColor.value;
+        }
+        set top(value) {
+            this.translation.y = value;
+        }
+        set left(value) {
+            this.translation.x = value;
+        }
+        set width(value) {
+            this.scaling.w = value;
+        }
+        set height(value) {
+            this.scaling.h = value;
+        }
+        set color(value) {
+            this.backgroundColor.value = value;
         }
     }
 
@@ -89,11 +106,13 @@
         template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
         data: function() {
             return {
-                shapes: [], //[{aShape:aVersion},{aShape:aVersion}]
+                shapes: [],
                 startingPosition: {
                     x: 0,
                     y: 0
-                }
+                },
+                nextState: undefined,
+                previousState: undefined
             }
         },
         methods: {
@@ -108,8 +127,7 @@
             actionStarted: function(e) {
                 if (toolbarVM.drawMode) {
                     this.drawingStarted(e);
-                }
-                if (toolbarVM.selectionMode) {
+                } else if (toolbarVM.selectionMode) {
                     //We traverse the shapes in backward order
                     var selectedShape = null;
                     for (var i = this.shapes.length - 1; i >= 0; i--) {
@@ -136,17 +154,17 @@
 
             //DRAWING METHODS
             drawingStarted: function(e) {
-                var newShape = this.addNewShape();
+                var newShapeVM = this.addNewShape();
 
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.drawingChanged(e, newShape)
+                    this.drawingChanged(e, newShapeVM)
                 }.bind(this)
 
                 var mouseUpHandler
                 mouseUpHandler = function(e) {
-                    this.drawingEnded(e, newShape)
+                    this.drawingEnded(e, newShapeVM)
                     this.$el.removeEventListener('mousemove', mouseMoveHandler, false);
                     this.$el.removeEventListener('mouseup', mouseUpHandler, false);
                 }.bind(this)
@@ -154,52 +172,51 @@
                 this.$el.addEventListener('mousemove', mouseMoveHandler, false);
                 this.$el.addEventListener('mouseup', mouseUpHandler, false);
 
-                newShape.startingPosition.x = e.x;
-                newShape.startingPosition.y = e.y;
+                newShapeVM.startingPosition.x = e.x;
+                newShapeVM.startingPosition.y = e.y;
             },
 
-            drawingChanged: function(e, drawnShape) {
-                this.updateDrawnDivStyle(e, drawnShape);
+            drawingChanged: function(e, newShapeVM) {
+                this.updateShapeProperties(e, newShapeVM);
             },
 
-            drawingEnded: function(e, drawnShape) {
-                outputAreaVM.$emit('didCreateShape', drawnShape, this);
+            drawingEnded: function(e, newShapeVM) {
+                outputAreaVM.$emit('didCreateShape', newShapeVM, this);
             },
 
-            updateDrawnDivStyle: function(e, drawnDiv) {
+            updateShapeProperties: function(e, newShapeVM) {
                 //Maybe this should go in Shape
-                var topValue = drawnDiv.startingPosition.y
-                if (e.y < drawnDiv.startingPosition.y) {
+                var topValue = newShapeVM.startingPosition.y
+                if (e.y < newShapeVM.startingPosition.y) {
                     topValue = e.y;
                 }
 
-                var leftValue = drawnDiv.startingPosition.x
-                if (e.x < drawnDiv.startingPosition.x) {
+                var leftValue = newShapeVM.startingPosition.x
+                if (e.x < newShapeVM.startingPosition.x) {
                     leftValue = e.x;
                 }
-                var widthValue = Math.abs(e.x - drawnDiv.startingPosition.x);
-                var heightValue = Math.abs(e.y - drawnDiv.startingPosition.y)
+                var widthValue = Math.abs(e.x - newShapeVM.startingPosition.x);
+                var heightValue = Math.abs(e.y - newShapeVM.startingPosition.y)
 
-                drawnDiv.shapeModel
-                    .top = topValue - this.$el.offsetTop;
-                drawnDiv.shapeModel.left = leftValue - this.$el.offsetLeft;
-                drawnDiv.shapeModel.width = widthValue;
-                drawnDiv.shapeModel.height = heightValue;
+                newShapeVM.version.top = topValue - this.$el.offsetTop;
+                newShapeVM.version.left = leftValue - this.$el.offsetLeft;
+                newShapeVM.version.width = widthValue;
+                newShapeVM.version.height = heightValue;
             },
 
 
             //MOVING METHODS
-            moveStarted: function(e, selectedDrawing) {
+            moveStarted: function(e, selectedShapeVM) {
 
-                var offsetY = e.y - selectedDrawing.shapeModel.top;
-                var offsetX = e.x - selectedDrawing.shapeModel.left;
+                var offsetY = e.y - selectedShapeVM.version.top;
+                var offsetX = e.x - selectedShapeVM.version.left;
 
-                var parentElement = selectedDrawing.$el.parentNode;
+                var parentElement = selectedShapeVM.$el.parentNode;
                 //When the second parameter is null in insertBefore the element is added as the last child
-                parentElement.insertBefore(selectedDrawing.$el, null);
+                parentElement.insertBefore(selectedShapeVM.$el, null);
 
                 var moveHandler = function(e) {
-                    this.moveChanged(e, selectedDrawing, offsetX, offsetY);
+                    this.moveChanged(e, selectedShapeVM, offsetX, offsetY);
                 }.bind(this);
                 this.$el.addEventListener('mousemove', moveHandler, false);
 
@@ -212,39 +229,59 @@
                 this.$el.addEventListener('mouseup', upHandler, false);
             },
 
-            moveChanged: function(e, selectedDrawing, initialOffsetX, initialOffsetY) {
-                selectedDrawing.isSelected = true;
-                selectedDrawing.shapeModel.top = Math.abs(initialOffsetY - e.y);
-                selectedDrawing.shapeModel.left = Math.abs(initialOffsetX - e.x);
+            moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
+                selectedShapeVM.isSelected = true;
+                selectedShapeVM.version.top = Math.abs(initialOffsetY - e.y);
+                selectedShapeVM.version.left = Math.abs(initialOffsetX - e.x);
+                selectedShapeVM.version.masterVersion = undefined;
+                // if (this.nextState) {
+                // this.nextState.somethingChanged(selectedShapeVM.version, selectedShapeVM);
+                // }
+            },
+            somethingChanged(version, shapeVM) {
+                this.$forceUpdate();
             },
             propertyChanged: function(cssStyle) {
-
-
-
                 _.each(this.selectedShapes(), function(shapeVM) {
-                                    shapeVM.shapeModel.color = cssStyle['background-color'];
-
+                    shapeVM.version.color = cssStyle['background-color'];
                 });
             },
-            addNewShape(oldShape) {
-                var newShape = new ShapeVM();
+            addNewShape(oldShapeVM) {
+                var newShapeVM = new ShapeVM();
 
-                if (oldShape) {
-                    newShape.shapeModel = oldShape.shapeModel;
+                if (oldShapeVM) {
+                    //Cheap way of cloning the version
+                    newShapeVM.version = new ShapeModelVersion(oldShapeVM.version.model, {
+                        value: oldShapeVM.version.backgroundColor.value
+                    }, {
+                        x: oldShapeVM.version.translation.x,
+                        y: oldShapeVM.version.translation.y
+                    }, {
+                        w: oldShapeVM.version.scaling.w,
+                        h: oldShapeVM.version.scaling.h
+                    });
+
+
+
+                    newShapeVM.version.masterVersion = oldShapeVM.version;
                 } else {
-                    newShape.shapeModel = new ShapeModel('white', 0, 0, 0, 0)
+                    let newShape = new ShapeModel('white', 0, 0, 0, 0);
+                    newShapeVM.version = newShape.currentVersion;
                 }
 
-                if (oldShape) {
-                    newShape.isSelected = oldShape.isSelected
-                    newShape.startingPosition = oldShape.startingPosition
+                if (oldShapeVM) {
+                    newShapeVM.isSelected = oldShapeVM.isSelected
+                    newShapeVM.startingPosition = {
+                        x: oldShapeVM.startingPosition.x,
+                        y: oldShapeVM.startingPosition.y
+                    }
                 }
 
-                newShape.$mount();
-                this.$el.appendChild(newShape.$el);
-                this.shapes.push(newShape);
+                newShapeVM.$mount();
+                this.$el.appendChild(newShapeVM.$el);
+                this.shapes.push(newShapeVM);
 
-                return newShape;
+                return newShapeVM;
             }
         }
     });
@@ -259,18 +296,18 @@
                     x: 0,
                     y: 0
                 },
-                shapeModel: undefined
+                version: undefined
             }
         },
         computed: {
             styleObject: function() {
                 return {
-                    'backgroundColor': this.shapeModel.color,
+                    'backgroundColor': this.version.color,
                     'position': 'absolute',
-                    'top': this.shapeModel.top + 'px',
-                    'left': this.shapeModel.left + 'px',
-                    'width': this.shapeModel.width + 'px',
-                    'height': this.shapeModel.height + 'px',
+                    'top': this.version.top + 'px',
+                    'left': this.version.left + 'px',
+                    'width': this.version.width + 'px',
+                    'height': this.version.height + 'px',
                     'border': (this.isSelected ? '4px' : '1px') + ' solid gray'
                 }
             }
@@ -279,7 +316,7 @@
             isPointInside: function(windowX, windowY) {
                 let x = windowX - this.$el.parentElement.offsetLeft;
                 let y = windowY - this.$el.parentElement.offsetTop;
-                return this.shapeModel.top < y && this.shapeModel.left < x && x < this.shapeModel.left + this.shapeModel.width && y < this.shapeModel.top + this.shapeModel.height;
+                return this.version.top < y && this.version.left < x && x < this.version.left + this.version.width && y < this.version.top + this.version.height;
 
             },
             toggleSelection() {
@@ -291,10 +328,6 @@
                 }
             },
             propertyChanged(cssStyle) {
-                let newVersion = new ShapeModelVersion()
-
-                this.shapeModel.versions
-
 
 
             }
@@ -367,6 +400,9 @@
                     _.each(previousVisualState.shapes, function(previousShape) {
                         newVisualState.addNewShape(previousShape);
                     });
+
+                    previousVisualState.nextState = newVisualState;
+                    newVisualState.previousState = previousVisualState;
                 }
 
                 outputAreaVM.$el.appendChild(newVisualState.$el)
