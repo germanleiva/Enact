@@ -57,17 +57,17 @@
             };
             this.masterVersion = aMasterVersion;
         }
-        get top() {
-            if (this.translation.value.y == null) {
-                return this.masterVersion.top;
-            }
-            return this.translation.value.y;
-        }
         get left() {
             if (this.translation.value.x == null) {
                 return this.masterVersion.left;
             }
             return this.translation.value.x;
+        }
+        get top() {
+            if (this.translation.value.y == null) {
+                return this.masterVersion.top;
+            }
+            return this.translation.value.y;
         }
         get width() {
             if (this.scaling.value.w == null) {
@@ -83,7 +83,7 @@
         }
         get color() {
             if (this.backgroundColor.value == '') {
-                return this.masterVersion.backgroundColor.value;
+                return this.masterVersion.color;
             }
             return this.backgroundColor.value;
         }
@@ -248,17 +248,25 @@
                 _.each(this.shapes, function(eachShape) {
 
                     if (eachShape.version.model === changedVersion.model) {
+                        let newValue
                         if (eachShape.version[changedPropertyName].value == previousValue) {
                             //Nothing to do, this shape should keep following the master
                             // that.$forceUpdate();
+                            newValue = '';
 
                         } else {
                             //Shape is getting it s own value, so its not following the materVersion anymore
                             if (eachShape.version[changedPropertyName].value == '') {
-                                eachShape.version[changedPropertyName].value = eachShape.version.masterVersion[changedPropertyName].value;
+                                newValue = eachShape.version.masterVersion[changedPropertyName].value;
                             } else {
-                                eachShape.version[changedPropertyName].value = changedVersion[changedPropertyName].value;
+                                newValue = changedVersion[changedPropertyName].value;
                             }
+                        }
+
+                        eachShape.version[changedPropertyName].value = newValue
+
+                        if (that.nextState) {
+                            that.nextState.somethingChangedPreviousState(newValue, eachShape.version, changedPropertyName, that);
                         }
                     }
                 });
