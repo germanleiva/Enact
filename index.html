@@ -156,6 +156,16 @@
                     return this.scale;
             }
         }
+        areEqualValues(property,value1,value2) {
+            switch (property) {
+                case 'backgroundColor':
+                    return value1 == value2;
+                case 'translation':
+                    return value1.x == value2.x && value1.y == value2.y;
+                case 'scaling':
+                    return value1.w == value2.w && value1.h == value2.h;
+            }
+        }
     }
 
     var VisualState = Vue.extend({
@@ -311,33 +321,25 @@
 
                         let shouldPropagate = false;
                         let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
-                        // let newChangedValue
 
                         logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(that));
                         logger('previousValue: ' + JSON.stringify(previousValue));
                         logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
-                        if (newPreviousValue == previousValue) {
+                        if (eachShape.version.areEqualValues(changedPropertyName,newPreviousValue,previousValue)) {
                             logger("newPreviousValue is equal to previousValue")
-                            //Nothing to do, this shape should keep following the master
-                            // that.$forceUpdate();
+                                //Nothing to do, this shape should keep following the master
                             eachShape.version.followMaster(changedPropertyName);
-                            // newChangedValue = changedValue
                             shouldPropagate = true;
                         } else {
                             logger("newPreviousValue is NOT equal to previousValue")
 
                             //Shape is getting it s own value, so its not following the materVersion anymore
-                            // if (newPreviousValue == '') {
-                            // newChangedValue = changedValue;
-                            // } else {
-                            // newChangedValue = changedValue;
-                            // }
                             if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
-                            logger("NOT following master")
-                                //We shouldn't change because we are NOT following master
+                                logger("NOT following master")
+                                    //We shouldn't change because we are NOT following master
                             } else {
-                                                            logger("following master")
-                                                            logger("changing value to "+ JSON.stringify(changedValue));
+                                logger("following master")
+                                logger("changing value to " + JSON.stringify(changedValue));
 
                                 eachShape.version[changedPropertyName].value = changedValue
                             }
