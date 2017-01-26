@@ -31,6 +31,13 @@
         toolbarVM.multiSelectionMode = false;
     });
 
+    let isLoggerActive = false;
+    let logger = function(text) {
+        if (isLoggerActive) {
+            console.log(text);
+        }
+    }
+
     class ShapeModel {
         constructor(anId) {
             this.id = anId;
@@ -161,9 +168,6 @@
             }
         },
         methods: {
-            shapes() {
-                return
-            },
             selectedShapes: function() {
                 return this.shapes.filter(function(each) {
                     return each.isSelected;
@@ -201,11 +205,15 @@
             drawingStarted: function(e) {
                 var newShapeVM = this.addNewShape();
 
+                let startingPosition = {
+                    x: e.x,
+                    y: e.y
+                };
+
                 var mouseMoveHandler
 
-                let startingPosition = {x:e.x,y:e.y};
                 mouseMoveHandler = function(e) {
-                    this.drawingChanged(e, newShapeVM,startingPosition)
+                    this.drawingChanged(e, newShapeVM, startingPosition)
                 }.bind(this)
 
                 var mouseUpHandler
@@ -219,7 +227,7 @@
                 this.$el.addEventListener('mouseup', mouseUpHandler, false);
             },
 
-            drawingChanged: function(e, newShapeVM,startingPosition) {
+            drawingChanged: function(e, newShapeVM, startingPosition) {
                 this.updateShapeProperties(e, newShapeVM, startingPosition);
             },
 
@@ -229,7 +237,7 @@
                 }
             },
 
-            updateShapeProperties: function(e, newShapeVM,startingPosition) {
+            updateShapeProperties: function(e, newShapeVM, startingPosition) {
                 //Maybe this should go in Shape
                 var topValue = startingPosition.y
                 if (e.y < startingPosition.y) {
@@ -276,16 +284,16 @@
             moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
                 selectedShapeVM.isSelected = true;
 
-                let previousValue = selectedShapeVM.version.translation.value //{x:43,y:40}
+                let previousValue = selectedShapeVM.version.position;
                 let newValue = {
                     x: Math.abs(initialOffsetX - e.x),
                     y: Math.abs(initialOffsetY - e.y)
                 }
-                console.log('moveChanged');
-                console.log('previousValue: '+ JSON.stringify(previousValue));
-                console.log('newValue: '+ JSON.stringify(newValue));
-                console.log("---------");
-                if (selectedShapeVM.version.isFollowingMaster('translation') && previousValue == newValue) {
+                logger('moveChanged');
+                logger('previousValue: ' + JSON.stringify(previousValue));
+                logger('newValue: ' + JSON.stringify(newValue));
+                logger("---------");
+                if (selectedShapeVM.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
                     //Don't do anything, keep following master and do not propagate
                 } else {
                     if (this.nextState) {
@@ -305,17 +313,19 @@
                         let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
                         // let newChangedValue
 
-                console.log('somethingChangedPreviousState State'+ (1+outputAreaVM.visualStates.indexOf(that)));
-                console.log('previousValue: '+ JSON.stringify(previousValue));
-                console.log('newPreviousValue: '+ JSON.stringify(newPreviousValue));
-                console.log("---------");
+                        logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(that));
+                        logger('previousValue: ' + JSON.stringify(previousValue));
+                        logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
                         if (newPreviousValue == previousValue) {
+                            logger("newPreviousValue is equal to previousValue")
                             //Nothing to do, this shape should keep following the master
                             // that.$forceUpdate();
                             eachShape.version.followMaster(changedPropertyName);
                             // newChangedValue = changedValue
                             shouldPropagate = true;
                         } else {
+                            logger("newPreviousValue is NOT equal to previousValue")
+
                             //Shape is getting it s own value, so its not following the materVersion anymore
                             // if (newPreviousValue == '') {
                             // newChangedValue = changedValue;
@@ -323,8 +333,12 @@
                             // newChangedValue = changedValue;
                             // }
                             if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
+                            logger("NOT following master")
                                 //We shouldn't change because we are NOT following master
                             } else {
+                                                            logger("following master")
+                                                            logger("changing value to "+ JSON.stringify(changedValue));
+
                                 eachShape.version[changedPropertyName].value = changedValue
                             }
                         }
@@ -334,6 +348,8 @@
                                 that.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
                             }
                         }
+                        logger("---------");
+
                     }
                 });
 
@@ -397,7 +413,6 @@
         template: "<div v-bind:style='styleObject'></div>",
         data: function() {
             return {
-                color: 'white',
                 isSelected: false,
                 version: undefined
             }
@@ -407,8 +422,8 @@
                 return {
                     'backgroundColor': this.version.color,
                     'position': 'absolute',
-                    'top': this.version.top + 'px',
                     'left': this.version.left + 'px',
+                    'top': this.version.top + 'px',
                     'width': this.version.width + 'px',
                     'height': this.version.height + 'px',
                     'border': (this.isSelected ? '4px' : '1px') + ' solid gray'
