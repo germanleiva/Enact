@@ -17,10 +17,25 @@
 
 #toolbar{
 	display: block;
-	padding: 5px;
+	padding-top: 5px;
+    padding-bottom: 5px;
+
+}
+
+.is-active{
+    background-color: #fafafa;
 }
 
 #title{
 	font-family: futura;
 	font-weight: 800;
+}
+
+.is-alone{
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+#color-picker{
+
 }
