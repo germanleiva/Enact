@@ -12,3 +12,11 @@
     height: 420px;
     background-color:red;
 }
+
+.shapeHandler {
+    width: 10px;
+    height: 10px;
+    background-color: #ffffff;
+    border: 1px solid #000000;
+    position:absolute;
+}

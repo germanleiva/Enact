@@ -156,7 +156,7 @@
                     return this.scale;
             }
         }
-        areEqualValues(property,value1,value2) {
+        areEqualValues(property, value1, value2) {
             switch (property) {
                 case 'backgroundColor':
                     return value1 == value2;
@@ -187,26 +187,33 @@
                 if (toolbarVM.drawMode) {
                     this.drawingStarted(e);
                 } else if (toolbarVM.selectionMode) {
-                    //We traverse the shapes in backward order
-                    var selectedShape = null;
-                    for (var i = this.shapes.length - 1; i >= 0; i--) {
-                        var each = this.shapes[i];
-                        if (each.isPointInside(e.x, e.y)) {
-                            each.toggleSelection();
-                            if (each.isSelected) {
-                                selectedShape = each;
-                            }
-                            this.moveStarted(e, each);
-                            continue;
-                        }
-                    }
-                    if (!toolbarVM.multiSelectionMode) {
-                        _.each(this.selectedShapes(), function(previouslySelectedShape) {
-                            if (previouslySelectedShape !== selectedShape) {
-                                previouslySelectedShape.deselect();
-                            }
-                        });
-                    }
+                    // let selectedShape = null;
+
+                    // //We traverse the shapes in backward order
+                    // for (var i = this.shapes.length - 1; i >= 0; i--) {
+                    //     var each = this.shapes[i];
+                    //     if (each.isSelected) {
+                    //         let handler = each.handlerAtPoint(e.x, e.y)
+                    //         if (handler) {
+                    //             //Resizing started
+
+                    //         }
+                    //     } else if (each.isPointInside(e.x, e.y)) {
+                    //         each.toggleSelection();
+                    //         if (each.isSelected) {
+                    //             selectedShape = each;
+                    //         }
+                    //         this.moveStarted(e, each);
+                    //         continue;
+                    //     }
+                    // }
+                    // if (!toolbarVM.multiSelectionMode) {
+                    //     _.each(this.selectedShapes(), function(previouslySelectedShape) {
+                    //         if (previouslySelectedShape !== selectedShape) {
+                    //             previouslySelectedShape.deselect();
+                    //         }
+                    //     });
+                    // }
 
                 }
             },
@@ -269,50 +276,50 @@
 
 
             //MOVING METHODS
-            moveStarted: function(e, selectedShapeVM) {
-                var offsetX = e.x - selectedShapeVM.version.left;
-                var offsetY = e.y - selectedShapeVM.version.top;
+            // moveStarted: function(e, selectedShapeVM) {
+            //     var offsetX = e.x - selectedShapeVM.version.left;
+            //     var offsetY = e.y - selectedShapeVM.version.top;
 
-                var parentElement = selectedShapeVM.$el.parentNode;
-                //When the second parameter is null in insertBefore the element is added as the last child
-                parentElement.insertBefore(selectedShapeVM.$el, null);
+            //     var parentElement = selectedShapeVM.$el.parentNode;
+            //     //When the second parameter is null in insertBefore the element is added as the last child
+            //     parentElement.insertBefore(selectedShapeVM.$el, null);
 
-                var moveHandler = function(e) {
-                    this.moveChanged(e, selectedShapeVM, offsetX, offsetY);
-                }.bind(this);
-                this.$el.addEventListener('mousemove', moveHandler, false);
+            //     var moveHandler = function(e) {
+            //         this.moveChanged(e, selectedShapeVM, offsetX, offsetY);
+            //     }.bind(this);
+            //     this.$el.addEventListener('mousemove', moveHandler, false);
 
-                var visualOuputElement = this.$el;
-                var upHandler
-                upHandler = function(e) {
-                    visualOuputElement.removeEventListener('mousemove', moveHandler, false);
-                    visualOuputElement.removeEventListener('mouseup', upHandler, false);
-                }
-                this.$el.addEventListener('mouseup', upHandler, false);
-            },
+            //     var visualOuputElement = this.$el;
+            //     var upHandler
+            //     upHandler = function(e) {
+            //         visualOuputElement.removeEventListener('mousemove', moveHandler, false);
+            //         visualOuputElement.removeEventListener('mouseup', upHandler, false);
+            //     }
+            //     this.$el.addEventListener('mouseup', upHandler, false);
+            // },
 
-            moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
-                selectedShapeVM.isSelected = true;
+            // moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
+            //     selectedShapeVM.isSelected = true;
 
-                let previousValue = selectedShapeVM.version.position;
-                let newValue = {
-                    x: Math.abs(initialOffsetX - e.x),
-                    y: Math.abs(initialOffsetY - e.y)
-                }
-                logger('moveChanged');
-                logger('previousValue: ' + JSON.stringify(previousValue));
-                logger('newValue: ' + JSON.stringify(newValue));
-                logger("---------");
-                if (selectedShapeVM.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
-                    //Don't do anything, keep following master and do not propagate
-                } else {
-                    if (this.nextState) {
-                        this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'translation');
-                    }
-                    selectedShapeVM.version.left = newValue.x
-                    selectedShapeVM.version.top = newValue.y
-                }
-            },
+            //     let previousValue = selectedShapeVM.version.position;
+            //     let newValue = {
+            //         x: Math.abs(initialOffsetX - e.x),
+            //         y: Math.abs(initialOffsetY - e.y)
+            //     }
+            //     logger('moveChanged');
+            //     logger('previousValue: ' + JSON.stringify(previousValue));
+            //     logger('newValue: ' + JSON.stringify(newValue));
+            //     logger("---------");
+            //     if (selectedShapeVM.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
+            //         //Don't do anything, keep following master and do not propagate
+            //     } else {
+            //         if (this.nextState) {
+            //             this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'translation');
+            //         }
+            //         selectedShapeVM.version.left = newValue.x
+            //         selectedShapeVM.version.top = newValue.y
+            //     }
+            // },
             somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
                 var that = this;
                 _.each(this.shapes, function(eachShape) {
@@ -325,7 +332,7 @@
                         logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(that));
                         logger('previousValue: ' + JSON.stringify(previousValue));
                         logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
-                        if (eachShape.version.areEqualValues(changedPropertyName,newPreviousValue,previousValue)) {
+                        if (eachShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
                             logger("newPreviousValue is equal to previousValue")
                                 //Nothing to do, this shape should keep following the master
                             eachShape.version.followMaster(changedPropertyName);
@@ -378,6 +385,7 @@
             },
             addNewShape(oldShapeVM) {
                 var newShapeVM = new ShapeVM();
+                newShapeVM.visualState = this;
 
                 if (oldShapeVM) {
                     //Cheap way of cloning the version
@@ -411,12 +419,40 @@
         }
     });
 
+    class Handler {
+        constructor(incompleteName, left, top, right, bottom) {
+            this.incompleteName = incompleteName;
+            this.left = left;
+            this.top = top;
+            this.right = right;
+            this.bottom = bottom;
+        }
+        get styleObject() {
+            var result = {}
+            if (this.left != 0) {
+                result.left = this.left + 'px';
+            }
+            if (this.top != 0) {
+                result.top = this.top + 'px';
+            }
+            if (this.right != 0) {
+                result.right = this.right + 'px';
+            }
+            if (this.bottom != 0) {
+                result.bottom = this.bottom + 'px';
+            }
+            return result;
+        }
+    }
+
     var ShapeVM = Vue.extend({
-        template: "<div v-bind:style='styleObject'></div>",
+        template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape"><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.incompleteName + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
         data: function() {
             return {
+                visualState: undefined,
                 isSelected: false,
-                version: undefined
+                version: undefined,
+                handlers: [new Handler('nw', -6, -6, 0, 0), new Handler('ne', 0, -6, -6, 0), new Handler('se', 0, 0, -6, -6), new Handler('sw', -6, 0, 0, -6)] //L T R B
             }
         },
         computed: {
@@ -428,16 +464,116 @@
                     'top': this.version.top + 'px',
                     'width': this.version.width + 'px',
                     'height': this.version.height + 'px',
-                    'border': (this.isSelected ? '4px' : '1px') + ' solid gray'
+                    'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
+                    'overflow': 'visible',
                 }
             }
         },
         methods: {
+            mouseDownStartedOnHandler(e) {
+                if (!this.isSelected) {
+                    console.log("THIS SHOULD NEVER HAPPEN")
+                    return
+                }
+                e.stopPropagation()
+
+                let startingPosition = {
+                    x: e.x,
+                    y: e.y
+                };
+
+                let startingSize = {
+                    w: this.version.scale.w,
+                    h: this.version.scale.h
+                }
+
+                var mouseMoveHandler
+
+                mouseMoveHandler = function(e) {
+                    this.scalingChanged(e, startingPosition, startingSize)
+                }.bind(this)
+                let visualStateElement = this.visualState.$el;
+                visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
+
+                var mouseUpHandler
+                mouseUpHandler = function(e) {
+                    visualStateElement.removeEventListener('mousemove', mouseMoveHandler, false);
+                    visualStateElement.removeEventListener('mouseup', mouseUpHandler, false);
+                }.bind(this)
+                visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
+            },
+            mouseDownStartedOnShape(e){
+                if (toolbarVM.drawMode) {
+                    return
+                }
+                e.stopPropagation();
+
+                if (!this.isSelected) {
+                    this.isSelected = true;
+                }
+
+                //Starting to move a shape
+                var offsetX = e.x - this.version.left;
+                var offsetY = e.y - this.version.top;
+
+                var parentElement = this.$el.parentNode;
+                //When the second parameter is null in insertBefore the element is added as the last child
+                parentElement.insertBefore(this.$el, null);
+
+                var moveHandler = function(e) {
+                    this.moveChanged(e, offsetX, offsetY);
+                }.bind(this);
+                let visualStateElement = this.visualState.$el;
+                visualStateElement.addEventListener('mousemove', moveHandler, false);
+
+                var upHandler
+                upHandler = function(e) {
+                    visualStateElement.removeEventListener('mousemove', moveHandler, false);
+                    visualStateElement.removeEventListener('mouseup', upHandler, false);
+                }
+                visualStateElement.addEventListener('mouseup', upHandler, false);
+            },
+
+            moveChanged: function(e, initialOffsetX, initialOffsetY) {
+                let previousValue = this.version.position;
+                let newValue = {
+                    x: Math.abs(initialOffsetX - e.x),
+                    y: Math.abs(initialOffsetY - e.y)
+                }
+                logger('moveChanged');
+                logger('previousValue: ' + JSON.stringify(previousValue));
+                logger('newValue: ' + JSON.stringify(newValue));
+                logger("---------");
+                if (this.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
+                    //Don't do anything, keep following master and do not propagate
+                } else {
+                    if (this.visualState.nextState) {
+                        this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'translation');
+                    }
+                    this.version.left = newValue.x
+                    this.version.top = newValue.y
+                }
+            },
             isPointInside: function(windowX, windowY) {
                 let x = windowX - this.$el.parentElement.offsetLeft;
                 let y = windowY - this.$el.parentElement.offsetTop;
                 return this.version.top < y && this.version.left < x && x < this.version.left + this.version.width && y < this.version.top + this.version.height;
+            },
+            handlerAtPoint(windowX, windowY) {
+                let mouseVisualOutputX = windowX - this.$el.parentElement.offsetLeft;
+                let mouseVisualOutputY = windowY - this.$el.parentElement.offsetTop;
 
+                let codes = ['nw', 'ne', 'se', 'sw']
+                for (var i = 0; i < codes.length; i++) {
+                    let handlerCode = codes[i];
+                    let handler = window.document.getElementById(handlerCode + this.version.model.id);
+                    let handlerVisualOuputLeft = handler.offsetLeft + this.$el.offsetLeft;
+                    let handlerVisualOuputTop = handler.offsetTop + this.$el.offsetTop;
+                    if (mouseVisualOutputX > handlerVisualOuputLeft && handlerVisualOuputLeft < handlerVisualOuputLeft + 10 && mouseVisualOutputY > handlerVisualOuputTop && mouseVisualOutputY < handlerVisualOuputTop + 10) {
+                        return handler
+                    }
+                }
+                return undefined;
             },
             toggleSelection() {
                 this.isSelected = !this.isSelected;
@@ -446,6 +582,17 @@
                 if (this.isSelected) {
                     this.isSelected = false;
                 }
+            },
+
+            scalingChanged(e, startingPosition, startingSize) {
+
+                var offsetX = e.x - startingPosition.x;
+                var offsetY = e.y - startingPosition.y;
+
+                let newWidth = startingSize.w + offsetX
+                let newHeight = startingSize.h + offsetY
+                this.version.width = newWidth
+                this.version.height = newHeight
             }
         }
     });
