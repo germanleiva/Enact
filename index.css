@@ -2,13 +2,25 @@
     width: 200px;
     height: 400px;
     background-color:white;
-    border: 2px solid black;
+    border: 1px solid #333333;
     float:left;
-    margin: 10px;
+    margin: 8px;
     position: relative;
 }
 
 .outputArea {
     height: 420px;
-    background-color:red;
+    background-color: #eeeeee;
+    display: block;
+    width: 100%;
+}
+
+#toolbar{
+	display: block;
+	padding: 5px;
+}
+
+#title{
+	font-family: futura;
+	font-weight: 800;
 }

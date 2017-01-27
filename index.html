@@ -10,17 +10,25 @@
 <body>
     <div id="toolbar">
         <div class="block">
-            <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected">Selection</a>
-            <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected">Draw</a>
+            <div class="control is-grouped">
+                <p class="control has-addons">
+            <a class="button is-primary" id="title">ENACT</a>
+                </p>
+                <p class="control has-addons">
+                    <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected">Selection</a>
+                    <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span><span>Draw</span></a>
+                </p>
             <a class="button">Measure</a>
             <a class="button" v-on:click="changeToBlue">Change to blue</a>
             <a class="button" v-on:click="changeToRed">Change to red</a>
             <a class="button" v-on:click="addVisualState">Add VisualState</a>
         </div>
     </div>
+</div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script src="https://use.fontawesome.com/2e280f90a6.js"></script>
     <script>
     window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
