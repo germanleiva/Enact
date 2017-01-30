@@ -577,16 +577,33 @@
                         newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
                         break;
                     case 'sw':
-                        let newStartingOffsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
-                        let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.$el.offsetLeft;
-                        this.version.left = startingShapePositionX - newStartingOffsetX;
 
-                        newValue.w = newStartingOffsetX + startingShapeWidth;
+                        if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
+                            let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
 
-                        newValue.h = currentWindowMousePositionY - startingShapePositionYInWindowCoordinates;
+                            let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.$el.offsetLeft;
+                            this.version.left = startingShapePositionX - offsetX;
+
+                            newValue.w = startingShapeWidth + offsetX;
+                        } else {
+                            newValue.w = currentWindowMousePositionX - (this.version.left + this.visualState.$el.offsetLeft);
+                        }
+
+                        if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
+                            let offsetY = startingShapePositionYInWindowCoordinates - currentWindowMousePositionY;
+                            let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.visualState.$el.offsetTop;
+                            this.version.top = startingShapePositionY - offsetY;
+
+                            newValue.h = offsetY;
+
+                        } else {
+                            newValue.h = currentWindowMousePositionY - (this.version.top + this.visualState.$el.offsetTop);
+                        }
 
                         break;
                     case 'nw':
+
+
                         break;
                     case 'ne':
                         break;
