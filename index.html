@@ -172,16 +172,21 @@
         template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
         data: function() {
             return {
-                shapes: [],
+                shapesDictionary: {},
                 nextState: undefined,
                 previousState: undefined
             }
         },
         methods: {
+            shapes() {
+                let result = [];
+                for (let shapeModelId in this.shapesDictionary) {
+                    result.push(this.shapesDictionary[shapeModelId]);
+                }
+                return result;
+            },
             selectedShapes: function() {
-                return this.shapes.filter(function(each) {
-                    return each.isSelected;
-                });
+                return this.shapes().filter(each => each.isSelected);
             },
             actionStarted: function(e) {
                 if (toolbarVM.drawMode) {
@@ -222,7 +227,7 @@
             drawingStarted: function(e) {
                 var newShapeVM = this.addNewShape();
 
-                let startingPosition = {
+                let startingWindowMousePosition = {
                     x: e.x,
                     y: e.y
                 };
@@ -230,7 +235,7 @@
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.drawingChanged(e, newShapeVM, startingPosition)
+                    this.drawingChanged(e, newShapeVM, startingWindowMousePosition)
                 }.bind(this)
 
                 var mouseUpHandler
@@ -244,8 +249,8 @@
                 this.$el.addEventListener('mouseup', mouseUpHandler, false);
             },
 
-            drawingChanged: function(e, newShapeVM, startingPosition) {
-                this.updateShapeProperties(e, newShapeVM, startingPosition);
+            drawingChanged: function(e, newShapeVM, startingWindowMousePosition) {
+                this.updateShapeProperties(e, newShapeVM, startingWindowMousePosition);
             },
 
             drawingEnded: function(e, newShapeVM) {
@@ -254,19 +259,21 @@
                 }
             },
 
-            updateShapeProperties: function(e, newShapeVM, startingPosition) {
+            updateShapeProperties: function(e, newShapeVM, startingWindowMousePosition) {
                 //Maybe this should go in Shape
-                var topValue = startingPosition.y
-                if (e.y < startingPosition.y) {
-                    topValue = e.y;
+                let currentWindowMousePositionX = e.x;
+                let currentWindowMousePositionY = e.y;
+                var topValue = startingWindowMousePosition.y
+                if (currentWindowMousePositionY < startingWindowMousePosition.y) {
+                    topValue = currentWindowMousePositionY;
                 }
 
-                var leftValue = startingPosition.x
-                if (e.x < startingPosition.x) {
-                    leftValue = e.x;
+                var leftValue = startingWindowMousePosition.x
+                if (currentWindowMousePositionX < startingWindowMousePosition.x) {
+                    leftValue = currentWindowMousePositionX;
                 }
-                var widthValue = Math.abs(e.x - startingPosition.x);
-                var heightValue = Math.abs(e.y - startingPosition.y)
+                var widthValue = Math.abs(currentWindowMousePositionX - startingWindowMousePosition.x);
+                var heightValue = Math.abs(currentWindowMousePositionY - startingWindowMousePosition.y)
 
                 newShapeVM.version.top = topValue - this.$el.offsetTop;
                 newShapeVM.version.left = leftValue - this.$el.offsetLeft;
@@ -274,94 +281,43 @@
                 newShapeVM.version.height = heightValue;
             },
 
-
-            //MOVING METHODS
-            // moveStarted: function(e, selectedShapeVM) {
-            //     var offsetX = e.x - selectedShapeVM.version.left;
-            //     var offsetY = e.y - selectedShapeVM.version.top;
-
-            //     var parentElement = selectedShapeVM.$el.parentNode;
-            //     //When the second parameter is null in insertBefore the element is added as the last child
-            //     parentElement.insertBefore(selectedShapeVM.$el, null);
-
-            //     var moveHandler = function(e) {
-            //         this.moveChanged(e, selectedShapeVM, offsetX, offsetY);
-            //     }.bind(this);
-            //     this.$el.addEventListener('mousemove', moveHandler, false);
-
-            //     var visualOuputElement = this.$el;
-            //     var upHandler
-            //     upHandler = function(e) {
-            //         visualOuputElement.removeEventListener('mousemove', moveHandler, false);
-            //         visualOuputElement.removeEventListener('mouseup', upHandler, false);
-            //     }
-            //     this.$el.addEventListener('mouseup', upHandler, false);
-            // },
-
-            // moveChanged: function(e, selectedShapeVM, initialOffsetX, initialOffsetY) {
-            //     selectedShapeVM.isSelected = true;
-
-            //     let previousValue = selectedShapeVM.version.position;
-            //     let newValue = {
-            //         x: Math.abs(initialOffsetX - e.x),
-            //         y: Math.abs(initialOffsetY - e.y)
-            //     }
-            //     logger('moveChanged');
-            //     logger('previousValue: ' + JSON.stringify(previousValue));
-            //     logger('newValue: ' + JSON.stringify(newValue));
-            //     logger("---------");
-            //     if (selectedShapeVM.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
-            //         //Don't do anything, keep following master and do not propagate
-            //     } else {
-            //         if (this.nextState) {
-            //             this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'translation');
-            //         }
-            //         selectedShapeVM.version.left = newValue.x
-            //         selectedShapeVM.version.top = newValue.y
-            //     }
-            // },
             somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
-                var that = this;
-                _.each(this.shapes, function(eachShape) {
-                    //First we check the shapes with the changed model
-                    if (eachShape.version.model === model) {
+                let eachShape = this.shapesDictionary[model.id]
+                if (!eachShape) {
+                    return;
+                }
+                let shouldPropagate = false;
+                let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
 
-                        let shouldPropagate = false;
-                        let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
+                logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(this));
+                logger('previousValue: ' + JSON.stringify(previousValue));
+                logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
+                if (eachShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
+                    logger("newPreviousValue is equal to previousValue")
+                        //Nothing to do, this shape should keep following the master
+                    eachShape.version.followMaster(changedPropertyName);
+                    shouldPropagate = true;
+                } else {
+                    logger("newPreviousValue is NOT equal to previousValue")
 
-                        logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(that));
-                        logger('previousValue: ' + JSON.stringify(previousValue));
-                        logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
-                        if (eachShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
-                            logger("newPreviousValue is equal to previousValue")
-                                //Nothing to do, this shape should keep following the master
-                            eachShape.version.followMaster(changedPropertyName);
-                            shouldPropagate = true;
-                        } else {
-                            logger("newPreviousValue is NOT equal to previousValue")
+                    //Shape is getting it s own value, so its not following the materVersion anymore
+                    if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
+                        logger("NOT following master")
+                            //We shouldn't change because we are NOT following master
+                    } else {
+                        logger("following master")
+                        logger("changing value to " + JSON.stringify(changedValue));
 
-                            //Shape is getting it s own value, so its not following the materVersion anymore
-                            if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
-                                logger("NOT following master")
-                                    //We shouldn't change because we are NOT following master
-                            } else {
-                                logger("following master")
-                                logger("changing value to " + JSON.stringify(changedValue));
-
-                                eachShape.version[changedPropertyName].value = changedValue
-                            }
-                        }
-
-                        if (shouldPropagate) {
-                            if (that.nextState) {
-                                that.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
-                            }
-                        }
-                        logger("---------");
-
+                        eachShape.version[changedPropertyName].value = changedValue
                     }
-                });
+                }
 
+                if (shouldPropagate) {
+                    if (this.nextState) {
+                        this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
+                    }
+                }
+                logger("---------");
             },
             changeColorOnSelection: function(cssStyle) {
                 var currentVisualStateVM = this;
@@ -401,7 +357,7 @@
 
                 newShapeVM.$mount();
                 this.$el.appendChild(newShapeVM.$el);
-                this.shapes.push(newShapeVM);
+                this.shapesDictionary[newShapeVM.version.model.id] = newShapeVM;
 
                 return newShapeVM;
             },
@@ -420,8 +376,8 @@
     });
 
     class Handler {
-        constructor(incompleteName, left, top, right, bottom) {
-            this.incompleteName = incompleteName;
+        constructor(namePrefix, left, top, right, bottom) {
+            this.namePrefix = namePrefix;
             this.left = left;
             this.top = top;
             this.right = right;
@@ -446,7 +402,7 @@
     }
 
     var ShapeVM = Vue.extend({
-        template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape"><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.incompleteName + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
+        template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape"><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
         data: function() {
             return {
                 visualState: undefined,
@@ -465,7 +421,7 @@
                     'width': this.version.width + 'px',
                     'height': this.version.height + 'px',
                     'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
-                    'overflow': 'visible',
+                    'overflow': 'visible'
                 }
             }
         },
@@ -475,22 +431,18 @@
                     console.log("THIS SHOULD NEVER HAPPEN")
                     return
                 }
-                e.stopPropagation()
+                e.preventDefault();
+                e.stopPropagation();
 
-                let startingPosition = {
-                    x: e.x,
-                    y: e.y
+                let startingShapePositionInWindowCoordinates = {
+                    x: this.version.left + this.visualState.$el.offsetLeft,
+                    y: this.version.top + this.visualState.$el.offsetTop
                 };
-
-                let startingSize = {
-                    w: this.version.scale.w,
-                    h: this.version.scale.h
-                }
 
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.scalingChanged(e, startingPosition, startingSize)
+                    this.scalingChanged(e, startingShapePositionInWindowCoordinates.x, startingShapePositionInWindowCoordinates.y)
                 }.bind(this)
                 let visualStateElement = this.visualState.$el;
                 visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
@@ -502,10 +454,11 @@
                 }.bind(this)
                 visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
             },
-            mouseDownStartedOnShape(e){
+            mouseDownStartedOnShape(e) {
                 if (toolbarVM.drawMode) {
                     return
                 }
+                e.preventDefault();
                 e.stopPropagation();
 
                 if (!this.isSelected) {
@@ -513,8 +466,10 @@
                 }
 
                 //Starting to move a shape
-                var offsetX = e.x - this.version.left;
-                var offsetY = e.y - this.version.top;
+                let currentWindowMousePositionX = e.x;
+                let currentWindowMousePositionY = e.y;
+                var offsetX = currentWindowMousePositionX - this.version.left;
+                var offsetY = currentWindowMousePositionY - this.version.top;
 
                 var parentElement = this.$el.parentNode;
                 //When the second parameter is null in insertBefore the element is added as the last child
@@ -535,10 +490,13 @@
             },
 
             moveChanged: function(e, initialOffsetX, initialOffsetY) {
+                let currentWindowMousePositionX = e.x;
+                let currentWindowMousePositionY = e.y;
+
                 let previousValue = this.version.position;
                 let newValue = {
-                    x: Math.abs(initialOffsetX - e.x),
-                    y: Math.abs(initialOffsetY - e.y)
+                    x: Math.abs(initialOffsetX - currentWindowMousePositionX),
+                    y: Math.abs(initialOffsetY - currentWindowMousePositionY)
                 }
                 logger('moveChanged');
                 logger('previousValue: ' + JSON.stringify(previousValue));
@@ -559,6 +517,7 @@
                 let y = windowY - this.$el.parentElement.offsetTop;
                 return this.version.top < y && this.version.left < x && x < this.version.left + this.version.width && y < this.version.top + this.version.height;
             },
+            //deprecated
             handlerAtPoint(windowX, windowY) {
                 let mouseVisualOutputX = windowX - this.$el.parentElement.offsetLeft;
                 let mouseVisualOutputY = windowY - this.$el.parentElement.offsetTop;
@@ -584,15 +543,32 @@
                 }
             },
 
-            scalingChanged(e, startingPosition, startingSize) {
+            scalingChanged(e, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates) {
+                let previousValue = this.version.scale;
 
-                var offsetX = e.x - startingPosition.x;
-                var offsetY = e.y - startingPosition.y;
+                let currentWindowMousePositionX = e.x;
+                let currentWindowMousePositionY = e.y;
 
-                let newWidth = startingSize.w + offsetX
-                let newHeight = startingSize.h + offsetY
-                this.version.width = newWidth
-                this.version.height = newHeight
+                var offsetX = currentWindowMousePositionX - startingShapePositionXInWindowCoordinates;
+                var offsetY = currentWindowMousePositionY - startingShapePositionYInWindowCoordinates;
+
+                let newValue = {
+                    w: offsetX,
+                    h: offsetY
+                }
+
+                if (this.version.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
+                    //Don't do anything, keep following master and do not propagate
+                } else {
+                    if (this.visualState.nextState) {
+                        this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'scaling');
+                    }
+                    this.version.width = newValue.w
+                    this.version.height = newValue.h
+                }
+
+
+
             }
         }
     });
@@ -648,10 +624,10 @@
                 var newVisualState = new VisualState().$mount()
 
                 if (allTheVisualStates.length > 0) {
-                    var previousVisualState = _.last(allTheVisualStates);
+                    let previousVisualState = _.last(allTheVisualStates);
 
-                    _.each(previousVisualState.shapes, function(previousShape) {
-                        newVisualState.addNewShape(previousShape);
+                    _.each(previousVisualState.shapes(), function(aPreviouslyCreatedShape) {
+                        newVisualState.addNewShape(aPreviouslyCreatedShape);
                     });
 
                     //TODO: Should we send didCreateShape?
