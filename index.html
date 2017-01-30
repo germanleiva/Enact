@@ -436,11 +436,15 @@
 
                 let startingShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
                 let startingShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
+                let startingShapeWidth = this.version.scale.w
+                let startingShapeHeight = this.version.scale.h
+
+                let handlerType = e.target.id.substring(0, 2);
 
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.scalingChanged(e,startingShapePositionXInWindowCoordinates,startingShapePositionYInWindowCoordinates);
+                    this.scalingChanged(e,handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates,startingShapeWidth,startingShapeHeight);
                 }.bind(this)
                 let visualStateElement = this.visualState.$el;
                 visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
@@ -541,30 +545,51 @@
                 }
             },
 
-            scalingChanged(e,startingShapePositionXInWindowCoordinates,startingShapePositionYInWindowCoordinates) {
+            scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates,startingShapeWidth,startingShapeHeight) {
                 let previousValue = this.version.scale;
 
                 let currentWindowMousePositionX = e.x;
                 let currentWindowMousePositionY = e.y;
 
-                let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
-                let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
+                console.log("startingShapeWidth "+startingShapeWidth)
+                console.log("startingShapeHeight "+startingShapeHeight)
 
-                if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                    //The currentWindowMousePositionX controls the startingShapePositionX
-                    this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft
-                }
-                if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
-                    //The currentWindowMousePositionX controls the startingShapePositionX
-                    this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop
-                }
-
-                var newWidth = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
-                var newHeight = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
+                // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
+                // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
 
                 let newValue = {
-                    w: newWidth,
-                    h: newHeight
+                    w: previousValue.w,
+                    h: previousValue.h,
+                }
+
+                    console.log('handler ' + handlerType + " (" + handlerType.length + ")");
+                switch (handlerType) {
+                    case 'se':
+                        if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
+                            //The currentWindowMousePositionX controls the startingShapePositionX
+                            this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft
+                        }
+                        if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
+                            //The currentWindowMousePositionX controls the startingShapePositionX
+                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop
+                        }
+                        newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
+                        newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
+                        break;
+                    case 'sw':
+                        let newStartingOffsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
+                        let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.$el.offsetLeft;
+                        this.version.left = startingShapePositionX - newStartingOffsetX;
+
+                        newValue.w = newStartingOffsetX + startingShapeWidth;
+
+                        newValue.h = currentWindowMousePositionY - startingShapePositionYInWindowCoordinates;
+
+                        break;
+                    case 'nw':
+                        break;
+                    case 'ne':
+                        break;
                 }
 
                 if (this.version.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
