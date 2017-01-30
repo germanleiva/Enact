@@ -192,33 +192,29 @@
                 if (toolbarVM.drawMode) {
                     this.drawingStarted(e);
                 } else if (toolbarVM.selectionMode) {
-                    // let selectedShape = null;
+                    let selectedShape = null;
 
-                    // //We traverse the shapes in backward order
-                    // for (var i = this.shapes.length - 1; i >= 0; i--) {
-                    //     var each = this.shapes[i];
-                    //     if (each.isSelected) {
-                    //         let handler = each.handlerAtPoint(e.x, e.y)
-                    //         if (handler) {
-                    //             //Resizing started
+                    //We traverse the shapes in backward order
+                    let allShapes = this.shapes()
+                    for (var i = allShapes.length - 1; i >= 0; i--) {
+                        var each = allShapes[i];
+                            if (each.isPointInside(e.x, e.y)) {
+                                each.toggleSelection();
 
-                    //         }
-                    //     } else if (each.isPointInside(e.x, e.y)) {
-                    //         each.toggleSelection();
-                    //         if (each.isSelected) {
-                    //             selectedShape = each;
-                    //         }
-                    //         this.moveStarted(e, each);
-                    //         continue;
-                    //     }
-                    // }
-                    // if (!toolbarVM.multiSelectionMode) {
-                    //     _.each(this.selectedShapes(), function(previouslySelectedShape) {
-                    //         if (previouslySelectedShape !== selectedShape) {
-                    //             previouslySelectedShape.deselect();
-                    //         }
-                    //     });
-                    // }
+                                if (each.isSelected) {
+                                    selectedShape = each;
+                                }
+                                continue;
+                            }
+                    }
+
+                    if (!toolbarVM.multiSelectionMode) {
+                        _.each(this.selectedShapes(), function(previouslySelectedShape) {
+                            if (!selectedShape || previouslySelectedShape !== selectedShape) {
+                                previouslySelectedShape.deselect();
+                            }
+                        });
+                    }
 
                 }
             },
@@ -351,9 +347,9 @@
                     newShapeVM.version = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
                 }
 
-                if (oldShapeVM) {
-                    newShapeVM.isSelected = oldShapeVM.isSelected
-                }
+                // if (oldShapeVM) {
+                //     newShapeVM.isSelected = oldShapeVM.isSelected
+                // }
 
                 newShapeVM.$mount();
                 this.$el.appendChild(newShapeVM.$el);
@@ -370,6 +366,15 @@
                 let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
                 if (this.nextState) {
                     this.nextState.didCreateShape(ourNewlyCreatedShape, this);
+                }
+            },
+            didSelect(aVisualState,aShapeVM) {
+                if (!toolbarVM.multiSelectionMode || aVisualState !== this) {
+                    this.selectedShapes().forEach(function(aSelectedShapeVM) {
+                        if (aSelectedShapeVM !== aShapeVM) {
+                            aSelectedShapeVM.toggleSelection(false)
+                        }
+                    });
                 }
             }
         }
@@ -402,7 +407,7 @@
     }
 
     var ShapeVM = Vue.extend({
-        template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape"><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
+        template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
         data: function() {
             return {
                 visualState: undefined,
@@ -460,11 +465,12 @@
                 if (toolbarVM.drawMode) {
                     return
                 }
+
                 e.preventDefault();
                 e.stopPropagation();
 
                 if (!this.isSelected) {
-                    this.isSelected = true;
+                    this.toggleSelection();
                 }
 
                 //Starting to move a shape
@@ -487,7 +493,7 @@
                 upHandler = function(e) {
                     visualStateElement.removeEventListener('mousemove', moveHandler, false);
                     visualStateElement.removeEventListener('mouseup', upHandler, false);
-                }
+                }.bind(this);
                 visualStateElement.addEventListener('mouseup', upHandler, false);
             },
 
@@ -536,8 +542,11 @@
                 }
                 return undefined;
             },
-            toggleSelection() {
+            toggleSelection(notify=true) {
                 this.isSelected = !this.isSelected;
+                if (this.isSelected && notify) {
+                    outputAreaVM.didSelectShapeAtVisualState(this.visualState,this);
+                }
             },
             deselect() {
                 if (this.isSelected) {
@@ -650,6 +659,11 @@
                 _.each(this.visualStates, function(each) {
                     each.changeColorOnSelection(cssStyle);
                 });
+            },
+            didSelectShapeAtVisualState(visualState,shape) {
+                for (each of this.visualStates) {
+                    each.didSelect(visualState,shape);
+                }
             }
         }
     });
