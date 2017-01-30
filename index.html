@@ -434,15 +434,13 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                let startingShapePositionInWindowCoordinates = {
-                    x: this.version.left + this.visualState.$el.offsetLeft,
-                    y: this.version.top + this.visualState.$el.offsetTop
-                };
+                let startingShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
+                let startingShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
 
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.scalingChanged(e, startingShapePositionInWindowCoordinates.x, startingShapePositionInWindowCoordinates.y)
+                    this.scalingChanged(e,startingShapePositionXInWindowCoordinates,startingShapePositionYInWindowCoordinates);
                 }.bind(this)
                 let visualStateElement = this.visualState.$el;
                 visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
@@ -543,18 +541,30 @@
                 }
             },
 
-            scalingChanged(e, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates) {
+            scalingChanged(e,startingShapePositionXInWindowCoordinates,startingShapePositionYInWindowCoordinates) {
                 let previousValue = this.version.scale;
 
                 let currentWindowMousePositionX = e.x;
                 let currentWindowMousePositionY = e.y;
 
-                var offsetX = currentWindowMousePositionX - startingShapePositionXInWindowCoordinates;
-                var offsetY = currentWindowMousePositionY - startingShapePositionYInWindowCoordinates;
+                let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
+                let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
+
+                if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
+                    //The currentWindowMousePositionX controls the startingShapePositionX
+                    this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft
+                }
+                if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
+                    //The currentWindowMousePositionX controls the startingShapePositionX
+                    this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop
+                }
+
+                var newWidth = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
+                var newHeight = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
 
                 let newValue = {
-                    w: offsetX,
-                    h: offsetY
+                    w: newWidth,
+                    h: newHeight
                 }
 
                 if (this.version.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
@@ -566,9 +576,6 @@
                     this.version.width = newValue.w
                     this.version.height = newValue.h
                 }
-
-
-
             }
         }
     });
