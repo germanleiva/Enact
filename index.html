@@ -551,9 +551,6 @@
                 let currentWindowMousePositionX = e.x;
                 let currentWindowMousePositionY = e.y;
 
-                console.log("startingShapeWidth " + startingShapeWidth)
-                console.log("startingShapeHeight " + startingShapeHeight)
-
                 // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
                 // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
 
@@ -562,7 +559,6 @@
                     h: previousValue.h,
                 }
 
-                console.log('handler ' + handlerType + " (" + handlerType.length + ")");
                 switch (handlerType) {
                     case 'se':
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
@@ -621,11 +617,9 @@
                         newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
 
                         if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                            let newHeight = (startingShapePositionYInWindowCoordinates + startingShapeHeight) - currentWindowMousePositionY;
                             this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop;
-                            // newValue.h = newHeight;
                         }
-                            newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
+                        newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                         break;
                 }
