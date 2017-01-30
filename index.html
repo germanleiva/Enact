@@ -444,7 +444,7 @@
                 var mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
-                    this.scalingChanged(e,handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates,startingShapeWidth,startingShapeHeight);
+                    this.scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight);
                 }.bind(this)
                 let visualStateElement = this.visualState.$el;
                 visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
@@ -545,14 +545,14 @@
                 }
             },
 
-            scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates,startingShapeWidth,startingShapeHeight) {
+            scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
                 let previousValue = this.version.scale;
 
                 let currentWindowMousePositionX = e.x;
                 let currentWindowMousePositionY = e.y;
 
-                console.log("startingShapeWidth "+startingShapeWidth)
-                console.log("startingShapeHeight "+startingShapeHeight)
+                console.log("startingShapeWidth " + startingShapeWidth)
+                console.log("startingShapeHeight " + startingShapeHeight)
 
                 // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
                 // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
@@ -562,7 +562,7 @@
                     h: previousValue.h,
                 }
 
-                    console.log('handler ' + handlerType + " (" + handlerType.length + ")");
+                console.log('handler ' + handlerType + " (" + handlerType.length + ")");
                 switch (handlerType) {
                     case 'se':
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
@@ -602,10 +602,31 @@
 
                         break;
                     case 'nw':
+                        if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
+                            this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft;
+                        }
+                        newValue.w = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
 
+                        if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
+                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop;
+                        }
+
+                        newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                         break;
                     case 'ne':
+                        if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
+                            this.version.left = (currentWindowMousePositionX - this.visualState.$el.offsetLeft);
+                        }
+                        newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
+
+                        if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
+                            let newHeight = (startingShapePositionYInWindowCoordinates + startingShapeHeight) - currentWindowMousePositionY;
+                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop;
+                            // newValue.h = newHeight;
+                        }
+                            newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
+
                         break;
                 }
 
@@ -615,8 +636,8 @@
                     if (this.visualState.nextState) {
                         this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'scaling');
                     }
-                    this.version.width = newValue.w
-                    this.version.height = newValue.h
+                    this.version.width = newValue.w;
+                    this.version.height = newValue.h;
                 }
             }
         }
