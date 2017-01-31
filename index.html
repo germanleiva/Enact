@@ -24,9 +24,19 @@
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
-    <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
     <script src="https://use.fontawesome.com/2e280f90a6.js"></script>
     <script>
+    if (!Array.prototype.first) {
+        Array.prototype.first = function() {
+            return this[0];
+        }
+    }
+    if (!Array.prototype.last) {
+        Array.prototype.last = function() {
+            return this[this.length - 1];
+        }
+    }
+
     window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
             toolbarVM.multiSelectionMode = true;
@@ -203,13 +213,13 @@
                     if (comparingShape) {
                         this.diffText += aShape.diff(comparingShape);
                     } else {
-                       this.diffText += 'Removed Shape ' + aShape.version.model.id + "\n"
+                        this.diffText += 'Removed Shape ' + aShape.version.model.id + "\n"
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
-                       this.diffText += 'Added Shape ' + nextShapeKey + "\n"
+                        this.diffText += 'Added Shape ' + nextShapeKey + "\n"
                     }
                 }
             },
@@ -239,22 +249,22 @@
                     let allShapes = this.shapes()
                     for (var i = allShapes.length - 1; i >= 0; i--) {
                         var each = allShapes[i];
-                            if (each.isPointInside(e.x, e.y)) {
-                                each.toggleSelection();
+                        if (each.isPointInside(e.x, e.y)) {
+                            each.toggleSelection();
 
-                                if (each.isSelected) {
-                                    selectedShape = each;
-                                }
-                                continue;
+                            if (each.isSelected) {
+                                selectedShape = each;
                             }
+                            continue;
+                        }
                     }
 
                     if (!toolbarVM.multiSelectionMode) {
-                        _.each(this.selectedShapes(), function(previouslySelectedShape) {
+                        for(let previouslySelectedShape of this.selectedShapes()) {
                             if (!selectedShape || previouslySelectedShape !== selectedShape) {
                                 previouslySelectedShape.deselect();
                             }
-                        });
+                        };
                     }
 
                 }
@@ -358,7 +368,7 @@
             },
             changeColorOnSelection: function(cssStyle) {
                 var currentVisualStateVM = this;
-                _.each(this.selectedShapes(), function(selectedShapeVM) {
+                for (let selectedShapeVM of this.selectedShapes()) {
                     //The first previousValue needs to be an actualValue
                     let previousValue = selectedShapeVM.version.color;
                     let newValue = cssStyle['background-color'];
@@ -374,7 +384,7 @@
                     }
 
 
-                });
+                };
             },
             addNewShape(oldShapeVM) {
                 var newShapeVM = new ShapeVM();
@@ -415,7 +425,7 @@
                     this.nextState.didCreateShape(ourNewlyCreatedShape, this);
                 }
             },
-            didSelect(aVisualState,aShapeVM) {
+            didSelect(aVisualState, aShapeVM) {
                 if (!toolbarVM.multiSelectionMode || aVisualState !== this) {
                     this.selectedShapes().forEach(function(aSelectedShapeVM) {
                         if (aSelectedShapeVM !== aShapeVM) {
@@ -602,10 +612,10 @@
                 }
                 return undefined;
             },
-            toggleSelection(notify=true) {
+            toggleSelection(notify = true) {
                 this.isSelected = !this.isSelected;
                 if (this.isSelected && notify) {
-                    outputAreaVM.didSelectShapeAtVisualState(this.visualState,this);
+                    outputAreaVM.didSelectShapeAtVisualState(this.visualState, this);
                 }
             },
             deselect() {
@@ -716,13 +726,13 @@
         },
         methods: {
             changeColorOfSelectedShapes: function(cssStyle) {
-                _.each(this.visualStates, function(each) {
+                for (let each of this.visualStates) {
                     each.changeColorOnSelection(cssStyle);
-                });
+                }
             },
-            didSelectShapeAtVisualState(visualState,shape) {
+            didSelectShapeAtVisualState(visualState, shape) {
                 for (each of this.visualStates) {
-                    each.didSelect(visualState,shape);
+                    each.didSelect(visualState, shape);
                 }
             }
         }
@@ -758,11 +768,11 @@
                 var newVisualState = new VisualState().$mount()
 
                 if (allTheVisualStates.length > 0) {
-                    let previousVisualState = _.last(allTheVisualStates);
+                    let previousVisualState = allTheVisualStates.last();
 
-                    _.each(previousVisualState.shapes(), function(aPreviouslyCreatedShape) {
+                    for (let aPreviouslyCreatedShape of previousVisualState.shapes())
                         newVisualState.addNewShape(aPreviouslyCreatedShape);
-                    });
+                    };
 
                     //TODO: Should we send didCreateShape?
 
