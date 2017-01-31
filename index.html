@@ -52,6 +52,7 @@
     class ShapeModelVersion {
         constructor(model, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
             this.model = model;
+
             this.backgroundColor = {
                 value: aColor
             };
@@ -174,7 +175,7 @@
     }
 
     var VisualState = Vue.extend({
-        template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' v-bind:class=\"{ 'is-disabled' : nextState === undefined}\">Diff</a></div>",
+        template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a></div>",
         data: function() {
             return {
                 shapesDictionary: {},
@@ -183,6 +184,29 @@
             }
         },
         methods: {
+            shapeFor(aShapeKey) {
+                return this.shapesDictionary[aShapeKey];
+            },
+            displayDiff() {
+                let comparedShapesKey = []
+                for (let shapeKey in this.shapesDictionary) {
+                    comparedShapesKey.push(shapeKey)
+                    let aShape = this.shapesDictionary[shapeKey];
+                    let comparingShape = this.nextState.shapeFor(shapeKey)
+                    if (comparingShape) {
+                        let diff = aShape.diff(comparingShape);
+                        console.log(diff)
+                    } else {
+                        console.log('Removed Shape ' + aShape.version.model.id)
+                    }
+                }
+                for (let nextShapeKey in this.nextState.shapesDictionary) {
+                    if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
+                        //key not found
+                        console.log('Added Shape ' + nextShapeKey)
+                    }
+                }
+            },
             hasNextState() {
                 return this.nextState !== undefined;
             },
@@ -448,6 +472,19 @@
             }
         },
         methods: {
+            diff(nextShapeWithTheSameModel) {
+                let changes = ""
+                if (!nextShapeWithTheSameModel.version.isFollowingMaster('backgroundColor')) {
+                    changes += 'Changed color from ' + this.version.color + ' to ' + nextShapeWithTheSameModel.version.color + "\n";
+                }
+                if (!nextShapeWithTheSameModel.version.isFollowingMaster('translation')) {
+                    changes += 'Changed position from ' + JSON.stringify(this.version.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.position) + "\n";
+                }
+                if (!nextShapeWithTheSameModel.version.isFollowingMaster('scaling')) {
+                    changes += 'Changed size from ' + JSON.stringify(this.version.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.scale) + "\n";
+                }
+                return changes
+            },
             mouseDownStartedOnHandler(e) {
                 if (!this.isSelected) {
                     console.log("THIS SHOULD NEVER HAPPEN")
