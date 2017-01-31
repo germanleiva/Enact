@@ -1,4 +1,4 @@
-.visualState {
+.visualStateCanvas {
     width: 200px;
     height: 400px;
     background-color:white;
@@ -6,6 +6,14 @@
     float:left;
     margin: 8px;
     position: relative;
+}
+
+.visualStateContainer {
+display: inline-block;
+}
+
+.visualStateDiff {
+
 }
 
 .outputArea {

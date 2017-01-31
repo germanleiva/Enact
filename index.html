@@ -174,15 +174,21 @@
     }
 
     var VisualState = Vue.extend({
-        template: '<div v-on:mousedown="actionStarted" class="visualState"></div>',
+        template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' v-bind:class=\"{ 'is-disabled' : nextState === undefined}\">Diff</a></div>",
         data: function() {
             return {
                 shapesDictionary: {},
                 nextState: undefined,
-                previousState: undefined
+                previousState: undefined,
             }
         },
         methods: {
+            hasNextState() {
+                return this.nextState !== undefined;
+            },
+            canvasElement() {
+                return this.$el.getElementsByClassName("visualStateCanvas")[0]
+            },
             shapes() {
                 let result = [];
                 for (let shapeModelId in this.shapesDictionary) {
@@ -276,8 +282,8 @@
                 var widthValue = Math.abs(currentWindowMousePositionX - startingWindowMousePosition.x);
                 var heightValue = Math.abs(currentWindowMousePositionY - startingWindowMousePosition.y)
 
-                newShapeVM.version.top = topValue - this.$el.offsetTop;
-                newShapeVM.version.left = leftValue - this.$el.offsetLeft;
+                newShapeVM.version.top = topValue - this.canvasOffsetTop();
+                newShapeVM.version.left = leftValue - this.canvasOffsetLeft();
                 newShapeVM.version.width = widthValue;
                 newShapeVM.version.height = heightValue;
             },
@@ -357,10 +363,16 @@
                 // }
 
                 newShapeVM.$mount();
-                this.$el.appendChild(newShapeVM.$el);
+                this.canvasElement().appendChild(newShapeVM.$el);
                 this.shapesDictionary[newShapeVM.version.model.id] = newShapeVM;
 
                 return newShapeVM;
+            },
+            canvasOffsetLeft() {
+                return this.canvasElement().offsetLeft;
+            },
+            canvasOffsetTop() {
+                return this.canvasElement().offsetTop;
             },
 
             didCreateShape(newlyCreatedShape, previousState) {
@@ -444,8 +456,8 @@
                 e.preventDefault();
                 e.stopPropagation();
 
-                let startingShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
-                let startingShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
+                let startingShapePositionXInWindowCoordinates = this.version.left + this.visualState.canvasOffsetLeft();
+                let startingShapePositionYInWindowCoordinates = this.version.top + this.visualState.canvasOffsetTop();
                 let startingShapeWidth = this.version.scale.w
                 let startingShapeHeight = this.version.scale.h
 
@@ -456,7 +468,7 @@
                 mouseMoveHandler = function(e) {
                     this.scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight);
                 }.bind(this)
-                let visualStateElement = this.visualState.$el;
+                let visualStateElement = this.visualState.canvasElement();
                 visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
 
                 var mouseUpHandler
@@ -539,8 +551,8 @@
                 for (var i = 0; i < codes.length; i++) {
                     let handlerCode = codes[i];
                     let handler = window.document.getElementById(handlerCode + this.version.model.id);
-                    let handlerVisualOuputLeft = handler.offsetLeft + this.$el.offsetLeft;
-                    let handlerVisualOuputTop = handler.offsetTop + this.$el.offsetTop;
+                    let handlerVisualOuputLeft = handler.offsetLeft + this.canvasOffsetLeft();
+                    let handlerVisualOuputTop = handler.offsetTop + this.canvasOffsetTop();
                     if (mouseVisualOutputX > handlerVisualOuputLeft && handlerVisualOuputLeft < handlerVisualOuputLeft + 10 && mouseVisualOutputY > handlerVisualOuputTop && mouseVisualOutputY < handlerVisualOuputTop + 10) {
                         return handler
                     }
@@ -565,8 +577,8 @@
                 let currentWindowMousePositionX = e.x;
                 let currentWindowMousePositionY = e.y;
 
-                // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.$el.offsetLeft;
-                // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.$el.offsetTop;
+                // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.canvasOffsetLeft();
+                // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.canvasOffsetTop();
 
                 let newValue = {
                     w: previousValue.w,
@@ -577,11 +589,11 @@
                     case 'se':
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
                             //The currentWindowMousePositionX controls the startingShapePositionX
-                            this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft
+                            this.version.left = currentWindowMousePositionX - this.visualState.canvasOffsetLeft()
                         }
                         if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                             //The currentWindowMousePositionX controls the startingShapePositionX
-                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop
+                            this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop()
                         }
                         newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
                         newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
@@ -591,34 +603,34 @@
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
                             let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
 
-                            let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.$el.offsetLeft;
+                            let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.canvasOffsetLeft();
                             this.version.left = startingShapePositionX - offsetX;
 
                             newValue.w = startingShapeWidth + offsetX;
                         } else {
-                            newValue.w = currentWindowMousePositionX - (this.version.left + this.visualState.$el.offsetLeft);
+                            newValue.w = currentWindowMousePositionX - (this.version.left + this.visualState.canvasOffsetLeft());
                         }
 
                         if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                             let offsetY = startingShapePositionYInWindowCoordinates - currentWindowMousePositionY;
-                            let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.visualState.$el.offsetTop;
+                            let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.visualState.canvasOffsetTop();
                             this.version.top = startingShapePositionY - offsetY;
 
                             newValue.h = offsetY;
 
                         } else {
-                            newValue.h = currentWindowMousePositionY - (this.version.top + this.visualState.$el.offsetTop);
+                            newValue.h = currentWindowMousePositionY - (this.version.top + this.visualState.canvasOffsetTop());
                         }
 
                         break;
                     case 'nw':
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
-                            this.version.left = currentWindowMousePositionX - this.visualState.$el.offsetLeft;
+                            this.version.left = currentWindowMousePositionX - this.visualState.canvasOffsetLeft();
                         }
                         newValue.w = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
 
                         if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop;
+                            this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop();
                         }
 
                         newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
@@ -626,12 +638,12 @@
                         break;
                     case 'ne':
                         if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                            this.version.left = (currentWindowMousePositionX - this.visualState.$el.offsetLeft);
+                            this.version.left = (currentWindowMousePositionX - this.visualState.canvasOffsetLeft());
                         }
                         newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
 
                         if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                            this.version.top = currentWindowMousePositionY - this.visualState.$el.offsetTop;
+                            this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop();
                         }
                         newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
