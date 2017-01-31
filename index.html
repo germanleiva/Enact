@@ -10,17 +10,22 @@
 <body>
     <div id="toolbar">
         <div class="block">
-            <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected">Selection</a>
-            <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected">Draw</a>
-            <a class="button">Measure</a>
-            <a class="button" v-on:click="changeToBlue">Change to blue</a>
-            <a class="button" v-on:click="changeToRed">Change to red</a>
-            <a class="button" v-on:click="addVisualState">Add VisualState</a>
+            <div class="control is-grouped">
+                <a class="button is-primary is-alone" id="title">ENACT</a>
+                <p class="control has-addons">
+                    <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
+                    <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
+                </p>
+                <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span></a>
+                <input type="color" @change="changeColor()" id="color-picker" class="button" id="color-picker" v-model="currentColor">
+                <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+            </div>
         </div>
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <script src="https://unpkg.com/vue/dist/vue.js"></script>
     <script src="https://cdn.jsdelivr.net/lodash/4.17.4/lodash.min.js"></script>
+    <script src="https://use.fontawesome.com/2e280f90a6.js"></script>
     <script>
     window.addEventListener('keydown', function(e) {
         if (e.code === 'AltLeft' || e.code === 'AltRight') {
@@ -673,7 +678,8 @@
         data: {
             drawMode: false,
             selectionMode: true,
-            multiSelectionMode: false
+            multiSelectionMode: false,
+            currentColor: '#1a60f3',
         },
         methods: {
             drawSelected() {
@@ -686,14 +692,9 @@
                 this.selectionMode = true;
                 outputAreaVM.cursorType = "default";
             },
-            changeToBlue() {
+            changeColor() {
                 outputAreaVM.changeColorOfSelectedShapes({
-                    'background-color': 'blue'
-                });
-            },
-            changeToRed() {
-                outputAreaVM.changeColorOfSelectedShapes({
-                    'background-color': 'red'
+                    'background-color': this.currentColor
                 });
             },
 

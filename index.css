@@ -2,15 +2,18 @@
     width: 200px;
     height: 400px;
     background-color:white;
-    border: 2px solid black;
+    border: 1px solid #333333;
     float:left;
-    margin: 10px;
+    margin: 8px;
     position: relative;
 }
 
 .outputArea {
     height: 420px;
     background-color:red;
+        background-color: #eeeeee;
+    display: block;
+    width: 100%;
 }
 
 .shapeHandler {
@@ -19,4 +22,29 @@
     background-color: #ffffff;
     border: 1px solid #000000;
     position:absolute;
+}
+
+#toolbar{
+	display: block;
+	padding-top: 5px;
+    padding-bottom: 5px;
+
+}
+
+.is-active{
+    background-color: #fafafa;
+}
+
+#title{
+	font-family: futura;
+	font-weight: 800;
+}
+
+.is-alone{
+    margin-right: 10px;
+    margin-left: 10px;
+}
+
+#color-picker{
+
 }
