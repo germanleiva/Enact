@@ -175,12 +175,14 @@
     }
 
     var VisualState = Vue.extend({
-        template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a></div>",
+        template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a><div v-show='isDisplayingDiff' class='box'>{{diffText}}</div></div>",
         data: function() {
             return {
                 shapesDictionary: {},
                 nextState: undefined,
                 previousState: undefined,
+                isDisplayingDiff: false,
+                diffText: ''
             }
         },
         methods: {
@@ -188,22 +190,26 @@
                 return this.shapesDictionary[aShapeKey];
             },
             displayDiff() {
+                this.isDisplayingDiff = !this.isDisplayingDiff;
+                if (!this.isDisplayingDiff) {
+                    return;
+                }
                 let comparedShapesKey = []
+                this.diffText = ""
                 for (let shapeKey in this.shapesDictionary) {
                     comparedShapesKey.push(shapeKey)
                     let aShape = this.shapesDictionary[shapeKey];
                     let comparingShape = this.nextState.shapeFor(shapeKey)
                     if (comparingShape) {
-                        let diff = aShape.diff(comparingShape);
-                        console.log(diff)
+                        this.diffText += aShape.diff(comparingShape);
                     } else {
-                        console.log('Removed Shape ' + aShape.version.model.id)
+                       this.diffText += 'Removed Shape ' + aShape.version.model.id + "\n"
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
-                        console.log('Added Shape ' + nextShapeKey)
+                       this.diffText += 'Added Shape ' + nextShapeKey + "\n"
                     }
                 }
             },
