@@ -3,7 +3,11 @@ var webpack = require('webpack')
 var HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-    entry: './src/main.js',
+    entry: [
+        'webpack/hot/dev-server',
+        'webpack-hot-middleware/client',
+        './src/main.js'
+    ],
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',

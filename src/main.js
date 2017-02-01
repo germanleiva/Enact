@@ -1,8 +1,38 @@
 import Vue from 'vue'
+let io = require("socket.io-client");
 
 require('bulma/css/bulma.css')
 require('font-awesome/css/font-awesome.css')
 require('./index.css')
+
+
+let socket = io.connect('http://localhost:3000');
+let context = undefined
+
+socket.on('message-from-server', function(data) {
+    console.log(data)
+    let positionX = data.message.pageX;
+    let positionY = data.message.pageY;
+    console.log("Drawing a line from "+positionX+ " " + positionY)
+
+    context.strokeStyle = "#df4b26";
+    context.lineJoin = "round";
+    context.lineWidth = 5;
+
+    if (data.message.type == "touchstart") {
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+        context.beginPath();
+        context.moveTo(positionX, positionY);
+    } else {
+
+    context.lineTo(positionX, positionY);
+    context.closePath();
+    context.stroke();
+
+    context.moveTo(positionX, positionY);
+
+    }
+});
 
 if (!Array.prototype.first) {
     Array.prototype.first = function() {
@@ -14,6 +44,19 @@ if (!Array.prototype.last) {
         return this[this.length - 1];
     }
 }
+
+window.addEventListener('load', function(e) {
+    context = document.getElementById('myCanvas').getContext("2d");
+context.fillStyle = "#9ea7b8";
+            context.fillRect(0,0,context.canvas.width, context.canvas.height);
+    // context.strokeStyle = "#df4b26";
+    // context.lineJoin = "round";
+    // context.lineWidth = 5;
+
+    // context.moveTo(0, 0);
+    // context.lineTo(200, 100);
+    // context.stroke();
+});
 
 window.addEventListener('keydown', function(e) {
     if (e.code === 'AltLeft' || e.code === 'AltRight') {
@@ -161,6 +204,18 @@ class ShapeModelVersion {
         }
     }
 }
+
+let TimelineVM = new Vue({
+    el: '#timelineArea',
+    data: {
+
+    },
+    methods: {
+        startRecording() {
+
+        }
+    }
+});
 
 var VisualState = Vue.extend({
     template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a><div v-show='isDisplayingDiff' class='box'>{{diffText}}</div></div>",

@@ -25,6 +25,10 @@
         </div>
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
+    <div id="timelineArea">
+        <a class="button is-alone" v-on:click="startRecording"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+        <canvas id="myCanvas" width="375" height="667"></canvas>
+    </div>
 </body>
 
 </html>

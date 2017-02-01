@@ -26,19 +26,30 @@ if (app.settings.env === 'development') {
 }
 
 
-// app.use('/client', express.static(__dirname + '/client'));
+app.use('/client', express.static(__dirname + '/client'));
 // app.use('/', express.static(__dirname));
 
 // app.get('/desktop', function(req, res){
 //   res.sendfile('desktop/index.html');
 // });
 
-io.sockets.on('connection', function (socket) {
-    // socket.emit('message', { message: 'welcome to the chat' });
-    socket.on('send', function (data) {
-        io.sockets.emit('message', data);
-    });
+io.on('connection', function(socket){
+  console.log('a user connected ' + socket.id);
+  socket.on('disconnect', function(){
+    console.log('user disconnected ' + socket.id);
+  });
+  socket.on('message-from-device',function(data) {
+    console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
+    io.emit('message-from-server', data);
+  })
 });
+
+// io.sockets.on('connection', function (socket) {
+//     // socket.emit('message', { message: 'welcome to the chat' });
+//     socket.on('send', function (data) {
+//         io.sockets.emit('message', data);
+//     });
+// });
 
 let port = 3000;
 http.listen(port, function(){

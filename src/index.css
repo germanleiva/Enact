@@ -1,6 +1,6 @@
 .visualStateCanvas {
-    width: 200px;
-    height: 400px;
+    width: 375px;
+    height: 667px;
     background-color:white;
     border: 1px solid #333333;
     float:left;
@@ -17,7 +17,7 @@ display: inline-block;
 }
 
 .outputArea {
-    height: 420px;
+    height: 700px;
     background-color:red;
         background-color: #eeeeee;
     display: block;

@@ -16,7 +16,7 @@ var eventsCache = [];
 
 function saveEvent(anEvent) {
     var anEvent = { type: anEvent.type, pageX: anEvent.pageX, pageY: anEvent.pageY, timeStamp: anEvent.timeStamp, window: {width: window.outerWidth, height: window.outerHeight } }
-    socket.emit('send', { message: anEvent });
+    socket.emit('message-from-device', { message: anEvent });
 
     eventsCache.push(anEvent);
 
@@ -26,7 +26,7 @@ function saveEvent(anEvent) {
 //To prevent scrolling - not working
 // document.body.addEventListener('pointermove', function(event) {
 //   event.preventDefault();
-// }, false); 
+// }, false);
 
 document.body.addEventListener('touchstart', function (e) { e.preventDefault(); });
 document.body.addEventListener('touchmove', function (e) { e.preventDefault(); });
