@@ -1,5 +1,9 @@
 import Vue from 'vue'
 
+require('bulma/css/bulma.css')
+require('font-awesome/css/font-awesome.css')
+require('./index.css')
+
 if (!Array.prototype.first) {
     Array.prototype.first = function() {
         return this[0];

@@ -1,0 +1,31 @@
+<!doctype html>
+
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+
+  <title>Gestural Client</title>
+  <meta name="description" content="Gestural Client">
+  <meta name="author" content="GmanLeiva">
+  <meta name="viewport" content="width=device-width,height=device-height,user-scalable=no,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+
+  <!--iPhone options-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Gestural">
+
+  <!--<script src="pep.js"></script>-->
+
+  <link rel="stylesheet" href="./styles.css">
+  <script src="/socket.io/socket.io.js"></script>
+
+</head>
+
+<body>
+  <div class="draggable"></div>
+  <button ontouchend="playEvents()">Play</button>
+  <button ontouchend="resetFigure()">Reset</button>
+
+  <script src="client.js"></script>
+</body>
+</html>
