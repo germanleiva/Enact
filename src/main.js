@@ -193,6 +193,9 @@ class ShapeModelVersion {
                 return this.scale;
         }
     }
+    valueForProperty(property) {
+        return this[property].value;
+    }
     areEqualValues(property, value1, value2) {
         switch (property) {
             case 'backgroundColor':
@@ -362,42 +365,32 @@ var VisualState = Vue.extend({
         },
 
         somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
-            let eachShape = this.shapesDictionary[model.id]
-            if (!eachShape) {
+            let relatedShape = this.shapesDictionary[model.id]
+            if (!relatedShape) {
                 return;
             }
-            let shouldPropagate = false;
-            let newPreviousValue = eachShape.version.nonZeroValue(changedPropertyName);
+            let newPreviousValue = previousValue;
 
-            logger('>>> somethingChangedPreviousState State' + outputAreaVM.visualStates.indexOf(this));
-            logger('previousValue: ' + JSON.stringify(previousValue));
-            logger('newPreviousValue: ' + JSON.stringify(newPreviousValue));
-            if (eachShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
-                logger("newPreviousValue is equal to previousValue")
-                    //Nothing to do, this shape should keep following the master
-                eachShape.version.followMaster(changedPropertyName);
-                shouldPropagate = true;
+            if (!relatedShape.version.isFollowingMaster(changedPropertyName)) {
+                newPreviousValue = relatedShape.version.valueForProperty(changedPropertyName);
+                // newPreviousValue = relatedShape.version.nonZeroValue(changedPropertyName);
+            }
+
+            if (relatedShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
+                //Equal values, this shape should keep or start following the master
+                relatedShape.version.followMaster(changedPropertyName);
+
+                if (this.nextState) {
+                    this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
+                }
             } else {
                 logger("newPreviousValue is NOT equal to previousValue")
 
                 //Shape is getting it s own value, so its not following the materVersion anymore
-                if (!eachShape.version.isFollowingMaster(changedPropertyName)) {
-                    logger("NOT following master")
-                        //We shouldn't change because we are NOT following master
-                } else {
-                    logger("following master")
-                    logger("changing value to " + JSON.stringify(changedValue));
-
-                    eachShape.version[changedPropertyName].value = changedValue
+                if (relatedShape.version.isFollowingMaster(changedPropertyName)) {
+                    relatedShape.version[changedPropertyName].value = changedValue
                 }
             }
-
-            if (shouldPropagate) {
-                if (this.nextState) {
-                    this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
-                }
-            }
-            logger("---------");
         },
         changeColorOnSelection: function(cssStyle) {
             var currentVisualStateVM = this;
@@ -410,13 +403,13 @@ var VisualState = Vue.extend({
                 if (selectedShapeVM.version.isFollowingMaster('backgroundColor') && previousValue == newValue) {
                     //Don't do anything, keep following master and do not propagate
                 } else {
+
+                    selectedShapeVM.version.color = newValue;
+
                     if (currentVisualStateVM.nextState) {
                         currentVisualStateVM.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'backgroundColor');
                     }
-                    selectedShapeVM.version.color = newValue;
                 }
-
-
             };
         },
         addNewShape(oldShapeVM) {
@@ -604,7 +597,7 @@ var ShapeVM = Vue.extend({
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
 
-            let previousValue = this.version.position;
+            let previousValue = {x: this.version.position.x , y: this.version.position.y };
             let newValue = {
                 x: Math.abs(initialOffsetX - currentWindowMousePositionX),
                 y: Math.abs(initialOffsetY - currentWindowMousePositionY)
@@ -616,11 +609,11 @@ var ShapeVM = Vue.extend({
             if (this.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
                 //Don't do anything, keep following master and do not propagate
             } else {
+                this.version.left = newValue.x
+                this.version.top = newValue.y
                 if (this.visualState.nextState) {
                     this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'translation');
                 }
-                this.version.left = newValue.x
-                this.version.top = newValue.y
             }
         },
         isPointInside: function(windowX, windowY) {
@@ -658,7 +651,7 @@ var ShapeVM = Vue.extend({
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = this.version.scale;
+            let previousValue = {w: this.version.scale.w, h: this.version.scale.h};
 
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
@@ -739,11 +732,11 @@ var ShapeVM = Vue.extend({
             if (this.version.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
                 //Don't do anything, keep following master and do not propagate
             } else {
+                this.version.width = newValue.w;
+                this.version.height = newValue.h;
                 if (this.visualState.nextState) {
                     this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'scaling');
                 }
-                this.version.width = newValue.w;
-                this.version.height = newValue.h;
             }
         }
     }
