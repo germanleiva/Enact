@@ -863,10 +863,9 @@ window.addEventListener('load', function(e) {
     // context.stroke();
 
     socket.on('message-from-server', function(data) {
-        console.log(data)
+        // console.log(data)
         let positionX = data.message.pageX;
         let positionY = data.message.pageY;
-        console.log("Drawing a line from " + positionX + " " + positionY)
 
         context.strokeStyle = "#df4b26";
         context.lineJoin = "round";

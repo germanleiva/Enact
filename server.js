@@ -25,7 +25,6 @@ if (app.settings.env === 'development') {
     app.use(express.static(__dirname + '/public'));
 }
 
-
 app.use('/client', express.static(__dirname + '/client'));
 // app.use('/', express.static(__dirname));
 
@@ -39,7 +38,7 @@ io.on('connection', function(socket){
     console.log('user disconnected ' + socket.id);
   });
   socket.on('message-from-device',function(data) {
-    console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
+    // console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
     io.emit('message-from-server', data);
   })
 });

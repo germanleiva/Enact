@@ -1,5 +1,5 @@
+var socket = io.connect(window.location.href.split('/')[2]);
 
-var socket = io.connect('http://192.168.0.12:3000');
 
 var draggable = document.getElementsByClassName("draggable")[0];
 
