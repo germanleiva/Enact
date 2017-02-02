@@ -22,7 +22,7 @@ if (app.settings.env === 'development') {
   app.use(devMiddleware)
   app.use(hotMiddleware)
 } else {
-    app.use(express.static(__dirname + '/public'));
+    app.use(express.static(__dirname + '/dist'));
 }
 
 app.use('/client', express.static(__dirname + '/client'));
