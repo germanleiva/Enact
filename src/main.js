@@ -221,7 +221,13 @@ let TimelineVM = new Vue({
 });
 
 var VisualState = Vue.extend({
-    template: "<div class='visualStateContainer'><div v-on:mousedown='actionStarted' class='visualStateCanvas'></div><a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a><div v-show='isDisplayingDiff' class='box'>{{diffText}}</div></div>",
+    template: `<div class='visualStateContainer'>
+                    <div v-on:mousedown='actionStarted' class='visualStateCanvas'></div>
+                    <div class="diffContainer">
+                        <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
+                        <div v-show='isDisplayingDiff' class='box diffBox'>{{diffText}}</div>
+                    </div>
+                </div>`,
     data: function() {
         return {
             shapesDictionary: {},
@@ -490,7 +496,7 @@ class Handler {
 }
 
 var ShapeVM = Vue.extend({
-    template: '<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>',
+    template: `<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>`,
     data: function() {
         return {
             visualState: undefined,
