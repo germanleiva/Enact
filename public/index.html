@@ -27,6 +27,9 @@
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <div id="timelineArea">
         <a class="button is-alone" v-on:click="startRecording"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+        <div class="inputTimeline">
+            <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
+        </div>
         <canvas id="myCanvas" width="375" height="667"></canvas>
     </div>
 </body>

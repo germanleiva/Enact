@@ -89,3 +89,18 @@
     -o-transform: rotate(135deg);
     transform: rotate(135deg);
 }
+
+.inputTimeline {
+    width: 80%;
+    height: 50px;
+    background-color: #A29B9B;
+    position:relative;
+}
+
+.mark {
+    width: 40px;
+    height: 40px;
+    background-color: white;
+    position: absolute;
+    left: 0%;
+}

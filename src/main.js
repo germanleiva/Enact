@@ -9,28 +9,55 @@ require('./index.css')
 let socket = io.connect('http://localhost:3000');
 let context = undefined
 
-socket.on('message-from-server', function(data) {
-    console.log(data)
-    let positionX = data.message.pageX;
-    let positionY = data.message.pageY;
-    console.log("Drawing a line from "+positionX+ " " + positionY)
+let timelineAreaVM
 
-    context.strokeStyle = "#df4b26";
-    context.lineJoin = "round";
-    context.lineWidth = 5;
+Vue.component('visual-state-mark', {
+    props: ['initialVisualState'],
+    data: function() {
+        return { visualState: this.initialVisualState }
+    },
+    template: `<div class="mark" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>`,
+    methods: {
+        draggingStartedVisualStateMark(e) {
+            e.stopPropagation()
+            e.preventDefault()
+                //e.target is the visualStateMark DOM element
+            let visualStateMark = e.target;
+            let mouseTargetOffsetX = e.x - e.target.offsetLeft;
+            let mouseTargetOffsetY = e.y - e.target.offsetTop;
 
-    if (data.message.type == "touchstart") {
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
-        context.beginPath();
-        context.moveTo(positionX, positionY);
-    } else {
+            let inputTimelineElement = timelineAreaVM.$el.getElementsByClassName('inputTimeline')[0];
+            let moveHandler = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                let percentageInTimeline = (e.x - mouseTargetOffsetX) * 100 / inputTimelineElement.clientWidth;
+                percentageInTimeline = Math.max(Math.min(percentageInTimeline, 100), 0);
 
-    context.lineTo(positionX, positionY);
-    context.closePath();
-    context.stroke();
+                visualStateMark.style.left = percentageInTimeline + '%';
 
-    context.moveTo(positionX, positionY);
+                let totalEventCount = timelineAreaVM.inputEvents.length
+                let index = Math.round(totalEventCount * percentageInTimeline / 100)
+                index = Math.max(Math.min(index, totalEventCount - 1), 0);
 
+                let correspondingInputEvent = timelineAreaVM.inputEvents[index]
+
+                // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + totalEventCount + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
+
+                this.visualState.inputEvent = correspondingInputEvent;
+            }.bind(this);
+            window.addEventListener('mousemove', moveHandler, false);
+
+            var upHandler
+            upHandler = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+
+                window.removeEventListener('mousemove', moveHandler, false);
+                window.removeEventListener('mouseup', upHandler, false);
+            }.bind(this);
+            window.addEventListener('mouseup', upHandler, false);
+
+        }
     }
 });
 
@@ -44,19 +71,11 @@ if (!Array.prototype.last) {
         return this[this.length - 1];
     }
 }
-
-window.addEventListener('load', function(e) {
-    context = document.getElementById('myCanvas').getContext("2d");
-context.fillStyle = "#9ea7b8";
-            context.fillRect(0,0,context.canvas.width, context.canvas.height);
-    // context.strokeStyle = "#df4b26";
-    // context.lineJoin = "round";
-    // context.lineWidth = 5;
-
-    // context.moveTo(0, 0);
-    // context.lineTo(200, 100);
-    // context.stroke();
-});
+if (!Array.prototype.removeAll) {
+    Array.prototype.removeAll = function() {
+        return this.splice(0, this.length);
+    }
+}
 
 window.addEventListener('keydown', function(e) {
     if (e.code === 'AltLeft' || e.code === 'AltRight') {
@@ -208,10 +227,11 @@ class ShapeModelVersion {
     }
 }
 
-let TimelineVM = new Vue({
+timelineAreaVM = new Vue({
     el: '#timelineArea',
     data: {
-
+        visualStates: [],
+        inputEvents: []
     },
     methods: {
         startRecording() {
@@ -222,7 +242,9 @@ let TimelineVM = new Vue({
 
 var VisualState = Vue.extend({
     template: `<div class='visualStateContainer'>
-                    <div v-on:mousedown='actionStarted' class='visualStateCanvas'></div>
+                    <div v-on:mousedown='actionStarted' class='visualStateCanvas'>
+                        <div v-if="inputEvent !== undefined" :style="{position:'absolute',left:inputEvent.pageX + 'px',top:inputEvent.pageY +'px', width:'20px',height:'20px',backgroundColor:'red'}"></div>
+                    </div>
                     <div class="diffContainer">
                         <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
                         <div v-show='isDisplayingDiff' class='box diffBox'>{{diffText}}</div>
@@ -230,6 +252,7 @@ var VisualState = Vue.extend({
                 </div>`,
     data: function() {
         return {
+            inputEvent: undefined,
             shapesDictionary: {},
             nextState: undefined,
             previousState: undefined,
@@ -603,7 +626,7 @@ var ShapeVM = Vue.extend({
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
 
-            let previousValue = {x: this.version.position.x , y: this.version.position.y };
+            let previousValue = { x: this.version.position.x, y: this.version.position.y };
             let newValue = {
                 x: Math.abs(initialOffsetX - currentWindowMousePositionX),
                 y: Math.abs(initialOffsetY - currentWindowMousePositionY)
@@ -657,7 +680,7 @@ var ShapeVM = Vue.extend({
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = {w: this.version.scale.w, h: this.version.scale.h};
+            let previousValue = { w: this.version.scale.w, h: this.version.scale.h };
 
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
@@ -752,7 +775,6 @@ var ShapeVM = Vue.extend({
 var outputAreaVM = new Vue({
     el: '#outputArea',
     data: {
-        visualStates: [],
         cursorType: 'auto',
         shapeCounter: 0
     },
@@ -766,6 +788,11 @@ var outputAreaVM = new Vue({
             for (let each of this.visualStates) {
                 each.didSelect(visualState, shape);
             }
+        }
+    },
+    computed: {
+        visualStates: function() {
+            return timelineAreaVM.visualStates
         }
     }
 });
@@ -796,7 +823,7 @@ var toolbarVM = new Vue({
         },
 
         addVisualState() {
-            var allTheVisualStates = outputAreaVM.$data.visualStates;
+            var allTheVisualStates = timelineAreaVM.visualStates;
             var newVisualState = new VisualState().$mount()
 
             if (allTheVisualStates.length > 0) {
@@ -821,4 +848,45 @@ var toolbarVM = new Vue({
         this.addVisualState();
     }
 
+});
+
+window.addEventListener('load', function(e) {
+    context = document.getElementById('myCanvas').getContext("2d");
+    context.fillStyle = "#9ea7b8";
+    context.fillRect(0, 0, context.canvas.width, context.canvas.height);
+    // context.strokeStyle = "#df4b26";
+    // context.lineJoin = "round";
+    // context.lineWidth = 5;
+
+    // context.moveTo(0, 0);
+    // context.lineTo(200, 100);
+    // context.stroke();
+
+    socket.on('message-from-server', function(data) {
+        console.log(data)
+        let positionX = data.message.pageX;
+        let positionY = data.message.pageY;
+        console.log("Drawing a line from " + positionX + " " + positionY)
+
+        context.strokeStyle = "#df4b26";
+        context.lineJoin = "round";
+        context.lineWidth = 5;
+
+        if (data.message.type == "touchstart") {
+            timelineAreaVM.inputEvents.removeAll();
+            context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
+            context.beginPath();
+            context.moveTo(positionX, positionY);
+        } else {
+
+            context.lineTo(positionX, positionY);
+            context.closePath();
+            context.stroke();
+
+            context.moveTo(positionX, positionY);
+
+        }
+
+        timelineAreaVM.inputEvents.push(data.message);
+    });
 });
