@@ -21,7 +21,7 @@ Vue.component('visual-state-mark', {
         draggingStartedVisualStateMark(e) {
             e.stopPropagation()
             e.preventDefault()
-                //e.target is the visualStateMark DOM element
+
             let visualStateMark = e.target;
             let mouseTargetOffsetX = e.x - e.target.offsetLeft;
             let mouseTargetOffsetY = e.y - e.target.offsetTop;
@@ -243,7 +243,7 @@ timelineAreaVM = new Vue({
 var VisualState = Vue.extend({
     template: `<div class='visualStateContainer'>
                     <div v-on:mousedown='actionStarted' class='visualStateCanvas'>
-                        <div v-if="inputEvent !== undefined" :style="{position:'absolute',left:inputEvent.pageX + 'px',top:inputEvent.pageY +'px', width:'20px',height:'20px',backgroundColor:'red'}"></div>
+                        <div v-if="inputEvent !== undefined" :style="{borderRadius:'15px',position:'absolute',left:inputEvent.pageX + 'px',top:inputEvent.pageY +'px', width:'30px',height:'30px',backgroundColor:'red'}"></div>
                     </div>
                     <div class="diffContainer">
                         <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
