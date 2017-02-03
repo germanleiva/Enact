@@ -248,6 +248,25 @@ class ShapeModelVersion {
     }
 }
 
+
+let playerVM = new Vue({
+    el: '#player',
+    data: {
+        styleObject: {
+            backgroundColor: 'blue',
+            width: '375px',
+            height: '667px',
+            float: 'left'
+        }
+    },
+    computed: {
+
+    },
+    methods: {
+
+    }
+});
+
 timelineAreaVM = new Vue({
     el: '#timelineArea',
     data: {
@@ -255,8 +274,41 @@ timelineAreaVM = new Vue({
         inputEvents: []
     },
     methods: {
-        startRecording() {
+        startPlaying() {
+            // let indexCSS = document.styleSheets[document.styleSheets.length - 1];
+            var sheet = (function() {
+                // Create the <style> tag
+                var style = document.createElement("style");
 
+                // Add a media (and/or media query) here if you'd like!
+                // style.setAttribute("media", "screen")
+                // style.setAttribute("media", "only screen and (max-width : 1024px)")
+
+                // WebKit hack :(
+                style.appendChild(document.createTextNode(""));
+
+                // Add the <style> element to the page
+                document.head.appendChild(style);
+
+                return style.sheet;
+            })();
+
+
+            sheet.insertRule(`.animatable {
+    width: 100px;
+    height: 100px;
+    background: red;
+    position: relative;
+    -webkit-animation: mymove 5s infinite; /* Safari 4.0 - 8.0 */
+    animation: mymove 5s infinite;
+}`,0);
+
+            sheet.insertRule(`@keyframes mymove {
+    0%   {top: 0px;}
+    25%  {top: 200px;}
+    75%  {top: 50px}
+    100% {top: 100px;}
+}`, 1);
         }
     }
 });
@@ -340,7 +392,7 @@ Vue.component('diff-element', {
         },
         styleObject() {
             return {
-                backgroundColor: this.diffData['isInput']?'PeachPuff':''
+                backgroundColor: this.diffData['isInput'] ? 'PeachPuff' : ''
             }
         }
     }
@@ -403,16 +455,16 @@ var VisualState = Vue.extend({
                         if (this.nextState.currentInputEvent) {
                             //Both states have an input event
                             if (this.currentInputEvent.pageX != this.nextState.currentInputEvent.pageX || this.currentInputEvent.pageY != this.nextState.currentInputEvent.pageY) {
-                                result.push({isInput:true,translation:{previousValue:{x:this.currentInputEvent.pageX,y:this.currentInputEvent.pageY},newValue:{x:this.nextState.currentInputEvent.pageX,y:this.nextState.currentInputEvent.pageY}}})
+                                result.push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.pageX, y: this.currentInputEvent.pageY }, newValue: { x: this.nextState.currentInputEvent.pageX, y: this.nextState.currentInputEvent.pageY } } })
                             }
                         } else {
                             //The next state removed the input event or didn't set one
-                            result.push({isInput:true,removed:{previousValue:this.currentInputEvent,newValue:this.nextState.currentInputEvent}})
+                            result.push({ isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
                         }
                     } else {
                         if (this.nextState.currentInputEvent) {
                             //The next state added an input event and I don't have one
-                            result.push({isInput:true,added:{previousValue:this.currentInputEvent,newValue:this.nextState.currentInputEvent}})
+                            result.push({ isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
                         } else {
                             //Both states don't have an input event
                         }
@@ -773,8 +825,8 @@ var ShapeVM = Vue.extend({
 
             let previousValue = { x: this.version.position.x, y: this.version.position.y };
             let newValue = {
-                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX,0),this.visualState.canvasElement().clientWidth),
-                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY,0),this.visualState.canvasElement().clientHeight)
+                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.canvasElement().clientWidth),
+                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.canvasElement().clientHeight)
             }
             logger('moveChanged');
             logger('previousValue: ' + JSON.stringify(previousValue));

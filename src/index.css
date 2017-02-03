@@ -102,5 +102,8 @@
     height: 40px;
     background-color: white;
     position: absolute;
-    left: 0%;
+}
+
+#timelineArea {
+    display: block;
 }
