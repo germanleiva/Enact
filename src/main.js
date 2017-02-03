@@ -318,7 +318,7 @@ Vue.component('input-event-mark', {
 
 Vue.component('diff-element', {
     props: ['diffData'],
-    template: `"<a class='button'><i class='fa' v-bind:class="classObject"></i></a>"`,
+    template: `"<a class='button' :style="styleObject"><i class='fa' v-bind:class="classObject"></i></a>"`,
     data: function() {
         return {}
     },
@@ -335,8 +335,12 @@ Vue.component('diff-element', {
                     'fa-arrows-alt': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
                     'fa-tint': this.diffData['backgroundColor'] != undefined,
                     'fa-plus': this.diffData['added'] != undefined,
-                    'fa-minus': this.diffData['removed'] != undefined
                 }
+            }
+        },
+        styleObject() {
+            return {
+                backgroundColor: this.diffData['isInput']?'PeachPuff':''
             }
         }
     }
@@ -392,6 +396,25 @@ var VisualState = Vue.extend({
                             //key not found
                             // result.push('Added Shape ' + nextShapeKey)
                             result.push({ added: { previousValue: undefined, newValue: nextShapeKey } })
+                        }
+                    }
+
+                    if (this.currentInputEvent) {
+                        if (this.nextState.currentInputEvent) {
+                            //Both states have an input event
+                            if (this.currentInputEvent.pageX != this.nextState.currentInputEvent.pageX || this.currentInputEvent.pageY != this.nextState.currentInputEvent.pageY) {
+                                result.push({isInput:true,translation:{previousValue:{x:this.currentInputEvent.pageX,y:this.currentInputEvent.pageY},newValue:{x:this.nextState.currentInputEvent.pageX,y:this.nextState.currentInputEvent.pageY}}})
+                            }
+                        } else {
+                            //The next state removed the input event or didn't set one
+                            result.push({isInput:true,removed:{previousValue:this.currentInputEvent,newValue:this.nextState.currentInputEvent}})
+                        }
+                    } else {
+                        if (this.nextState.currentInputEvent) {
+                            //The next state added an input event and I don't have one
+                            result.push({isInput:true,added:{previousValue:this.currentInputEvent,newValue:this.nextState.currentInputEvent}})
+                        } else {
+                            //Both states don't have an input event
                         }
                     }
                 }
