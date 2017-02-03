@@ -750,8 +750,8 @@ var ShapeVM = Vue.extend({
 
             let previousValue = { x: this.version.position.x, y: this.version.position.y };
             let newValue = {
-                x: Math.abs(initialOffsetX - currentWindowMousePositionX),
-                y: Math.abs(initialOffsetY - currentWindowMousePositionY)
+                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX,0),this.visualState.canvasElement().clientWidth),
+                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY,0),this.visualState.canvasElement().clientHeight)
             }
             logger('moveChanged');
             logger('previousValue: ' + JSON.stringify(previousValue));
