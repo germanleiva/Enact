@@ -1,10 +1,13 @@
 import Vue from 'vue'
-let io = require("socket.io-client");
+import io from 'socket.io-client';
+
+// import App from './App.vue'
 
 require('bulma/css/bulma.css')
 require('font-awesome/css/font-awesome.css')
 require('./index.css')
 
+// import store from './store.js'
 
 let socket = io.connect('http://localhost:3000');
 let context = undefined
@@ -16,7 +19,24 @@ Vue.component('visual-state-mark', {
     data: function() {
         return { visualState: this.initialVisualState }
     },
-    template: `<div class="mark" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>`,
+    template: `<div class="mark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>`,
+    computed: {
+        styleObject() {
+            return {
+                left: this.percentageInTimeline + '%'
+            }
+        },
+        percentageInTimeline() {
+            if (this.visualState.currentInputEvent) {
+                let totalEventCount = timelineAreaVM.inputEvents.length
+                let index = timelineAreaVM.inputEvents.indexOf(this.visualState.currentInputEvent)
+
+                return index * 100 / totalEventCount;
+            } else {
+                return 0;
+            }
+        }
+    },
     methods: {
         draggingStartedVisualStateMark(e) {
             e.stopPropagation()
@@ -26,6 +46,7 @@ Vue.component('visual-state-mark', {
             let mouseTargetOffsetX = e.x - e.target.offsetLeft;
             let mouseTargetOffsetY = e.y - e.target.offsetTop;
 
+            this.visualState.showAllInputEvents = true;
             let inputTimelineElement = timelineAreaVM.$el.getElementsByClassName('inputTimeline')[0];
             let moveHandler = function(e) {
                 e.stopPropagation();
@@ -33,7 +54,7 @@ Vue.component('visual-state-mark', {
                 let percentageInTimeline = (e.x - mouseTargetOffsetX) * 100 / inputTimelineElement.clientWidth;
                 percentageInTimeline = Math.max(Math.min(percentageInTimeline, 100), 0);
 
-                visualStateMark.style.left = percentageInTimeline + '%';
+                // visualStateMark.style.left = percentageInTimeline + '%';
 
                 let totalEventCount = timelineAreaVM.inputEvents.length
                 let index = Math.round(totalEventCount * percentageInTimeline / 100)
@@ -43,7 +64,7 @@ Vue.component('visual-state-mark', {
 
                 // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + totalEventCount + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
 
-                this.visualState.inputEvent = correspondingInputEvent;
+                this.visualState.currentInputEvent = correspondingInputEvent;
             }.bind(this);
             window.addEventListener('mousemove', moveHandler, false);
 
@@ -51,7 +72,7 @@ Vue.component('visual-state-mark', {
             upHandler = function(e) {
                 e.stopPropagation();
                 e.preventDefault();
-
+                this.visualState.showAllInputEvents = false;
                 window.removeEventListener('mousemove', moveHandler, false);
                 window.removeEventListener('mouseup', upHandler, false);
             }.bind(this);
@@ -240,10 +261,67 @@ timelineAreaVM = new Vue({
     }
 });
 
+Vue.component('input-event-mark', {
+    props: ['initialVisualState', 'initialInputEvent'],
+    template: `<div v-if="inputEvent !== undefined" :style="styleObject" v-on:mousedown="draggedInputEventMark"></div>`,
+    data: function() {
+        return { visualState: this.initialVisualState }
+    },
+    computed: {
+        inputEvent() {
+            if (this.visualState) {
+                return this.visualState.currentInputEvent
+            }
+            return this.initialInputEvent
+        },
+        styleObject() {
+            return {
+                borderRadius: '15px',
+                position: 'absolute',
+                left: this.inputEvent.pageX + 'px',
+                top: this.inputEvent.pageY + 'px',
+                width: '30px',
+                height: '30px',
+                backgroundColor: this.visualState ? 'red' : 'pink',
+                'z-index': 9999
+            };
+        }
+    },
+    methods: {
+        draggedInputEventMark(e) {
+            let mouseMoveHandler;
+
+            let startingMousePositionX = e.x;
+
+            let initialIndex = timelineAreaVM.inputEvents.indexOf(this.inputEvent);
+            mouseMoveHandler = function(e) {
+                let deltaX = e.x - startingMousePositionX
+                let indexVariation = Math.floor(deltaX / 2);
+                let newIndex = Math.max(Math.min(initialIndex + indexVariation, timelineAreaVM.inputEvents.length - 1), 0);
+                this.visualState.currentInputEvent = timelineAreaVM.inputEvents[newIndex];
+                this.visualState.showAllInputEvents = true;
+            }.bind(this)
+
+            let mouseUpHandler;
+            mouseUpHandler = function(e) {
+                this.visualState.showAllInputEvents = false;
+                window.removeEventListener('mousemove', mouseMoveHandler, false);
+                window.removeEventListener('mouseup', mouseUpHandler, false);
+            }.bind(this)
+
+            window.addEventListener('mousemove', mouseMoveHandler, false);
+            window.addEventListener('mouseup', mouseUpHandler, false);
+        }
+    }
+
+})
+
 var VisualState = Vue.extend({
     template: `<div class='visualStateContainer'>
+
                     <div v-on:mousedown='actionStarted' class='visualStateCanvas'>
-                        <div v-if="inputEvent !== undefined" :style="{borderRadius:'15px',position:'absolute',left:inputEvent.pageX + 'px',top:inputEvent.pageY +'px', width:'30px',height:'30px',backgroundColor:'red'}"></div>
+                        <input-event-mark v-for="anInputEvent in allInputEvents" v-if="showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
+                        <input-event-mark :initial-visual-state="this"></input-event-mark>
                     </div>
                     <div class="diffContainer">
                         <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
@@ -252,12 +330,14 @@ var VisualState = Vue.extend({
                 </div>`,
     data: function() {
         return {
-            inputEvent: undefined,
+            currentInputEvent: undefined,
             shapesDictionary: {},
             nextState: undefined,
             previousState: undefined,
             isDisplayingDiff: false,
-            diffText: ''
+            diffText: '',
+            showAllInputEvents: false,
+            allInputEvents: timelineAreaVM.inputEvents
         }
     },
     methods: {
