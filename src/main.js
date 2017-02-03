@@ -316,16 +316,43 @@ Vue.component('input-event-mark', {
 
 })
 
+Vue.component('diff-element', {
+    props: ['diffData'],
+    template: `"<a class='button'><i class='fa' v-bind:class="classObject"></i></a>"`,
+    data: function() {
+        return {}
+    },
+    computed: {
+        classObject: {
+            cache: false,
+            get: function() {
+                return {
+                    'fa-arrows-h': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x != this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y == this.diffData['translation'].newValue.y),
+                    'fa-arrows-v': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x == this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y != this.diffData['translation'].newValue.y),
+                    'fa-arrows': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x != this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y != this.diffData['translation'].newValue.y),
+                    'fa-expand fa-rotate-135': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w == this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
+                    'fa-expand fa-rotate-45': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h == this.diffData['scaling'].newValue.h),
+                    'fa-arrows-alt': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
+                    'fa-tint': this.diffData['backgroundColor'] != undefined,
+                    'fa-plus': this.diffData['added'] != undefined,
+                    'fa-minus': this.diffData['removed'] != undefined
+                }
+            }
+        }
+    }
+});
+
 var VisualState = Vue.extend({
     template: `<div class='visualStateContainer'>
-
                     <div v-on:mousedown='actionStarted' class='visualStateCanvas'>
                         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
                         <input-event-mark :initial-visual-state="this"></input-event-mark>
                     </div>
                     <div class="diffContainer">
                         <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
-                        <div v-show='isDisplayingDiff' class='box diffBox'>{{diffText}}</div>
+                        <div v-show='isDisplayingDiff' class='box diffBox'>
+                            <diff-element v-for="diff in differencesWithNextState" :diff-data="diff"></div>
+                        </div>
                     </div>
                 </div>`,
     data: function() {
@@ -335,9 +362,45 @@ var VisualState = Vue.extend({
             nextState: undefined,
             previousState: undefined,
             isDisplayingDiff: false,
-            diffText: '',
             showAllInputEvents: false,
             allInputEvents: timelineAreaVM.inputEvents
+        }
+    },
+    computed: {
+        differencesWithNextState: {
+            cache: false,
+            get: function() {
+                let result = []
+                this.shapesDictionary
+                if (this.hasNextState) {
+                    let comparedShapesKey = []
+                    for (let shapeKey in this.shapesDictionary) {
+                        comparedShapesKey.push(shapeKey)
+                        let aShape = this.shapesDictionary[shapeKey];
+                        let comparingShape = this.nextState.shapeFor(shapeKey)
+                        if (comparingShape) {
+                            for (let eachDiff of aShape.diffArray(comparingShape)) {
+                                result.push(eachDiff);
+                            }
+                        } else {
+                            // result.push('Removed Shape ' + aShape.version.model.id)
+                            result.push({ removed: { previousValue: undefined, newValue: aShape.version.model.id } })
+                        }
+                    }
+                    for (let nextShapeKey in this.nextState.shapesDictionary) {
+                        if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
+                            //key not found
+                            // result.push('Added Shape ' + nextShapeKey)
+                            result.push({ added: { previousValue: undefined, newValue: nextShapeKey } })
+                        }
+                    }
+                }
+                return result
+            }
+        },
+
+        hasNextState() {
+            return this.nextState !== undefined;
         }
     },
     methods: {
@@ -346,30 +409,6 @@ var VisualState = Vue.extend({
         },
         displayDiff() {
             this.isDisplayingDiff = !this.isDisplayingDiff;
-            if (!this.isDisplayingDiff) {
-                return;
-            }
-            let comparedShapesKey = []
-            this.diffText = ""
-            for (let shapeKey in this.shapesDictionary) {
-                comparedShapesKey.push(shapeKey)
-                let aShape = this.shapesDictionary[shapeKey];
-                let comparingShape = this.nextState.shapeFor(shapeKey)
-                if (comparingShape) {
-                    this.diffText += aShape.diff(comparingShape);
-                } else {
-                    this.diffText += 'Removed Shape ' + aShape.version.model.id + "\n"
-                }
-            }
-            for (let nextShapeKey in this.nextState.shapesDictionary) {
-                if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
-                    //key not found
-                    this.diffText += 'Added Shape ' + nextShapeKey + "\n"
-                }
-            }
-        },
-        hasNextState() {
-            return this.nextState !== undefined;
         },
         canvasElement() {
             return this.$el.getElementsByClassName("visualStateCanvas")[0]
@@ -539,7 +578,7 @@ var VisualState = Vue.extend({
 
             newShapeVM.$mount();
             this.canvasElement().appendChild(newShapeVM.$el);
-            this.shapesDictionary[newShapeVM.version.model.id] = newShapeVM;
+            Vue.set(this.shapesDictionary, newShapeVM.version.model.id, newShapeVM);
 
             return newShapeVM;
         },
@@ -623,16 +662,19 @@ var ShapeVM = Vue.extend({
         }
     },
     methods: {
-        diff(nextShapeWithTheSameModel) {
-            let changes = ""
+        diffArray(nextShapeWithTheSameModel) {
+            let changes = []
             if (!nextShapeWithTheSameModel.version.isFollowingMaster('backgroundColor')) {
-                changes += 'Changed color from ' + this.version.color + ' to ' + nextShapeWithTheSameModel.version.color + "\n";
+                // changes.push('Changed color from ' + this.version.color + ' to ' + nextShapeWithTheSameModel.version.color)
+                changes.push({ backgroundColor: { previousValue: this.version.color, newValue: nextShapeWithTheSameModel.version.color } })
             }
             if (!nextShapeWithTheSameModel.version.isFollowingMaster('translation')) {
-                changes += 'Changed position from ' + JSON.stringify(this.version.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.position) + "\n";
+                // changes.push('Changed position from ' + JSON.stringify(this.version.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.position))
+                changes.push({ translation: { previousValue: this.version.position, newValue: nextShapeWithTheSameModel.version.position } })
             }
             if (!nextShapeWithTheSameModel.version.isFollowingMaster('scaling')) {
-                changes += 'Changed size from ' + JSON.stringify(this.version.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.scale) + "\n";
+                // changes.push('Changed size from ' + JSON.stringify(this.version.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.scale))
+                changes.push({ scaling: { previousValue: this.version.scale, newValue: nextShapeWithTheSameModel.version.scale } })
             }
             return changes
         },
