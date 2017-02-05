@@ -1,17 +1,5 @@
 var socket = io.connect(window.location.href.split('/')[2]);
 
-
-var draggable = document.getElementsByClassName("draggable")[0];
-
-var isDragged = false;
-var isPlayback = false;
-
-var offset = { x: 0, y: 0 };
-
-var initialPosition = { x: document.body.clientWidth / 2 - draggable.offsetWidth / 2, y: document.body.clientHeight / 2 - draggable.offsetHeight / 2 };
-
-moveDraggableToInitialPosition()
-
 var eventsCache = [];
 
 function saveEvent(anEvent) {
@@ -33,47 +21,15 @@ document.body.addEventListener('touchmove', function (e) { e.preventDefault(); }
 document.body.addEventListener('touchend', function (e) { e.preventDefault(); });
 
 document.addEventListener("touchstart", function (event) {
-
-    var isInsideWidth = event.pageX > draggable.offsetLeft && event.pageX < (draggable.offsetLeft + draggable.offsetWidth);
-    var isInsideHeight = event.pageY > draggable.offsetTop && event.pageY < (draggable.offsetTop + draggable.offsetHeight);
-
-    if (isInsideWidth && isInsideHeight) {
-        // console.log("mousedown");
-
-        isDragged = true;
-
-        offset.x = event.pageX - draggable.offsetLeft;
-        offset.y = event.pageY - draggable.offsetTop;
-
-        if (!isPlayback) {
             saveEvent(event);
-        }
-    }
 });
 
 document.addEventListener("touchmove", function (event) {
-    if (isDragged) {
-        // console.log("mousemove");
-
-        // console.log("x: " + event.pageX);
-        // console.log("y: " + event.pageY);
-        draggable.style.left = (event.pageX - offset.x) + "px";
-        draggable.style.top = (event.pageY - offset.y) + "px";
-
-        if (!isPlayback) {
             saveEvent(event);
-        }
-    }
 });
 
 document.addEventListener("touchend", function (event) {
-    if (isDragged) {
-        // console.log("mouseup");
-        isDragged = false;
-        if (!isPlayback) {
             saveEvent(event);
-        }
-    }
 });
 
 function playEvents() {
@@ -83,8 +39,6 @@ function playEvents() {
     }
 
     moveDraggableToInitialPosition();
-
-    isPlayback = true;
 
     var isLast = false;
 
@@ -120,16 +74,5 @@ function dispathWaiting(aCachedEventObject, waitingTime, isLast) {
         }
 
     }, waitingTime);
-}
-
-function resetFigure() {
-    moveDraggableToInitialPosition();
-    eventsCache = [];
-    isPlayback = false;
-}
-
-function moveDraggableToInitialPosition() {
-    draggable.style.left = initialPosition.x + "px";
-    draggable.style.top = initialPosition.y + "px";
 }
 

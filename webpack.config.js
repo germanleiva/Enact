@@ -3,15 +3,23 @@ var webpack = require('webpack')
 var HtmlWebpackPlugin = require('html-webpack-plugin')
 
 module.exports = {
-    entry: [
-        'webpack/hot/dev-server',
-        'webpack-hot-middleware/client',
-        './src/main.js'
-    ],
+    entry: {
+        desktop: [
+            'webpack/hot/dev-server',
+            'webpack-hot-middleware/client',
+            './src/desktop.js'
+        ],
+        mobile: [
+            'webpack/hot/dev-server',
+            'webpack-hot-middleware/client',
+            './src/mobile.js'
+        ]
+    },
     output: {
         path: path.resolve(__dirname, './dist'),
         publicPath: '/dist/',
-        filename: 'build.js'
+        filename: '[name].build.js',
+        chunkFilename: "[id].chunk.js"
     },
     module: {
         rules: [{
@@ -63,13 +71,24 @@ module.exports = {
     devtool: '#eval-source-map',
     plugins: [
         new HtmlWebpackPlugin({
-            filename: 'index.html',
-            template: path.resolve(__dirname, 'src/index.html'),
-            inject: true
+            filename: 'desktop.html',
+            template: path.resolve(__dirname, 'src/desktop.html'),
+            inject: true,
+            chunks: ['commons','desktop']
         }),
         new webpack.optimize.OccurrenceOrderPlugin(),
         new webpack.HotModuleReplacementPlugin(),
-        new webpack.NoEmitOnErrorsPlugin()
+        new webpack.NoEmitOnErrorsPlugin(),
+        new HtmlWebpackPlugin({
+            filename: 'mobile.html',
+            template: path.resolve(__dirname, 'src/mobile.html'),
+            inject: true,
+            chunks: ['commons','mobile']
+        }),
+        new webpack.optimize.CommonsChunkPlugin({
+            filename: "commons.js",
+            name: "commons"
+        })
     ]
 }
 

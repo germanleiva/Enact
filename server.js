@@ -25,7 +25,7 @@ if (app.settings.env === 'development') {
     app.use(express.static(__dirname + '/dist'));
 }
 
-app.use('/client', express.static(__dirname + '/client'));
+// app.use('/client', express.static(__dirname + '/client'));
 // app.use('/', express.static(__dirname));
 
 // app.get('/desktop', function(req, res){

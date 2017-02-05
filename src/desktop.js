@@ -5,7 +5,7 @@ import io from 'socket.io-client';
 
 require('bulma/css/bulma.css')
 require('font-awesome/css/font-awesome.css')
-require('./index.css')
+require('./desktop.css')
 
 // import store from './store.js'
 
@@ -292,7 +292,6 @@ timelineAreaVM = new Vue({
 
                 return style.sheet;
             })();
-
 
             sheet.insertRule(`.animatable {
     width: 100px;
