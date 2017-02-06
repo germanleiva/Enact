@@ -19,7 +19,7 @@ Vue.component('visual-state-mark', {
     data: function() {
         return { visualState: this.initialVisualState }
     },
-    template: `<div class="mark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>`,
+    template: `<div class="mark button is-dark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>`,
     computed: {
         styleObject() {
             return {
@@ -248,25 +248,6 @@ class ShapeModelVersion {
     }
 }
 
-
-let playerVM = new Vue({
-    el: '#player',
-    data: {
-        styleObject: {
-            backgroundColor: 'blue',
-            width: '375px',
-            height: '667px',
-            float: 'left'
-        }
-    },
-    computed: {
-
-    },
-    methods: {
-
-    }
-});
-
 timelineAreaVM = new Vue({
     el: '#timelineArea',
     data: {
@@ -282,12 +263,25 @@ timelineAreaVM = new Vue({
                 let shapeKeyframes = {}
                 animation['shape'+eachShapeKey] = shapeKeyframes
 
-                for (let eachVisualState of outputAreaVM.visualStates) {
-                    let shapeInThisVisualState = eachVisualState.shapeFor(eachShapeKey)
-                    let currentInputEventIndex = timelineAreaVM.inputEvents.indexOf(eachVisualState.currentInputEvent)
-                    let currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length),0);
+                let createKeyframe = function(aVisualState,currentPercentage) {
+                    let currentInputEventIndex = timelineAreaVM.inputEvents.indexOf(aVisualState.currentInputEvent)
+                    if (currentPercentage == undefined) {
+                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length),0);
+                    }
+                    let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     shapeKeyframes[currentPercentage+'%'] = shapeInThisVisualState.$el.style.cssText;
-            }
+                }
+                for (let eachVisualState of outputAreaVM.visualStates) {
+                    createKeyframe(eachVisualState)
+                }
+
+                if (!shapeKeyframes['0%']) {
+                    createKeyframe(outputAreaVM.visualStates.first(),0)
+                }
+
+                if (!shapeKeyframes['100%']) {
+                    createKeyframe(outputAreaVM.visualStates.last(),100)
+                }
             }
 
             socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })

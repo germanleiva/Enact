@@ -3,9 +3,7 @@ import io from 'socket.io-client';
 
 // import App from './App.vue'
 
-require('bulma/css/bulma.css')
-require('font-awesome/css/font-awesome.css')
-require('./mobile.css')
+// require('./mobile.css')
 
 // import store from './store.js'
 
@@ -47,7 +45,34 @@ socket.on('message-from-server', function(data) {
             // Create the <style> tag
             debugger;
             var style = document.getElementById('customStyle')
-            if (!style) {
+            if (style) {
+                console.log("I already have a stylesheet so we are trying to remove the old keyframe rules")
+                    // style.disabled = true
+                    // style.parentElement.removeChild(style);
+                    // loop through all the rules
+
+                    var rules = Array.from(style.sheet.cssRules)
+                    for (var i = 0; i < rules.length; i++) {
+                        let keyframeParentRule = rules[i]
+                        let keyTexts = []
+                        for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
+                            keyTexts.push(keyframeParentRule.cssRules[j].keyText);
+                        }
+                        for (var eachKeyText of keyTexts) {
+                            keyframeParentRule.deleteRule(eachKeyText);
+                            // styleSheet.deleteRule(eachKeyText);
+                            // styleSheet.removeRule(eachKeyText);
+                        }
+
+                        style.sheet.removeRule(keyframeParentRule)
+                        // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
+                        // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
+                        //     return ss[i].cssRules[j];
+                    }
+
+
+             } else {
+
                 style = document.createElement("style");
                 style.setAttribute('id','customStyle');
                 // Add a media (and/or media query) here if you'd like!
@@ -59,20 +84,7 @@ socket.on('message-from-server', function(data) {
 
                 // WebKit hack :(
                 style.appendChild(document.createTextNode(""));
-            } else {
-                console.log("I already have a stylesheet so we are trying to remove the old keyframe rules")
-
-                    // loop through all the rules
-
-                    var rules = Array.from(style.sheet.cssRules)
-                    for (var i = 0; i < rules.length; i++) {
-                        style.sheet.removeRule(rules[i])
-                        // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
-                        // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
-                        //     return ss[i].cssRules[j];
-                    }
-
-            }
+             }
 
             return style.sheet;
         })();
@@ -86,11 +98,8 @@ socket.on('message-from-server', function(data) {
                 //This is an input not a shape
                 continue;
             }
-            if (eachShapeElement.style.animation.length == 0) {
-                eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s";
-                eachShapeElement.style['-webkit-animation'] = "mymove"+shapeModelId +" 2s infinite"; /* Safari 4.0 - 8.0 */
-            }
-            var keyframeAnimationText = '@keyframes mymove' + shapeModelId + ' {\n'
+
+            var keyframeAnimationText = '@-webkit-keyframes mymove' + shapeModelId + ' {\n'
             for (var percentageTextKey in newAnimation[shapeModelId]) {
                 var shapeStyleObject = newAnimation[shapeModelId][percentageTextKey]
                 keyframeAnimationText += '' + percentageTextKey + ' {' + shapeStyleObject + '}\n'
@@ -114,6 +123,18 @@ socket.on('message-from-server', function(data) {
 // }`, 1);
 console.log(keyframeAnimationText)
             sheet.insertRule(keyframeAnimationText,0)
+
+            if (eachShapeElement.style.webkitAnimation.length == 0) {
+                eachShapeElement.addEventListener("webkitAnimationEnd", function(e){
+                   eachShapeElement.style.webkitAnimation = "none"
+                }, false);
+            }
+            //     // eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s infinite";
+
+            //     // animation: name duration timing-function delay iteration-count direction fill-mode play-state;
+            //     eachShapeElement.style.webkitAnimation = "none"
+            // }
+            eachShapeElement.style.webkitAnimation = "mymove"+shapeModelId +" 3s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
         }
 
 
