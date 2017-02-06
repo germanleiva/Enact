@@ -9,21 +9,20 @@ require('./mobile.css')
 
 // import store from './store.js'
 
-let socket = io.connect(window.location.href.split('/')[2]);
+var socket = io.connect(window.location.href.split('/')[2]);
 
 socket.on('message-from-server', function(data) {
     console.log( 'receivekdahjskdhasdlas;dljasjhd')
     if (data.type == "NEW_SHAPE") {
         console.log("Received something from server");
     // console.log(data.message);
-        let parentDOM = document.getElementById("mobileCanvas")
+        var parentDOM = document.getElementById("mobileCanvas")
         parentDOM.innerHTML = data.message;
     }
     if (data.type == "NEW_ANIMATION") {
         console.log("Received NEW_ANIMATION: "+ JSON.stringify(data.message))
 
-        debugger;
-        let newAnimation = data.message;
+        var newAnimation = data.message;
 
         // {
         //     shape0: {
@@ -43,11 +42,11 @@ socket.on('message-from-server', function(data) {
         //     ....
         // }
 
-        // let indexCSS = document.styleSheets[document.styleSheets.length - 1];
+        // var indexCSS = document.styleSheets[document.styleSheets.length - 1];
         var sheet = (function() {
             // Create the <style> tag
             debugger;
-            let style = document.getElementById('customStyle')
+            var style = document.getElementById('customStyle')
             if (!style) {
                 style = document.createElement("style");
                 style.setAttribute('id','customStyle');
@@ -63,10 +62,10 @@ socket.on('message-from-server', function(data) {
             } else {
                 console.log("I already have a stylesheet so we are trying to remove the old keyframe rules")
 
-
                     // loop through all the rules
-                    let rules = Array.from(style.sheet.cssRules)
-                    for (let i = 0; i < rules.length; i++) {
+
+                    var rules = Array.from(style.sheet.cssRules)
+                    for (var i = 0; i < rules.length; i++) {
                         style.sheet.removeRule(rules[i])
                         // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
                         // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
@@ -78,11 +77,11 @@ socket.on('message-from-server', function(data) {
             return style.sheet;
         })();
 
-        let shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByTagName("div"));
+        var shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByTagName("div"));
 
         for (var i = 0; i < shapesElements.length; i++) {
-            let eachShapeElement = shapesElements[i];
-            let shapeModelId = eachShapeElement.getAttribute("id");
+            var eachShapeElement = shapesElements[i];
+            var shapeModelId = eachShapeElement.getAttribute("id");
             if (!shapeModelId) {
                 //This is an input not a shape
                 continue;
@@ -91,9 +90,9 @@ socket.on('message-from-server', function(data) {
                 eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s";
                 eachShapeElement.style['-webkit-animation'] = "mymove"+shapeModelId +" 2s infinite"; /* Safari 4.0 - 8.0 */
             }
-            let keyframeAnimationText = '@keyframes mymove' + shapeModelId + ' {\n'
-            for (let percentageTextKey in newAnimation[shapeModelId]) {
-                let shapeStyleObject = newAnimation[shapeModelId][percentageTextKey]
+            var keyframeAnimationText = '@keyframes mymove' + shapeModelId + ' {\n'
+            for (var percentageTextKey in newAnimation[shapeModelId]) {
+                var shapeStyleObject = newAnimation[shapeModelId][percentageTextKey]
                 keyframeAnimationText += '' + percentageTextKey + ' {' + shapeStyleObject + '}\n'
             }
             keyframeAnimationText += '}'
@@ -114,7 +113,7 @@ socket.on('message-from-server', function(data) {
 //     100% {top: 100px;}
 // }`, 1);
 console.log(keyframeAnimationText)
-            sheet.insertRule(keyframeAnimationText)
+            sheet.insertRule(keyframeAnimationText,0)
         }
 
 

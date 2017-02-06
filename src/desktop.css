@@ -14,8 +14,9 @@
 }
 
 .diffContainer{
+    width: 110px;
     display: flex; /*This is to align the diff button and the diff box*/
-    flex-direction: column; /*To have the child vertically align
+    flex-direction: column; /*To have the child vertically align*/
 }
 
 .visualStateDiff { /*MAybe we need to rename this as diffButton or shomething*/
@@ -23,8 +24,7 @@
 }
 
 .diffBox {
-    margin-top: 5px;
-    max-width: 150px;
+    margin-top: 3px;
     /*I need to remove white space
     to keep the text inside*/
     white-space: normal;

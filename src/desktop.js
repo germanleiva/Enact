@@ -387,7 +387,7 @@ var VisualState = Vue.extend({
                         <input-event-mark :initial-visual-state="this"></input-event-mark>
                     </div>
                     <div class="diffContainer">
-                        <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'>Diff</a>
+                        <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
                         <div v-show='isDisplayingDiff' class='box diffBox'>
                             <diff-element v-for="diff in differencesWithNextState" :diff-data="diff"></div>
                         </div>
