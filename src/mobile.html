@@ -1,40 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
 
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <title>Enact</title>
-    <!-- <link rel="stylesheet" type="text/css" href="./node_modules/bulma/css/bulma.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="./node_modules/font-awesome/css/font-awesome.css"> -->
-    <!-- <link rel="stylesheet" type="text/css" href="index.css"> -->
+  <meta charset="utf-8">
+
+  <title>Enact Mobile</title>
+  <meta name="description" content="Enact Mobile">
+  <meta name="author" content="GmanLeiva">
+  <meta name="viewport" content="width=device-width,height=device-height,user-scalable=no,initial-scale=1.0,maximum-scale=1.0,minimum-scale=1.0">
+
+  <!--iPhone options-->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <meta name="apple-mobile-web-app-title" content="Enact">
+
+  <!--<script src="pep.js"></script>-->
+
 </head>
 
 <body>
-    <div id="toolbar">
-        <div class="block">
-            <div class="control is-grouped">
-                <a class="button is-primary is-alone" id="title">ENACT</a>
-                <p class="control has-addons">
-                    <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
-                    <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
-                </p>
-                <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span></a>
-                <input type="color" @change="changeColor()" id="color-picker" class="button" id="color-picker" v-model="currentColor">
-                <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
-            </div>
-        </div>
-    </div>
-    <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
-    <div id='player' :style="styleObject">
-        <div class="animatable"></div>
-    </div>
-    <div id="timelineArea">
-        <a class="button is-alone" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
-        <div class="inputTimeline">
-            <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
-        </div>
-        <canvas id="myCanvas" width="375" height="667"></canvas>
-    </div>
 </body>
-
 </html>
