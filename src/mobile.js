@@ -10,15 +10,15 @@ import io from 'socket.io-client';
 var socket = io.connect(window.location.href.split('/')[2]);
 
 socket.on('message-from-server', function(data) {
-    console.log( 'receivekdahjskdhasdlas;dljasjhd')
+    console.log('receivekdahjskdhasdlas;dljasjhd')
     if (data.type == "NEW_SHAPE") {
         console.log("Received something from server");
-    // console.log(data.message);
+        // console.log(data.message);
         var parentDOM = document.getElementById("mobileCanvas")
         parentDOM.innerHTML = data.message;
     }
     if (data.type == "NEW_ANIMATION") {
-        console.log("Received NEW_ANIMATION: "+ JSON.stringify(data.message))
+        console.log("Received NEW_ANIMATION: " + JSON.stringify(data.message))
 
         var newAnimation = data.message;
 
@@ -43,7 +43,7 @@ socket.on('message-from-server', function(data) {
         // var indexCSS = document.styleSheets[document.styleSheets.length - 1];
         var sheet = (function() {
             // Create the <style> tag
-            debugger;
+
             var style = document.getElementById('customStyle')
             if (style) {
                 console.log("I already have a stylesheet so we are trying to remove the old keyframe rules")
@@ -51,30 +51,30 @@ socket.on('message-from-server', function(data) {
                     // style.parentElement.removeChild(style);
                     // loop through all the rules
 
-                    var rules = Array.from(style.sheet.cssRules)
-                    for (var i = 0; i < rules.length; i++) {
-                        let keyframeParentRule = rules[i]
-                        let keyTexts = []
-                        for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
-                            keyTexts.push(keyframeParentRule.cssRules[j].keyText);
-                        }
-                        for (var eachKeyText of keyTexts) {
-                            keyframeParentRule.deleteRule(eachKeyText);
-                            // styleSheet.deleteRule(eachKeyText);
-                            // styleSheet.removeRule(eachKeyText);
-                        }
+                var rules = Array.from(style.sheet.cssRules)
+                for (var i = 0; i < rules.length; i++) {
+                    let keyframeParentRule = rules[i]
+                    let keyTexts = []
+                    for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
+                        keyTexts.push(keyframeParentRule.cssRules[j].keyText);
+                    }
+                    for (var eachKeyText of keyTexts) {
+                        keyframeParentRule.deleteRule(eachKeyText);
+                        // styleSheet.deleteRule(eachKeyText);
+                        // styleSheet.removeRule(eachKeyText);
+                    }
 
-                        style.sheet.removeRule(keyframeParentRule)
+                    style.sheet.removeRule(keyframeParentRule)
                         // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
                         // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
                         //     return ss[i].cssRules[j];
-                    }
+                }
 
 
-             } else {
+            } else {
 
                 style = document.createElement("style");
-                style.setAttribute('id','customStyle');
+                style.setAttribute('id', 'customStyle');
                 // Add a media (and/or media query) here if you'd like!
                 // style.setAttribute("media", "screen")
                 // style.setAttribute("media", "only screen and (max-width : 1024px)")
@@ -84,7 +84,7 @@ socket.on('message-from-server', function(data) {
 
                 // WebKit hack :(
                 style.appendChild(document.createTextNode(""));
-             }
+            }
 
             return style.sheet;
         })();
@@ -106,27 +106,27 @@ socket.on('message-from-server', function(data) {
             }
             keyframeAnimationText += '}'
 
-//             sheet.insertRule(`.animatable {
-//     width: 100px;
-//     height: 100px;
-//     background: red;
-//     position: relative;
-//     -webkit-animation: mymove 5s infinite; /* Safari 4.0 - 8.0 */
-//     animation: mymove 5s infinite;
-// }`, 0);
+            //             sheet.insertRule(`.animatable {
+            //     width: 100px;
+            //     height: 100px;
+            //     background: red;
+            //     position: relative;
+            //     -webkit-animation: mymove 5s infinite; /* Safari 4.0 - 8.0 */
+            //     animation: mymove 5s infinite;
+            // }`, 0);
 
-//             sheet.insertRule(`@keyframes mymove {
-//     0%   {top: 0px;}
-//     25%  {top: 200px;}
-//     75%  {top: 50px}
-//     100% {top: 100px;}
-// }`, 1);
-console.log(keyframeAnimationText)
-            sheet.insertRule(keyframeAnimationText,0)
+            //             sheet.insertRule(`@keyframes mymove {
+            //     0%   {top: 0px;}
+            //     25%  {top: 200px;}
+            //     75%  {top: 50px}
+            //     100% {top: 100px;}
+            // }`, 1);
+            console.log(keyframeAnimationText)
+            sheet.insertRule(keyframeAnimationText, 0)
 
             if (eachShapeElement.style.webkitAnimation.length == 0) {
-                eachShapeElement.addEventListener("webkitAnimationEnd", function(e){
-                   eachShapeElement.style.webkitAnimation = "none"
+                eachShapeElement.addEventListener("webkitAnimationEnd", function(e) {
+                    eachShapeElement.style.webkitAnimation = "none"
                 }, false);
             }
             //     // eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s infinite";
@@ -134,7 +134,7 @@ console.log(keyframeAnimationText)
             //     // animation: name duration timing-function delay iteration-count direction fill-mode play-state;
             //     eachShapeElement.style.webkitAnimation = "none"
             // }
-            eachShapeElement.style.webkitAnimation = "mymove"+shapeModelId +" 3s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
+            eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s infinite normal forwards running"; /* Safari 4.0 - 8.0 */
         }
 
 
@@ -147,7 +147,11 @@ console.log(keyframeAnimationText)
 var eventsCache = [];
 
 function saveEvent(anEvent) {
-    var anEvent = { type: anEvent.type, pageX: anEvent.pageX, pageY: anEvent.pageY, timeStamp: anEvent.timeStamp, window: {width: window.outerWidth, height: window.outerHeight } }
+    let touches = []
+    for (let eachTouch of anEvent.touches) {
+        touches.push({ x: eachTouch.pageX, y: eachTouch.pageY })
+    }
+    var anEvent = { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }
     socket.emit('message-from-device', { message: anEvent });
 
     eventsCache.push(anEvent);
@@ -160,36 +164,42 @@ function saveEvent(anEvent) {
 //   event.preventDefault();
 // }, false);
 
-document.body.addEventListener('touchstart', function (e) { e.preventDefault(); });
-document.body.addEventListener('touchmove', function (e) { e.preventDefault(); });
-document.body.addEventListener('touchend', function (e) { e.preventDefault(); });
+document.body.addEventListener('touchstart', function(e) { e.preventDefault(); });
+document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
+document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
-document.addEventListener("touchstart", function (event) {
-            saveEvent(event);
+document.addEventListener("touchstart", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
-document.addEventListener("touchmove", function (event) {
-            saveEvent(event);
+document.addEventListener("touchmove", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
-document.addEventListener("touchend", function (event) {
-            saveEvent(event);
+document.addEventListener("touchend", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
-document.body.addEventListener('mousedown', function (e) { e.preventDefault(); });
-document.body.addEventListener('mousemove', function (e) { e.preventDefault(); });
-document.body.addEventListener('mouseup', function (e) { e.preventDefault(); });
+document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
+document.body.addEventListener('mousemove', function(e) { e.preventDefault(); });
+document.body.addEventListener('mouseup', function(e) { e.preventDefault(); });
 
-document.addEventListener("mousedown", function (event) {
-            saveEvent(event);
+document.addEventListener("mousedown", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
-document.addEventListener("mousemove", function (event) {
-            saveEvent(event);
+document.addEventListener("mousemove", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
-document.addEventListener("mouseup", function (event) {
-            saveEvent(event);
+document.addEventListener("mouseup", function(event) {
+    event.preventDefault();
+    saveEvent(event);
 });
 
 function playEvents() {
@@ -221,7 +231,7 @@ function playEvents() {
 }
 
 function dispathWaiting(aCachedEventObject, waitingTime, isLast) {
-    setTimeout(function () {
+    setTimeout(function() {
         var newEvent = new MouseEvent(aCachedEventObject.type, { clientX: aCachedEventObject.pageX, clientY: aCachedEventObject.pageY });
 
         // cachedEventObject.timeStamp = new Date().getTime();
@@ -235,4 +245,3 @@ function dispathWaiting(aCachedEventObject, waitingTime, isLast) {
 
     }, waitingTime);
 }
-

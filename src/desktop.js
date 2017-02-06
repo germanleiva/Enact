@@ -291,7 +291,7 @@ timelineAreaVM = new Vue({
 
 Vue.component('input-event-mark', {
     props: ['initialVisualState', 'initialInputEvent'],
-    template: `<div v-if="inputEvent !== undefined" :style="styleObject" v-on:mousedown="draggedInputEventMark"></div>`,
+    template: `<div v-if="inputEvent !== undefined"><div v-for="touch in inputEvent.touches" :style="styleObject(touch)" v-on:mousedown="draggedInputEventMark"></div></div>`,
     data: function() {
         return { visualState: this.initialVisualState }
     },
@@ -301,18 +301,6 @@ Vue.component('input-event-mark', {
                 return this.visualState.currentInputEvent
             }
             return this.initialInputEvent
-        },
-        styleObject() {
-            return {
-                borderRadius: '15px',
-                position: 'absolute',
-                left: this.inputEvent.pageX + 'px',
-                top: this.inputEvent.pageY + 'px',
-                width: '30px',
-                height: '30px',
-                backgroundColor: this.visualState ? 'red' : 'pink',
-                'z-index': 9999
-            };
         }
     },
     methods: {
@@ -339,6 +327,18 @@ Vue.component('input-event-mark', {
 
             window.addEventListener('mousemove', mouseMoveHandler, false);
             window.addEventListener('mouseup', mouseUpHandler, false);
+        },
+        styleObject(aTouch) {
+            return {
+                borderRadius: '15px',
+                position: 'absolute',
+                left: aTouch.x + 'px',
+                top: aTouch.y + 'px',
+                width: '30px',
+                height: '30px',
+                backgroundColor: this.visualState ? 'red' : 'pink',
+                'z-index': 9999
+            };
         }
     }
 
@@ -430,8 +430,14 @@ var VisualState = Vue.extend({
                     if (this.currentInputEvent) {
                         if (this.nextState.currentInputEvent) {
                             //Both states have an input event
-                            if (this.currentInputEvent.pageX != this.nextState.currentInputEvent.pageX || this.currentInputEvent.pageY != this.nextState.currentInputEvent.pageY) {
-                                result.push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.pageX, y: this.currentInputEvent.pageY }, newValue: { x: this.nextState.currentInputEvent.pageX, y: this.nextState.currentInputEvent.pageY } } })
+                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length ) {
+                                //TODO there's a difference that needs to be informed
+                            } else {
+                                for (let i=0;i<this.currentInputEvent.touches.length;i++) {
+                                    if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
+                                        result.push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                    }
+                                }
                             }
                         } else {
                             //The next state removed the input event or didn't set one
@@ -1039,30 +1045,33 @@ window.addEventListener('load', function(e) {
     // context.lineTo(200, 100);
     // context.stroke();
 
+    function drawTouches() {
+        let points = timelineAreaVM.inputEvents;
+         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+         context.lineWidth = 3;
+         for (let i = 1; i < points.length; i++) {
+            for (let j = 0; j < Math.max(Math.min(points[i-1].touches.length,points[i].touches.length),1) ; j++) {
+                context.beginPath();
+                 context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
+                 context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
+                 context.strokeStyle = "black";
+                 context.stroke();
+            }
+         }
+     }
+
     socket.on('message-from-server', function(data) {
         // console.log(data)
-        let positionX = data.message.pageX;
-        let positionY = data.message.pageY;
+        let anInputEvent = data.message
 
-        context.strokeStyle = "#df4b26";
-        context.lineJoin = "round";
-        context.lineWidth = 5;
-
-        if (data.message.type == "touchstart") {
+        if (anInputEvent.type == "touchstart") {
             timelineAreaVM.inputEvents.removeAll();
-            context.clearRect(0, 0, context.canvas.width, context.canvas.height); // Clears the canvas
-            context.beginPath();
-            context.moveTo(positionX, positionY);
-        } else {
-
-            context.lineTo(positionX, positionY);
-            context.closePath();
-            context.stroke();
-
-            context.moveTo(positionX, positionY);
+        } else if (anInputEvent.type == 'touchmove') {
+             drawTouches()
+        } else if (anInputEvent.type == 'touchend') {
 
         }
 
-        timelineAreaVM.inputEvents.push(data.message);
+        timelineAreaVM.inputEvents.push(anInputEvent);
     });
 });
