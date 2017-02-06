@@ -275,39 +275,22 @@ timelineAreaVM = new Vue({
     },
     methods: {
         startPlaying() {
-            // let indexCSS = document.styleSheets[document.styleSheets.length - 1];
-            var sheet = (function() {
-                // Create the <style> tag
-                var style = document.createElement("style");
+            let animation = {}
 
-                // Add a media (and/or media query) here if you'd like!
-                // style.setAttribute("media", "screen")
-                // style.setAttribute("media", "only screen and (max-width : 1024px)")
+            let allTheShapes = outputAreaVM.visualStates[0].shapesDictionary //I know this is wrong, FIX IT
+            for (let eachShapeKey in allTheShapes) {
+                let shapeKeyframes = {}
+                animation['shape'+eachShapeKey] = shapeKeyframes
 
-                // WebKit hack :(
-                style.appendChild(document.createTextNode(""));
+                for (let eachVisualState of outputAreaVM.visualStates) {
+                    let shapeInThisVisualState = eachVisualState.shapeFor(eachShapeKey)
+                    let currentInputEventIndex = timelineAreaVM.inputEvents.indexOf(eachVisualState.currentInputEvent)
+                    let currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length),0);
+                    shapeKeyframes[currentPercentage+'%'] = shapeInThisVisualState.$el.style.cssText;
+            }
+            }
 
-                // Add the <style> element to the page
-                document.head.appendChild(style);
-
-                return style.sheet;
-            })();
-
-            sheet.insertRule(`.animatable {
-    width: 100px;
-    height: 100px;
-    background: red;
-    position: relative;
-    -webkit-animation: mymove 5s infinite; /* Safari 4.0 - 8.0 */
-    animation: mymove 5s infinite;
-}`,0);
-
-            sheet.insertRule(`@keyframes mymove {
-    0%   {top: 0px;}
-    25%  {top: 200px;}
-    75%  {top: 50px}
-    100% {top: 100px;}
-}`, 1);
+            socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
         }
     }
 });
@@ -562,6 +545,10 @@ var VisualState = Vue.extend({
             if (this.nextState) {
                 this.nextState.didCreateShape(newShapeVM, this);
             }
+            if (outputAreaVM.visualStates[0] === this) {
+                let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
+                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
+            }
         },
 
         updateShapeProperties: function(e, newShapeVM, startingWindowMousePosition) {
@@ -712,7 +699,7 @@ class Handler {
 }
 
 var ShapeVM = Vue.extend({
-    template: `<div v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>`,
+    template: `<div :id="'shape'+version.model.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>`,
     data: function() {
         return {
             visualState: undefined,

@@ -39,7 +39,14 @@ io.on('connection', function(socket){
   });
   socket.on('message-from-device',function(data) {
     // console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
-    io.emit('message-from-server', data);
+
+    // sending to all clients except sender
+    socket.broadcast.emit('message-from-server',data);
+  })
+  socket.on('message-from-desktop',function(data) {
+    // THIS SHOULD SEND THE VisualStateCanvasHTML as the message of the data
+    console.log("Received something from desktop")
+    socket.broadcast.emit('message-from-server',data);
   })
 });
 
