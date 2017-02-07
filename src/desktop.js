@@ -252,9 +252,16 @@ timelineAreaVM = new Vue({
     el: '#timelineArea',
     data: {
         visualStates: [],
-        inputEvents: []
+        inputEvents: [],
+        isRecording: false
     },
     methods: {
+        toggleRecording() {
+            this.isRecording = !this.isRecording;
+            if (this.isRecording) {
+                socket.emit('message-from-desktop', { type: "START_RECORDING", message: undefined })
+            }
+        },
         startPlaying() {
             let animation = {}
 
@@ -1075,16 +1082,27 @@ window.addEventListener('load', function(e) {
         }
     }
 
+    let amountOfTouchesLeft = 0
+
     socket.on('message-from-server', function(data) {
         // console.log(data)
         let anInputEvent = data.message
 
-        if (anInputEvent.type == "touchstart") {
-            timelineAreaVM.inputEvents.removeAll();
-        } else if (anInputEvent.type == 'touchmove') {
-            drawTouches()
-        } else if (anInputEvent.type == 'touchend') {
+        if (anInputEvent.type == 'touchend') {
+            amountOfTouchesLeft -= 1;
+            if (amountOfTouchesLeft == 0) {
+                timelineAreaVM.isRecording = false
+            }
+        } else {
+            amountOfTouchesLeft = Math.max(amountOfTouchesLeft,anInputEvent.touches.length)
 
+            if (anInputEvent.type == "touchstart") {
+                timelineAreaVM.inputEvents.removeAll();
+            } else if (anInputEvent.type == 'touchmove') {
+                drawTouches()
+            } else {
+                console.log("UNKNOWN INPUT TYPE");
+            }
         }
 
         timelineAreaVM.inputEvents.push(anInputEvent);

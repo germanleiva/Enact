@@ -9,8 +9,25 @@ import io from 'socket.io-client';
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
+let mobileCanvasVM = new Vue({
+    el: '#mobileCanvas',
+    data: {
+        isRecording: false
+    },
+    computed: {
+        styleObject: {
+            'backgroundColor' : this.isRecording ? 'gray' : 'white'
+        }
+    }
+})
+
 socket.on('message-from-server', function(data) {
-    console.log('receivekdahjskdhasdlas;dljasjhd')
+    if (data.type == "START_RECORDING") {
+        mobileCanvasVM.isRecording = true;
+    }
+    if (data.type == "STOP_RECORDING") {
+        mobileCanvasVM.isRecording = false;
+    }
     if (data.type == "NEW_SHAPE") {
         console.log("Received something from server");
         // console.log(data.message);
@@ -171,17 +188,23 @@ document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
 document.addEventListener("touchstart", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 document.addEventListener("touchmove", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 document.addEventListener("touchend", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
@@ -190,17 +213,23 @@ document.body.addEventListener('mouseup', function(e) { e.preventDefault(); });
 
 document.addEventListener("mousedown", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 document.addEventListener("mousemove", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 document.addEventListener("mouseup", function(event) {
     event.preventDefault();
-    saveEvent(event);
+    if (mobileCanvasVM.isRecording) {
+        saveEvent(event);
+    }
 });
 
 function playEvents() {

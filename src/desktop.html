@@ -23,6 +23,7 @@
     </div>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
     <div id="timelineArea">
+        <a class="button is-medium" :class="{'is-inverted' : !isRecording , ' is-danger' : isRecording}" v-on:click="toggleRecording"><span class="icon is-small"><i :class="{'fa' : true , 'fa-circle' : !isRecording, 'fa-square' : isRecording}"></i></span></a>
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
         </div>

@@ -95,7 +95,7 @@
     height: 40px;
     background-color: #CCC;
     position:relative;
-    margin-right: 5px;
+    margin: 0px 5px; //0px top bottom and 5px left right
     border-radius: 3px;
 }
 
