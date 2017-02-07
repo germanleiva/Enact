@@ -3,7 +3,7 @@ import io from 'socket.io-client';
 
 // import App from './App.vue'
 
-// require('./mobile.css')
+require('./mobile.css')
 
 // import store from './store.js'
 
@@ -15,8 +15,8 @@ let mobileCanvasVM = new Vue({
         isRecording: false
     },
     computed: {
-        styleObject: {
-            'backgroundColor' : this.isRecording ? 'gray' : 'white'
+        styleObject() {
+            return {'backgroundColor' : (this.isRecording ? 'red' : 'white'), width: '375px', height: '667px'}
         }
     }
 })

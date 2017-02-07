@@ -1092,6 +1092,7 @@ window.addEventListener('load', function(e) {
             amountOfTouchesLeft -= 1;
             if (amountOfTouchesLeft == 0) {
                 timelineAreaVM.isRecording = false
+                socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
             }
         } else {
             amountOfTouchesLeft = Math.max(amountOfTouchesLeft,anInputEvent.touches.length)
