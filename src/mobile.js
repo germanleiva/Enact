@@ -91,12 +91,13 @@ socket.on('message-from-server', function(data) {
 
         var shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByTagName("div"));
 
-        for (var i = 0; i < shapesElements.length; i++) {
-            var eachShapeElement = shapesElements[i];
-            var shapeModelId = eachShapeElement.getAttribute("id");
-            if (!shapeModelId) {
-                //This is an input not a shape
-                continue;
+        for (var shapeModelId in newAnimation) {
+            var eachShapeElement = document.getElementById(shapeModelId)
+            if (!eachShapeElement) {
+                eachShapeElement = document.createElement('div');
+                eachShapeElement.setAttribute('id',shapeModelId);
+                document.getElementById('mobileCanvas').appendChild(eachShapeElement);
+                eachShapeElement.style = newAnimation[shapeModelId]['0%']
             }
 
             var keyframeAnimationText = '@-webkit-keyframes mymove' + shapeModelId + ' {\n'

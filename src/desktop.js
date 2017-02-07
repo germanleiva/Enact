@@ -258,29 +258,44 @@ timelineAreaVM = new Vue({
         startPlaying() {
             let animation = {}
 
-            let allTheShapes = outputAreaVM.visualStates[0].shapesDictionary //I know this is wrong, FIX IT
-            for (let eachShapeKey in allTheShapes) {
+            let hiddedShapesKeys = []
+            for (let eachShapeKey = 0; eachShapeKey < outputAreaVM.shapeCounter; eachShapeKey++) {
                 let shapeKeyframes = {}
-                animation['shape'+eachShapeKey] = shapeKeyframes
+                animation['shape' + eachShapeKey] = shapeKeyframes
 
-                let createKeyframe = function(aVisualState,currentPercentage) {
+                let createKeyframe = function(aVisualState, currentPercentage) {
                     let currentInputEventIndex = timelineAreaVM.inputEvents.indexOf(aVisualState.currentInputEvent)
                     if (currentPercentage == undefined) {
-                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length),0);
+                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length), 0);
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
-                    shapeKeyframes[currentPercentage+'%'] = shapeInThisVisualState.$el.style.cssText;
+                    if (shapeInThisVisualState) {
+                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText + ' opacity: 1;';
+                    } else {
+                        if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
+                            //We need to find in which visual state this shape first appeared, get the attributes and hide
+                            for (let eachOtherVS of outputAreaVM.visualStates) {
+                                let missingShape = eachOtherVS.shapesDictionary[eachShapeKey]
+                                if (missingShape) {
+                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText + ' opacity: 0;';
+                                    hiddedShapesKeys.push(eachShapeKey)
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
                 for (let eachVisualState of outputAreaVM.visualStates) {
                     createKeyframe(eachVisualState)
                 }
 
                 if (!shapeKeyframes['0%']) {
-                    createKeyframe(outputAreaVM.visualStates.first(),0)
+                    createKeyframe(outputAreaVM.visualStates.first(), 0)
                 }
 
                 if (!shapeKeyframes['100%']) {
-                    createKeyframe(outputAreaVM.visualStates.last(),100)
+                    createKeyframe(outputAreaVM.visualStates.last(), 100)
                 }
             }
 
@@ -430,10 +445,10 @@ var VisualState = Vue.extend({
                     if (this.currentInputEvent) {
                         if (this.nextState.currentInputEvent) {
                             //Both states have an input event
-                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length ) {
+                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
                                 //TODO there's a difference that needs to be informed
                             } else {
-                                for (let i=0;i<this.currentInputEvent.touches.length;i++) {
+                                for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
                                     if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
                                         result.push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                     }
@@ -1047,18 +1062,18 @@ window.addEventListener('load', function(e) {
 
     function drawTouches() {
         let points = timelineAreaVM.inputEvents;
-         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-         context.lineWidth = 3;
-         for (let i = 1; i < points.length; i++) {
-            for (let j = 0; j < Math.max(Math.min(points[i-1].touches.length,points[i].touches.length),1) ; j++) {
+        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+        context.lineWidth = 3;
+        for (let i = 1; i < points.length; i++) {
+            for (let j = 0; j < Math.max(Math.min(points[i - 1].touches.length, points[i].touches.length), 1); j++) {
                 context.beginPath();
-                 context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
-                 context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
-                 context.strokeStyle = "black";
-                 context.stroke();
+                context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
+                context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
+                context.strokeStyle = "black";
+                context.stroke();
             }
-         }
-     }
+        }
+    }
 
     socket.on('message-from-server', function(data) {
         // console.log(data)
@@ -1067,7 +1082,7 @@ window.addEventListener('load', function(e) {
         if (anInputEvent.type == "touchstart") {
             timelineAreaVM.inputEvents.removeAll();
         } else if (anInputEvent.type == 'touchmove') {
-             drawTouches()
+            drawTouches()
         } else if (anInputEvent.type == 'touchend') {
 
         }
