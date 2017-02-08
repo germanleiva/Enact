@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import io from 'socket.io-client';
-
 // import App from './App.vue'
 
 require('bulma/css/bulma.css')
@@ -123,6 +122,8 @@ class ShapeModel {
 class ShapeModelVersion {
     constructor(model, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         this.model = model;
+
+        this.opacity = 1
 
         this.backgroundColor = {
             value: aColor
@@ -277,20 +278,25 @@ timelineAreaVM = new Vue({
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     if (shapeInThisVisualState) {
-                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText + ' opacity: 1;';
+                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText;
                     } else {
-                        if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
+                        if (currentPercentage == 0 || currentPercentage == 100) {
+                            if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
+                                hiddedShapesKeys.push(eachShapeKey)
+                            }
                             //We need to find in which visual state this shape first appeared, get the attributes and hide
                             for (let eachOtherVS of outputAreaVM.visualStates) {
                                 let missingShape = eachOtherVS.shapesDictionary[eachShapeKey]
                                 if (missingShape) {
-                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText + ' opacity: 0;';
-                                    hiddedShapesKeys.push(eachShapeKey)
+                                    var re = /opacity:?\s(\w+);/;
+
+                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText.replace(re, 'opacity:0;');
 
                                     break;
                                 }
                             }
                         }
+
                     }
                 }
                 for (let eachVisualState of outputAreaVM.visualStates) {
@@ -562,7 +568,7 @@ var VisualState = Vue.extend({
                 // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
                 // socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
 
-                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeVM.version.model.id, style: newShapeVM.styleObject } })
+                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeVM.version.model.id, color: newShapeVM.version.color, width: newShapeVM.version.width, height: newShapeVM.version.height, top: newShapeVM.version.top, left: newShapeVM.version.left, opacity: newShapeVM.version.opacity } })
             }
         },
 
@@ -754,7 +760,7 @@ var ShapeVM = Vue.extend({
     watch: {
         styleObject: function(val) {
             if (outputAreaVM.visualStates[0] === this.visualState) {
-                socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, style: val } })
+                socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, color: this.version.color, width: this.version.width, height: this.version.height, top: this.version.top, left: this.version.left, opacity: this.version.opacity } })
             }
         }
     },

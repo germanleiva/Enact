@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import io from 'socket.io-client';
+import CSSJSON from 'cssjson'
 
 // import App from './App.vue'
 
@@ -26,14 +27,40 @@ let ShapeVM = Vue.extend({
     data: function() {
         return {
             id: null,
-            styleObject: undefined
+            properties: {
+                color: 'white',
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+                opacity: 1
+            }
         }
+    },
+    computed: {
+        styleObject: {
+            // cache: false,
+            get: function() {
+                return {
+                    'backgroundColor': this.properties.color,
+                    'position': 'absolute',
+                    'left': this.properties.left + 'px',
+                    'top': this.properties.top + 'px',
+                    'width': this.properties.width + 'px',
+                    'height': this.properties.height + 'px',
+                    'border': '1px solid gray',
+                    'overflow': 'visible',
+                    'opacity': this.properties.opacity
+                }
+            }
+        }
+
     }
 })
 
 let allShapes = {}
 
-function createShapeVM(id, style) {
+function createShapeVM(id, message) {
     let existingShape = allShapes[id];
     if (existingShape) {
         return existingShape
@@ -42,7 +69,12 @@ function createShapeVM(id, style) {
     var newShapeVM = new ShapeVM();
 
     newShapeVM.id = id;
-    newShapeVM.styleObject = style;
+    newShapeVM.properties.color = message.color;
+    newShapeVM.properties.width = message.width;
+    newShapeVM.properties.height = message.height;
+    newShapeVM.properties.top = message.top;
+    newShapeVM.properties.left = message.left;
+    newShapeVM.properties.opacity = message.opacity;
 
     newShapeVM.$mount();
     document.getElementById("mobileCanvas").appendChild(newShapeVM.$el);
@@ -52,6 +84,8 @@ function createShapeVM(id, style) {
 }
 
 socket.on('message-from-server', function(data) {
+    console.log("Received something from server: " + JSON.stringify(data));
+
     if (data.type == "START_RECORDING") {
         mobileCanvasVM.isRecording = true;
     }
@@ -59,10 +93,9 @@ socket.on('message-from-server', function(data) {
         mobileCanvasVM.isRecording = false;
     }
     if (data.type == "NEW_SHAPE") {
-        console.log("Received something from server");
         // var parentDOM = document.getElementById("mobileCanvas")
         // parentDOM.innerHTML = data.message;
-        createShapeVM(data.message.id, data.message.style)
+        createShapeVM(data.message.id, data.message)
     }
     if (data.type == "EDIT_SHAPE") {
         // console.log(data.message);
@@ -70,7 +103,12 @@ socket.on('message-from-server', function(data) {
         // parentDOM.innerHTML = data.message;
         let editedShapeVM = allShapes[data.message.id]
         if (editedShapeVM) {
-            editedShapeVM.styleObject = data.message.style;
+            editedShapeVM.properties.color = data.message.color;
+            editedShapeVM.properties.left = data.message.left;
+            editedShapeVM.properties.top = data.message.top;
+            editedShapeVM.properties.width = data.message.width;
+            editedShapeVM.properties.height = data.message.height;
+            editedShapeVM.properties.opacity = data.message.opacity;
         } else {
             console.log("Are we editing a shape that was not created????? WERID!")
         }
@@ -153,7 +191,12 @@ socket.on('message-from-server', function(data) {
         for (var shapeModelId in newAnimation) {
             var eachShapeElement = document.getElementById(shapeModelId)
             if (!eachShapeElement) {
-                eachShapeElement = createShapeVM(shapeModelId,newAnimation[shapeModelId]['0%']).$el
+                console.log("CURRENT ANIMATION FOR MODEL " + shapeModelId +  " JSON: " + JSON.stringify(newAnimation[shapeModelId]))
+
+                let styleObject = CSSJSON.toJSON(newAnimation[shapeModelId]['0%']);
+
+                console.log("PARSED JSON: " + newAnimation[shapeModelId]['0%'])
+                eachShapeElement = createShapeVM(shapeModelId, styleObject).$el
             }
 
             var keyframeAnimationText = '@-webkit-keyframes mymove' + shapeModelId + ' {\n'
@@ -178,7 +221,7 @@ socket.on('message-from-server', function(data) {
             //     75%  {top: 50px}
             //     100% {top: 100px;}
             // }`, 1);
-            console.log(keyframeAnimationText)
+            // console.log(keyframeAnimationText)
             sheet.insertRule(keyframeAnimationText, 0)
 
             if (eachShapeElement.style.webkitAnimation.length == 0) {
@@ -225,13 +268,16 @@ document.body.addEventListener('touchstart', function(e) { e.preventDefault(); }
 document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
 document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
+let initialTouchPosition
+let targetElement
+
 document.addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     } else {
         //We are interacting
-
+        initialTouchPosition = { x: event.pageX, y: event.pageY }
     }
 });
 
@@ -239,6 +285,9 @@ document.addEventListener("touchmove", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
+    } else {
+        //We are interaction
+        // allShapes[0].version.top = ''
     }
 });
 
