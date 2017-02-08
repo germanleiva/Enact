@@ -27,30 +27,28 @@ let ShapeVM = Vue.extend({
     data: function() {
         return {
             id: null,
-            properties: {
-                color: 'white',
-                left: 0,
-                top: 0,
-                width: 0,
-                height: 0,
-                opacity: 1
-            }
+            color: 'white',
+            left: 0,
+            top: 0,
+            width: 0,
+            height: 0,
+            opacity: 1
         }
     },
     computed: {
         styleObject: {
-            // cache: false,
+            cache: false,
             get: function() {
                 return {
-                    'backgroundColor': this.properties.color,
+                    'backgroundColor': this.color,
                     'position': 'absolute',
-                    'left': this.properties.left + 'px',
-                    'top': this.properties.top + 'px',
-                    'width': this.properties.width + 'px',
-                    'height': this.properties.height + 'px',
+                    'left': this.left + 'px',
+                    'top': this.top + 'px',
+                    'width': this.width + 'px',
+                    'height': this.height + 'px',
                     'border': '1px solid gray',
                     'overflow': 'visible',
-                    'opacity': this.properties.opacity
+                    'opacity': this.opacity
                 }
             }
         }
@@ -69,12 +67,12 @@ function createShapeVM(id, message) {
     var newShapeVM = new ShapeVM();
 
     newShapeVM.id = id;
-    newShapeVM.properties.color = message.color;
-    newShapeVM.properties.width = message.width;
-    newShapeVM.properties.height = message.height;
-    newShapeVM.properties.top = message.top;
-    newShapeVM.properties.left = message.left;
-    newShapeVM.properties.opacity = message.opacity;
+    newShapeVM.color = message.color;
+    newShapeVM.width = message.width;
+    newShapeVM.height = message.height;
+    newShapeVM.top = message.top;
+    newShapeVM.left = message.left;
+    newShapeVM.opacity = message.opacity;
 
     newShapeVM.$mount();
     document.getElementById("mobileCanvas").appendChild(newShapeVM.$el);
@@ -103,12 +101,12 @@ socket.on('message-from-server', function(data) {
         // parentDOM.innerHTML = data.message;
         let editedShapeVM = allShapes[data.message.id]
         if (editedShapeVM) {
-            editedShapeVM.properties.color = data.message.color;
-            editedShapeVM.properties.left = data.message.left;
-            editedShapeVM.properties.top = data.message.top;
-            editedShapeVM.properties.width = data.message.width;
-            editedShapeVM.properties.height = data.message.height;
-            editedShapeVM.properties.opacity = data.message.opacity;
+            editedShapeVM.color = data.message.color;
+            editedShapeVM.left = data.message.left;
+            editedShapeVM.top = data.message.top;
+            editedShapeVM.width = data.message.width;
+            editedShapeVM.height = data.message.height;
+            editedShapeVM.opacity = data.message.opacity;
         } else {
             console.log("Are we editing a shape that was not created????? WERID!")
         }
@@ -268,8 +266,8 @@ document.body.addEventListener('touchstart', function(e) { e.preventDefault(); }
 document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
 document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
-let initialTouchPosition
-let targetElement
+let previousTouchPosition
+let initialShapePosition
 
 document.addEventListener("touchstart", function(event) {
     event.preventDefault();
@@ -277,7 +275,9 @@ document.addEventListener("touchstart", function(event) {
         saveEvent(event);
     } else {
         //We are interacting
-        initialTouchPosition = { x: event.pageX, y: event.pageY }
+        let touch = event.touches[0]
+        previousTouchPosition = { x: touch.pageX, y: touch.pageY }
+        initialShapePosition = {x: allShapes[0].left,y: allShapes[0].top}
     }
 });
 
@@ -286,8 +286,17 @@ document.addEventListener("touchmove", function(event) {
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     } else {
-        //We are interaction
-        // allShapes[0].version.top = ''
+        let touch = event.touches[0]
+
+        let deltaX = touch.pageX - previousTouchPosition.x
+        let deltaY = touch.pageY - previousTouchPosition.y
+        console.log("new delta " + deltaX + " " + deltaY)
+        allShapes[0].left = allShapes[0].left + deltaX
+        allShapes[0].top = allShapes[0].top + deltaY
+
+        console.log("New shape position: " + allShapes[0].left + " " + allShapes[0].top)
+        previousTouchPosition.x = touch.pageX
+        previousTouchPosition.y = touch.pageY
     }
 });
 
@@ -295,6 +304,10 @@ document.addEventListener("touchend", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
+    } else {
+        //We are interacting
+        previousTouchPosition = undefined
+        initialShapePosition = undefined
     }
 });
 
