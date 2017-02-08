@@ -538,8 +538,8 @@ var VisualState = Vue.extend({
             var newShapeVM = this.addNewShape();
 
             let startingWindowMousePosition = {
-                x: e.x,
-                y: e.y
+                x: e.pageX + outputAreaVM.$el.scrollLeft,
+                y: e.pageY + outputAreaVM.$el.scrollTop
             };
 
             var mouseMoveHandler
@@ -557,6 +557,13 @@ var VisualState = Vue.extend({
 
             this.$el.addEventListener('mousemove', mouseMoveHandler, false);
             this.$el.addEventListener('mouseup', mouseUpHandler, false);
+
+            if (outputAreaVM.visualStates[0] === this) {
+                // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
+                // socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
+
+                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeVM.version.model.id, style: newShapeVM.styleObject } })
+            }
         },
 
         drawingChanged: function(e, newShapeVM, startingWindowMousePosition) {
@@ -567,16 +574,12 @@ var VisualState = Vue.extend({
             if (this.nextState) {
                 this.nextState.didCreateShape(newShapeVM, this);
             }
-            if (outputAreaVM.visualStates[0] === this) {
-                let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
-                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
-            }
         },
 
         updateShapeProperties: function(e, newShapeVM, startingWindowMousePosition) {
             //Maybe this should go in Shape
-            let currentWindowMousePositionX = e.x;
-            let currentWindowMousePositionY = e.y;
+            let currentWindowMousePositionX = e.pageX + outputAreaVM.$el.scrollLeft;
+            let currentWindowMousePositionY = e.pageY + outputAreaVM.$el.scrollTop;
             var topValue = startingWindowMousePosition.y
             if (currentWindowMousePositionY < startingWindowMousePosition.y) {
                 topValue = currentWindowMousePositionY;
@@ -644,20 +647,20 @@ var VisualState = Vue.extend({
             };
         },
         addNewShape(oldShapeVM) {
-            var newShapeVM = new ShapeVM();
-            newShapeVM.visualState = this;
+            let correspondingVersion
 
             if (oldShapeVM) {
                 //Cheap way of cloning the version
-                newShapeVM.version = new ShapeModelVersion(oldShapeVM.version.model, oldShapeVM.version);
+                correspondingVersion = new ShapeModelVersion(oldShapeVM.version.model, oldShapeVM.version);
             } else {
                 let newId = outputAreaVM.shapeCounter++;
-                newShapeVM.version = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
+                correspondingVersion = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
             }
 
             // if (oldShapeVM) {
             //     newShapeVM.isSelected = oldShapeVM.isSelected
             // }
+            var newShapeVM = new ShapeVM({ data: { visualState: this, version: correspondingVersion } });
 
             newShapeVM.$mount();
             this.canvasElement().appendChild(newShapeVM.$el);
@@ -732,6 +735,7 @@ var ShapeVM = Vue.extend({
     },
     computed: {
         styleObject: function() {
+            // if (this.version) {
             return {
                 'backgroundColor': this.version.color,
                 'position': 'absolute',
@@ -740,7 +744,17 @@ var ShapeVM = Vue.extend({
                 'width': this.version.width + 'px',
                 'height': this.version.height + 'px',
                 'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
-                'overflow': 'visible'
+                'overflow': 'visible',
+                'opacity': '1'
+            }
+            // }
+            // return {}
+        }
+    },
+    watch: {
+        styleObject: function(val) {
+            if (outputAreaVM.visualStates[0] === this.visualState) {
+                socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, style: val } })
             }
         }
     },
@@ -1095,7 +1109,7 @@ window.addEventListener('load', function(e) {
                 socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
             }
         } else {
-            amountOfTouchesLeft = Math.max(amountOfTouchesLeft,anInputEvent.touches.length)
+            amountOfTouchesLeft = Math.max(amountOfTouchesLeft, anInputEvent.touches.length)
 
             if (anInputEvent.type == "touchstart") {
                 timelineAreaVM.inputEvents.removeAll();

@@ -16,10 +16,40 @@ let mobileCanvasVM = new Vue({
     },
     computed: {
         styleObject() {
-            return {'backgroundColor' : (this.isRecording ? 'red' : 'white'), width: '375px', height: '667px'}
+            return { 'backgroundColor': (this.isRecording ? 'red' : 'white'), width: '375px', height: '667px' }
         }
     }
 })
+
+let ShapeVM = Vue.extend({
+    template: `<div :id="'shape'+id" v-bind:style="styleObject"></div>`,
+    data: function() {
+        return {
+            id: null,
+            styleObject: undefined
+        }
+    }
+})
+
+let allShapes = {}
+
+function createShapeVM(id, style) {
+    let existingShape = allShapes[id];
+    if (existingShape) {
+        return existingShape
+    }
+
+    var newShapeVM = new ShapeVM();
+
+    newShapeVM.id = id;
+    newShapeVM.styleObject = style;
+
+    newShapeVM.$mount();
+    document.getElementById("mobileCanvas").appendChild(newShapeVM.$el);
+
+    allShapes[id] = newShapeVM
+    return newShapeVM
+}
 
 socket.on('message-from-server', function(data) {
     if (data.type == "START_RECORDING") {
@@ -30,9 +60,21 @@ socket.on('message-from-server', function(data) {
     }
     if (data.type == "NEW_SHAPE") {
         console.log("Received something from server");
+        // var parentDOM = document.getElementById("mobileCanvas")
+        // parentDOM.innerHTML = data.message;
+        createShapeVM(data.message.id, data.message.style)
+    }
+    if (data.type == "EDIT_SHAPE") {
         // console.log(data.message);
-        var parentDOM = document.getElementById("mobileCanvas")
-        parentDOM.innerHTML = data.message;
+        // var parentDOM = document.getElementById("mobileCanvas")
+        // parentDOM.innerHTML = data.message;
+        let editedShapeVM = allShapes[data.message.id]
+        if (editedShapeVM) {
+            editedShapeVM.styleObject = data.message.style;
+        } else {
+            console.log("Are we editing a shape that was not created????? WERID!")
+        }
+
     }
     if (data.type == "NEW_ANIMATION") {
         console.log("Received NEW_ANIMATION: " + JSON.stringify(data.message))
@@ -111,10 +153,7 @@ socket.on('message-from-server', function(data) {
         for (var shapeModelId in newAnimation) {
             var eachShapeElement = document.getElementById(shapeModelId)
             if (!eachShapeElement) {
-                eachShapeElement = document.createElement('div');
-                eachShapeElement.setAttribute('id',shapeModelId);
-                document.getElementById('mobileCanvas').appendChild(eachShapeElement);
-                eachShapeElement.style = newAnimation[shapeModelId]['0%']
+                eachShapeElement = createShapeVM(shapeModelId,newAnimation[shapeModelId]['0%']).$el
             }
 
             var keyframeAnimationText = '@-webkit-keyframes mymove' + shapeModelId + ' {\n'
@@ -190,6 +229,9 @@ document.addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
+    } else {
+        //We are interacting
+
     }
 });
 
