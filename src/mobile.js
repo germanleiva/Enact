@@ -10,6 +10,71 @@ require('./mobile.css')
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
+class Rule {
+    constructor(input, output, condition) {
+        this.input = input;
+        this.output = output;
+        this.condition = condition;
+        this.enforce = true;
+        this.currentInput = undefined;
+        this.currentOutput = undefined;
+    }
+    applyNewInput(newEvent) {
+        // let touch = event.touches[0]
+        let touch = newEvent.touches[this.input.id]
+        let previousTouch = this.currentInput.touches[this.input.id]
+
+        let delta = {x:0,y:0}
+        if (this.input.property == 'position') {
+            for (let eachInputAxis of this.input.axis) {
+                delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
+            }
+            // for (let eachAxis of this.input.axis) {
+            //     delta[eachAxis] = touch['page' + eachAxis.toUpperCase()] - previousTouch['page' + eachAxis.toUpperCase()]
+            // }
+        }
+
+        switch(this.output.property) {
+            case 'position':
+                for (let eachOutputAxis of this.output.axis) {
+                    let outputProperty = ''
+                    switch (eachOutputAxis) {
+                        case 'x':
+                            outputProperty = 'left';
+                            break
+                        case 'y':
+                            outputProperty = 'top';
+                            break;
+                    }
+                    this.currentOutput[outputProperty] += delta[eachOutputAxis]
+                }
+                break;
+            case 'size':
+                for (let eachOutputAxis of this.output.axis) {
+                    let outputProperty = ''
+                    switch (eachOutputAxis) {
+                        case 'x':
+                            outputProperty = 'width';
+                            break
+                        case 'y':
+                            outputProperty = 'height';
+                            break;
+                    }
+                    this.currentOutput[outputProperty] += delta[eachOutputAxis]
+                }
+                break;
+        }
+
+        this.currentInput = newEvent
+    }
+}
+
+let rules = [new Rule({id:0,property:'position',axis:['y']},{id:'0',property:'size',axis:['y']},function(event,shape){
+    let touch = event.touches[this.input.id];
+    return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
+})]
+let activeRules = []
+
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
     data: {
@@ -23,7 +88,7 @@ let mobileCanvasVM = new Vue({
 })
 
 let ShapeVM = Vue.extend({
-    template: `<div :id="'shape'+id" v-bind:style="styleObject"></div>`,
+    template: `<div :id="'shape'+id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
     data: function() {
         return {
             id: null,
@@ -36,6 +101,9 @@ let ShapeVM = Vue.extend({
         }
     },
     computed: {
+        isCanvasRecording: function() {
+            return mobileCanvasVM.isRecording
+        },
         styleObject: {
             cache: false,
             get: function() {
@@ -82,7 +150,7 @@ function createShapeVM(id, message) {
 }
 
 socket.on('message-from-server', function(data) {
-    console.log("Received something from server: " + JSON.stringify(data));
+    // console.log("Received something from server: " + JSON.stringify(data));
 
     if (data.type == "START_RECORDING") {
         mobileCanvasVM.isRecording = true;
@@ -113,7 +181,6 @@ socket.on('message-from-server', function(data) {
 
     }
     if (data.type == "NEW_ANIMATION") {
-        console.log("Received NEW_ANIMATION: " + JSON.stringify(data.message))
 
         var newAnimation = data.message;
 
@@ -267,7 +334,6 @@ document.body.addEventListener('touchmove', function(e) { e.preventDefault(); })
 document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
 let previousTouchPosition
-let initialShapePosition
 
 document.addEventListener("touchstart", function(event) {
     event.preventDefault();
@@ -275,9 +341,23 @@ document.addEventListener("touchstart", function(event) {
         saveEvent(event);
     } else {
         //We are interacting
-        let touch = event.touches[0]
-        previousTouchPosition = { x: touch.pageX, y: touch.pageY }
-        initialShapePosition = {x: allShapes[0].left,y: allShapes[0].top}
+        for (let aRule of rules) {
+            //Does the event has a rule that control that touch?
+            if (event.touches[aRule.input.id] != undefined) {
+                //Does it affect one of my shapes?
+                let controlledShape = allShapes[aRule.output.id]
+                if (controlledShape) {
+                    if (aRule.condition(event,controlledShape)) {
+                        aRule.currentInput = event
+                        aRule.currentOutput = controlledShape
+                        activeRules.push(aRule)
+                    }
+                }
+            }
+        }
+
+        // let touch = event.touches[0]
+        // previousTouchPosition = { x: touch.pageX, y: touch.pageY }
     }
 });
 
@@ -286,17 +366,21 @@ document.addEventListener("touchmove", function(event) {
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     } else {
-        let touch = event.touches[0]
+        for (let anActiveRule of activeRules) {
+            anActiveRule.applyNewInput(event)
+        }
 
-        let deltaX = touch.pageX - previousTouchPosition.x
-        let deltaY = touch.pageY - previousTouchPosition.y
-        console.log("new delta " + deltaX + " " + deltaY)
-        allShapes[0].left = allShapes[0].left + deltaX
-        allShapes[0].top = allShapes[0].top + deltaY
+        // let touch = event.touches[0]
 
-        console.log("New shape position: " + allShapes[0].left + " " + allShapes[0].top)
-        previousTouchPosition.x = touch.pageX
-        previousTouchPosition.y = touch.pageY
+        // let deltaX = touch.pageX - previousTouchPosition.x
+        // let deltaY = touch.pageY - previousTouchPosition.y
+        // console.log("new delta " + deltaX + " " + deltaY)
+        // allShapes[0].left = allShapes[0].left + deltaX
+        // allShapes[0].top = allShapes[0].top + deltaY
+
+        // console.log("New shape position: " + allShapes[0].left + " " + allShapes[0].top)
+        // previousTouchPosition.x = touch.pageX
+        // previousTouchPosition.y = touch.pageY
     }
 });
 
@@ -306,8 +390,7 @@ document.addEventListener("touchend", function(event) {
         saveEvent(event);
     } else {
         //We are interacting
-        previousTouchPosition = undefined
-        initialShapePosition = undefined
+        activeRules = []
     }
 });
 
