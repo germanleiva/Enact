@@ -24,6 +24,11 @@ class Rule {
         let touch = newEvent.touches[this.input.id]
         let previousTouch = this.currentInput.touches[this.input.id]
 
+        if (this.input.axis.length > this.output.axis.length) {
+            console.log("Fatal error: there are more input axis than ouput axis on this rule: " + this)
+            abort()
+        }
+
         let delta = {x:0,y:0}
         if (this.input.property == 'position') {
             for (let eachInputAxis of this.input.axis) {
@@ -36,7 +41,13 @@ class Rule {
 
         switch(this.output.property) {
             case 'position':
-                for (let eachOutputAxis of this.output.axis) {
+                for (let i=0;i<this.output.axis.length;i++) {
+                    let eachOutputAxis = this.output.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
+                    if (!correspondingInputAxis) {
+                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                        correspondingInputAxis = this.input.axis[0];
+                    }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
                         case 'x':
@@ -46,11 +57,17 @@ class Rule {
                             outputProperty = 'top';
                             break;
                     }
-                    this.currentOutput[outputProperty] += delta[eachOutputAxis]
+                    this.currentOutput[outputProperty] += delta[correspondingInputAxis]
                 }
                 break;
             case 'size':
-                for (let eachOutputAxis of this.output.axis) {
+                for (let i=0;i<this.output.axis.length;i++) {
+                    let eachOutputAxis = this.output.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
+                    if (!correspondingInputAxis) {
+                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                        correspondingInputAxis = this.input.axis[0];
+                    }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
                         case 'x':
@@ -60,7 +77,7 @@ class Rule {
                             outputProperty = 'height';
                             break;
                     }
-                    this.currentOutput[outputProperty] += delta[eachOutputAxis]
+                    this.currentOutput[outputProperty] += delta[correspondingInputAxis]
                 }
                 break;
         }
@@ -69,7 +86,7 @@ class Rule {
     }
 }
 
-let rules = [new Rule({id:0,property:'position',axis:['y']},{id:'0',property:'size',axis:['y']},function(event,shape){
+let rules = [new Rule({id:0,property:'position',axis:['x','y']},{id:'0',property:'size',axis:['x']},function(event,shape){
     let touch = event.touches[this.input.id];
     return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
 })]
