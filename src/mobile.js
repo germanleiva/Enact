@@ -10,43 +10,45 @@ require('./mobile.css')
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
-class Rule {
-    constructor(input, output, condition) {
-        this.input = input;
-        this.output = output;
-        this.condition = condition;
-        this.enforce = true;
-        this.currentInput = undefined;
-        this.currentOutput = undefined;
+class InEvent {
+    constructor(touchId, property, listOfAxis, aShouldApplyFn) {
+        this.touchId = touchId
+        this.property = property
+        this.axis = listOfAxis
+        this.initialCondition = function(event, aShape) { return aShouldApplyFn(this.touchFor(event),aShape); }
     }
-    applyNewInput(newEvent) {
-        // let touch = event.touches[0]
-        let touch = newEvent.touches[this.input.id]
-        let previousTouch = this.currentInput.touches[this.input.id]
+    shouldActivate(aRule, anEvent) {
+        //The event has the corresponding touch
+        return anEvent.touches[this.touchId] != undefined
+    }
+    touchFor(event) {
+        return event.touches[this.touchId]
+    }
+    applyNewInput(aRule, newEvent) {
+        let previousTouch = aRule.currentInput.touches[this.touchId]
 
-        if (this.input.axis.length > this.output.axis.length) {
-            console.log("Fatal error: there are more input axis than ouput axis on this rule: " + this)
+        let touch = newEvent.touches[this.touchId]
+
+        if (this.axis.length > aRule.output.axis.length) {
+            console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
             abort()
         }
 
-        let delta = {x:0,y:0}
-        if (this.input.property == 'position') {
-            for (let eachInputAxis of this.input.axis) {
+        let delta = { x: 0, y: 0 }
+        if (this.property == 'position') {
+            for (let eachInputAxis of this.axis) {
                 delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
             }
-            // for (let eachAxis of this.input.axis) {
-            //     delta[eachAxis] = touch['page' + eachAxis.toUpperCase()] - previousTouch['page' + eachAxis.toUpperCase()]
-            // }
         }
 
-        switch(this.output.property) {
+        switch (aRule.output.property) {
             case 'position':
-                for (let i=0;i<this.output.axis.length;i++) {
-                    let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.input.axis[i];
+                for (let i = 0; i < aRule.output.axis.length; i++) {
+                    let eachOutputAxis = aRule.output.axis[i];
+                    let correspondingInputAxis = this.axis[i];
                     if (!correspondingInputAxis) {
                         console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.input.axis[0];
+                        correspondingInputAxis = this.axis[0];
                     }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
@@ -57,16 +59,19 @@ class Rule {
                             outputProperty = 'top';
                             break;
                     }
-                    this.currentOutput[outputProperty] += delta[correspondingInputAxis]
+                    let newValue = aRule.currentOutput[outputProperty] + delta[correspondingInputAxis]
+                    if (aRule.shouldKeepApplying(aRule.currentOutput[outputProperty], newValue)) {
+                        aRule.currentOutput[outputProperty] = newValue
+                    }
                 }
                 break;
             case 'size':
-                for (let i=0;i<this.output.axis.length;i++) {
-                    let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.input.axis[i];
+                for (let i = 0; i < aRule.output.axis.length; i++) {
+                    let eachOutputAxis = aRule.output.axis[i];
+                    let correspondingInputAxis = this.axis[i];
                     if (!correspondingInputAxis) {
                         console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.input.axis[0];
+                        correspondingInputAxis = this.axis[0];
                     }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
@@ -77,19 +82,103 @@ class Rule {
                             outputProperty = 'height';
                             break;
                     }
-                    this.currentOutput[outputProperty] += delta[correspondingInputAxis]
+
+                    let newValue = aRule.currentOutput[outputProperty] + delta[correspondingInputAxis]
+                    if (aRule.shouldKeepApplying(aRule.currentOutput[outputProperty], newValue)) {
+                        aRule.currentOutput[outputProperty] = newValue
+                    }
                 }
                 break;
         }
 
-        this.currentInput = newEvent
+        aRule.currentInput = newEvent
     }
 }
 
-let rules = [new Rule({id:0,property:'position',axis:['x','y']},{id:'0',property:'size',axis:['x']},function(event,shape){
-    let touch = event.touches[this.input.id];
+class InMeasure {
+    get shape1Id() {
+        return allShapes[0].id;
+    }
+    get shape2Id() {
+        return allShapes[1].id;
+    }
+    shouldActivate(aRule, anEvent) {
+        //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
+        return true;
+    }
+    initialCondition(event,aShape) {
+        return true;
+    }
+    applyNewInput(aRule,newEvent) {
+        let r1 = allShapes[this.shape1Id];
+        let r2 = allShapes[this.shape2Id];
+        let r3 = allShapes[2]
+        let previousHeight = r3.height
+        let newHeight = Math.abs(r1.top + r1.height - r2.top)
+
+        if (aRule.shouldKeepApplying(previousHeight, newHeight)) {
+
+            r3.height = newHeight
+            r3.top -= (newHeight - previousHeight) / 2
+        }
+    }
+}
+
+class Rule {
+    constructor(input, output, shouldKeepApplying) {
+        this.in = input;
+        this.output = output;
+        this.shouldKeepApplying = shouldKeepApplying;
+        this.enforce = true;
+        this.currentInput = undefined;
+        this.currentOutput = undefined;
+    }
+    activate(anEvent, globalShapeDictionary) {
+        if (this.in.shouldActivate(this, anEvent)) {
+            //Does it affect one of the current shapes?
+            let controlledShape = globalShapeDictionary[this.output.id]
+            if (controlledShape) {
+                if (this.in.initialCondition(event, controlledShape)) {
+                    this.currentInput = event
+                    this.currentOutput = controlledShape
+                    return true
+                }
+            }
+        }
+        return false
+    }
+    applyNewInput(newEvent) {
+        // let touch = event.touches[0]
+        this.in.applyNewInput(this,newEvent)
+    }
+}
+
+let isInside = function(touch, shape) {
     return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
-})]
+}
+
+let exampleRule1 = new Rule(
+    new InEvent(0, 'position', ['y'], isInside),
+    { id: '0', property: 'position', axis: ['y'] },
+    function(oldValue, newValue) {
+        return newValue < 200
+    }
+)
+let exampleRule2 = new Rule(
+    new InEvent(1, 'position', ['y'], isInside),
+    { id: '1', property: 'position', axis: ['y'] },
+    function(oldValue, newValue) {
+        return newValue > 200
+    }
+)
+let exampleRule3 = new Rule(
+    new InMeasure(),
+    { id: '2', property: 'size', axis: ['y'] },
+    function(oldValue, newValue) {
+        return newValue < 100
+    }
+)
+let rules = [exampleRule1, exampleRule2, exampleRule3]
 let activeRules = []
 
 let mobileCanvasVM = new Vue({
@@ -273,7 +362,7 @@ socket.on('message-from-server', function(data) {
         for (var shapeModelId in newAnimation) {
             var eachShapeElement = document.getElementById(shapeModelId)
             if (!eachShapeElement) {
-                console.log("CURRENT ANIMATION FOR MODEL " + shapeModelId +  " JSON: " + JSON.stringify(newAnimation[shapeModelId]))
+                console.log("CURRENT ANIMATION FOR MODEL " + shapeModelId + " JSON: " + JSON.stringify(newAnimation[shapeModelId]))
 
                 let styleObject = CSSJSON.toJSON(newAnimation[shapeModelId]['0%']);
 
@@ -316,7 +405,7 @@ socket.on('message-from-server', function(data) {
             //     // animation: name duration timing-function delay iteration-count direction fill-mode play-state;
             //     eachShapeElement.style.webkitAnimation = "none"
             // }
-            eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s infinite normal forwards running"; /* Safari 4.0 - 8.0 */
+            eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
         }
 
 
@@ -360,16 +449,8 @@ document.addEventListener("touchstart", function(event) {
         //We are interacting
         for (let aRule of rules) {
             //Does the event has a rule that control that touch?
-            if (event.touches[aRule.input.id] != undefined) {
-                //Does it affect one of my shapes?
-                let controlledShape = allShapes[aRule.output.id]
-                if (controlledShape) {
-                    if (aRule.condition(event,controlledShape)) {
-                        aRule.currentInput = event
-                        aRule.currentOutput = controlledShape
-                        activeRules.push(aRule)
-                    }
-                }
+            if (aRule.activate(event, allShapes)) {
+                activeRules.push(aRule)
             }
         }
 
