@@ -12,12 +12,12 @@ var socket = io.connect(window.location.href.split('/')[2]);
 
 let allShapes = {}
 
-class InEvent {
+class TouchInput {
     constructor(touchId, property, listOfAxis, aShouldApplyFn) {
         this.touchId = touchId
         this.property = property
         this.axis = listOfAxis
-        this.initialCondition = function(event, aShape) { this.currentInput = event; return aShouldApplyFn(this.touchFor(event),aShape); }
+        this.condition = function(event, aShape) { return aShouldApplyFn(this.touchFor(event),aShape); }
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
@@ -27,7 +27,7 @@ class InEvent {
         return event.touches[this.touchId]
     }
     applyNewInput(aRule, newEvent) {
-        let previousTouch = this.currentInput.touches[this.touchId]
+        let previousTouch = aRule.currentEvent.touches[this.touchId]
 
         let touch = newEvent.touches[this.touchId]
 
@@ -43,13 +43,11 @@ class InEvent {
             }
         }
 
-        aRule.actuallyApply(delta)
-
-        this.currentInput = newEvent
+        aRule.actuallyApply(delta, newEvent)
     }
 }
 
-class InMeasure {
+class MeasureInput {
     constructor(measureFunction,listOfAxis) {
         this.axis = listOfAxis
         this.measureFunction = measureFunction
@@ -64,7 +62,7 @@ class InMeasure {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
         return true;
     }
-    initialCondition(event,aShape) {
+    condition(event,aShape) {
         return true;
     }
     applyNewInput(aRule,newEvent) {
@@ -100,44 +98,50 @@ class InMeasure {
         //             break;
         //     }
         // }
-        aRule.actuallyApply(delta)
+        aRule.actuallyApply(delta, newEvent)
     }
 }
 
 class Rule {
     constructor(input, output, shouldKeepApplying) {
-        this.in = input;
+        this.input = input;
         this.output = output;
         this.shouldKeepApplying = shouldKeepApplying;
         this.enforce = true;
         this.currentOutput = undefined;
     }
     activate(anEvent, globalShapeDictionary) {
-        if (this.in.shouldActivate(this, anEvent)) {
+        if (this.input.shouldActivate(this, anEvent)) {
             //Does it affect one of the current shapes?
             let controlledShape = globalShapeDictionary[this.output.id]
             if (controlledShape) {
-                if (this.in.initialCondition(event, controlledShape)) {
+                // if (this.input.condition(event, controlledShape)) {
+                    this.currentEvent = anEvent
                     this.currentOutput = controlledShape
                     return true
-                }
+                // }
             }
         }
         return false
     }
     applyNewInput(newEvent) {
         // let touch = event.touches[0]
-        this.in.applyNewInput(this,newEvent)
+        this.input.applyNewInput(this,newEvent)
+        this.currentEvent = newEvent
+
     }
-    actuallyApply(delta) {
+    actuallyApply(delta, newEvent) {
+        if (!this.input.condition(newEvent,this.currentOutput)) {
+            return
+        }
         switch (this.output.property) {
             case 'center':
                 for (let i = 0; i < this.output.axis.length; i++) {
                     let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.in.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
                     if (!correspondingInputAxis) {
                         console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.in.axis[0];
+                        correspondingInputAxis = this.input.axis[0];
                     }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
@@ -157,10 +161,10 @@ class Rule {
             case 'position':
                 for (let i = 0; i < this.output.axis.length; i++) {
                     let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.in.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
                     if (!correspondingInputAxis) {
                         console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.in.axis[0];
+                        correspondingInputAxis = this.input.axis[0];
                     }
                     let outputProperty = ''
                     switch (eachOutputAxis) {
@@ -180,10 +184,10 @@ class Rule {
             case 'size':
                 for (let i = 0; i < this.output.axis.length; i++) {
                     let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.in.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
                     if (!correspondingInputAxis) {
                         console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.in.axis[0];
+                        correspondingInputAxis = this.input.axis[0];
                     }
                     let outputProperty = ''
                     let complementaryProperty = undefined
@@ -222,7 +226,7 @@ let r2_initial_y_position
 let r1_initial_height
 
 let exampleRule1 = new Rule(
-    new InEvent(0, 'position', ['y'], isInside),
+    new TouchInput(0, 'position', ['y'], isInside),
     { id: '0', property: 'position', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r1_initial_y_position) {
@@ -232,7 +236,7 @@ let exampleRule1 = new Rule(
     }
 )
 let exampleRule2 = new Rule(
-    new InEvent(1, 'position', ['y'], isInside),
+    new TouchInput(1, 'position', ['y'], isInside),
     { id: '1', property: 'position', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r2_initial_y_position) {
@@ -242,7 +246,7 @@ let exampleRule2 = new Rule(
     }
 )
 let exampleRule3 = new Rule(
-    new InMeasure(function(aRule,newEvent){
+    new MeasureInput(function(aRule,newEvent){
         let r1 = allShapes[this.shape1Id];
         let r2 = allShapes[this.shape2Id];
         let r3 = allShapes[2]
@@ -262,7 +266,7 @@ let exampleRule3 = new Rule(
     }
 )
 let exampleRule4 = new Rule(
-    new InMeasure(function(aRule,newEvent){
+    new MeasureInput(function(aRule,newEvent){
         let r1 = allShapes[this.shape1Id];
         let r2 = allShapes[this.shape2Id];
         let r3 = allShapes[2]
