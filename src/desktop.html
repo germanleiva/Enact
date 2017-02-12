@@ -7,31 +7,7 @@
 </head>
 
 <body>
-    <div id="toolbar">
-        <div class="block">
-            <div class="control is-grouped">
-                <a class="button is-primary is-alone is-disabled" id="title">ENACT</a>
-                <p class="control has-addons">
-                    <a class="button" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
-                    <a class="button" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
-                </p>
-                <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span></a>
-                <input type="color" v-on:change="changeColor()" id="color-picker" class="button" id="color-picker" v-model="toolbarState.currentColor">
-                <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
-            </div>
-        </div>
-    </div>
-    <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'>
-        <visual-state ref="visualStatesVM" v-for="vs in visualStates" :initial-visual-state-model="vs"></visual-state>
-    </div>
-    <div id="timelineArea">
-        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
-        <div class="inputTimeline">
-            <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
-        </div>
-        <a class="button is-medium" :class="{'is-inverted' : !isRecording , ' is-danger' : isRecording}" v-on:click="toggleRecording"><span class="icon is-small"><i :class="{'fa' : true , 'fa-circle' : !isRecording, 'fa-square' : isRecording}"></i></span></a>
-    </div>
-    <canvas id="myCanvas" width="375" height="667"></canvas>
+    <div id='app'></div>
 </body>
 
 </html>
