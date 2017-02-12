@@ -1,7 +1,7 @@
 .visualStateCanvas {
-    width: 375px;
-    min-width: 375px; /*We are using flexbox so we shouldn't shrink below this width size*/
-    height: 667px;
+    /*width: 375px;
+    min-width: 375px; We are using flexbox so we shouldn't shrink below this width size
+    height: 667px;*/
     background-color:white;
     border: 1px solid #333333;
     float:left;

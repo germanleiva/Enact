@@ -10,18 +10,20 @@
     <div id="toolbar">
         <div class="block">
             <div class="control is-grouped">
-                <a class="button is-primary is-alone" id="title">ENACT</a>
+                <a class="button is-primary is-alone is-disabled" id="title">ENACT</a>
                 <p class="control has-addons">
-                    <a class="button" :class="{'is-active':selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
-                    <a class="button" :class="{'is-active':drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
+                    <a class="button" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
+                    <a class="button" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
                 </p>
                 <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span></a>
-                <input type="color" @change="changeColor()" id="color-picker" class="button" id="color-picker" v-model="currentColor">
+                <input type="color" v-on:change="changeColor()" id="color-picker" class="button" id="color-picker" v-model="toolbarState.currentColor">
                 <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
             </div>
         </div>
     </div>
-    <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'></div>
+    <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'>
+        <visual-state ref="visualStatesVM" v-for="vs in visualStates" :initial-visual-state-model="vs"></visual-state>
+    </div>
     <div id="timelineArea">
         <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">

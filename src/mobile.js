@@ -400,7 +400,7 @@ socket.on('message-from-server', function(data) {
             editedShapeVM.height = data.message.height;
             editedShapeVM.opacity = data.message.opacity;
         } else {
-            console.log("Are we editing a shape that was not created????? WERID!")
+            console.log("Are we editing a shape that was not created????? WERID!" + data.message.id)
         }
 
     }

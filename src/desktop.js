@@ -8,10 +8,110 @@ require('./desktop.css')
 
 // import store from './store.js'
 
-let socket = io.connect('http://localhost:3000');
+// let socket = io.connect('http://localhost:3000');
 let context = undefined
 
-let timelineAreaVM
+export const globalStore = new Vue({
+    data: {
+        visualStates: [],
+        inputEvents: [],
+        isRecording: false,
+        shapeCounter: 0,
+        toolbarState: {
+            drawMode: false,
+            selectionMode: true,
+            multiSelectionMode: false,
+            currentColor: '#1a60f3'
+        },
+        cursorType: 'auto',
+        context: undefined
+    },
+    computed: {
+        socket() {
+            //TODO check if putting this as a computed property is legit
+            return io.connect('http://localhost:3000')
+        }
+    }
+})
+
+let timelineAreaVM = new Vue({
+    el: '#timelineArea',
+    data: {
+
+    },
+    computed: {
+        visualStates: function() {
+            return globalStore.visualStates
+        },
+        isRecording: {
+            get: function() {
+                return globalStore.isRecording
+            },
+            set: function(newValue) {
+                globalStore.isRecording = newValue
+            }
+        }
+    },
+    methods: {
+        toggleRecording() {
+            this.isRecording = !this.isRecording;
+            if (this.isRecording) {
+                globalStore.socket.emit('message-from-desktop', { type: "START_RECORDING", message: undefined })
+            }
+        },
+        startPlaying() {
+            let animation = {}
+
+            let hiddedShapesKeys = []
+            for (let eachShapeKey = 0; eachShapeKey < globalStore.shapeCounter; eachShapeKey++) {
+                let shapeKeyframes = {}
+                animation['shape' + eachShapeKey] = shapeKeyframes
+
+                let createKeyframe = function(aVisualState, currentPercentage) {
+                    let currentInputEventIndex = globalStore.inputEvents.indexOf(aVisualState.currentInputEvent)
+                    if (currentPercentage == undefined) {
+                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / globalStore.inputEvents.length), 0);
+                    }
+                    let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
+                    if (shapeInThisVisualState) {
+                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText;
+                    } else {
+                        if (currentPercentage == 0 || currentPercentage == 100) {
+                            if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
+                                hiddedShapesKeys.push(eachShapeKey)
+                            }
+                            //We need to find in which visual state this shape first appeared, get the attributes and hide
+                            for (let eachOtherVS of globalStore.visualStates) {
+                                let missingShape = eachOtherVS.shapesDictionary[eachShapeKey]
+                                if (missingShape) {
+                                    var re = /opacity:?\s(\w+);/;
+
+                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText.replace(re, 'opacity:0;');
+
+                                    break;
+                                }
+                            }
+                        }
+
+                    }
+                }
+                for (let eachVisualState of globalStore.visualStates) {
+                    createKeyframe(eachVisualState)
+                }
+
+                if (!shapeKeyframes['0%']) {
+                    createKeyframe(globalStore.visualStates.first(), 0)
+                }
+
+                if (!shapeKeyframes['100%']) {
+                    createKeyframe(globalStore.visualStates.last(), 100)
+                }
+            }
+
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
+        }
+    }
+});
 
 Vue.component('visual-state-mark', {
     props: ['initialVisualState'],
@@ -27,8 +127,8 @@ Vue.component('visual-state-mark', {
         },
         percentageInTimeline() {
             if (this.visualState.currentInputEvent) {
-                let totalEventCount = window.store.inputEvents.length
-                let index = window.store.inputEvents.indexOf(this.visualState.currentInputEvent)
+                let totalEventCount = globalStore.inputEvents.length
+                let index = globalStore.inputEvents.indexOf(this.visualState.currentInputEvent)
 
                 return index * 100 / totalEventCount;
             } else {
@@ -46,7 +146,8 @@ Vue.component('visual-state-mark', {
             let mouseTargetOffsetY = e.y - e.target.offsetTop;
 
             this.visualState.showAllInputEvents = true;
-            let inputTimelineElement = timelineAreaVM.$el.getElementsByClassName('inputTimeline')[0];
+
+            let inputTimelineElement = this.$el.parentElement;
             let moveHandler = function(e) {
                 e.stopPropagation();
                 e.preventDefault();
@@ -55,11 +156,11 @@ Vue.component('visual-state-mark', {
 
                 // visualStateMark.style.left = percentageInTimeline + '%';
 
-                let totalEventCount = window.store.inputEvents.length
+                let totalEventCount = globalStore.inputEvents.length
                 let index = Math.round(totalEventCount * percentageInTimeline / 100)
                 index = Math.max(Math.min(index, totalEventCount - 1), 0);
 
-                let correspondingInputEvent = window.store.inputEvents[index]
+                let correspondingInputEvent = globalStore.inputEvents[index]
 
                 // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + totalEventCount + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
 
@@ -99,17 +200,100 @@ if (!Array.prototype.removeAll) {
 
 window.addEventListener('keydown', function(e) {
     if (e.code === 'AltLeft' || e.code === 'AltRight') {
-        toolbarVM.multiSelectionMode = true;
+        globalStore.toolbarState.multiSelectionMode = true;
     }
 });
 window.addEventListener('keyup', function(e) {
-    toolbarVM.multiSelectionMode = false;
+    globalStore.toolbarState.multiSelectionMode = false;
 });
 
 let isLoggerActive = false;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
+    }
+}
+
+class VisualStateModel {
+    constructor() {
+        this.shapesDictionary = {}
+        this.currentInputEvent = undefined
+        this.nextState = undefined
+        this.previousState = undefined
+        this.maxWidth = 375
+        this.maxHeight = 667
+        this.showAllInputEvents = false
+    }
+    shapes() {
+        let result = [];
+        for (let shapeModelId in this.shapesDictionary) {
+            result.push(this.shapesDictionary[shapeModelId]);
+        }
+        return result;
+    }
+    addNewShape(protoShape) {
+        let correspondingVersion
+
+        if (protoShape) {
+            //Cheap way of cloning the version
+            correspondingVersion = new ShapeModelVersion(protoShape.model, protoShape);
+        } else {
+            let newId = globalStore.shapeCounter++;
+            correspondingVersion = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
+        }
+
+        // if (oldShapeVM) {
+        //     newShapeVM.isSelected = oldShapeVM.isSelected
+        // }
+        // var newShapeVM = new ShapeVM({ data: { visualState: this, version: correspondingVersion } });
+
+        // newShapeVM.$mount();
+        // this.canvasElement().appendChild(newShapeVM.$el);
+        // Vue.set(this.shapesDictionary, newShapeVM.version.model.id, newShapeVM);
+        Vue.set(this.shapesDictionary, correspondingVersion.model.id, correspondingVersion);
+
+        return correspondingVersion;
+    }
+    didCreateShape(newlyCreatedShape, previousState) {
+        if (this.previousState !== previousState) {
+            console.log("WARNING: THIS SHOULDN'T HAPPEN");
+        }
+
+        let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
+        if (this.nextState) {
+            this.nextState.didCreateShape(ourNewlyCreatedShape, this);
+        }
+    }
+    shapeFor(aShapeKey) {
+        return this.shapesDictionary[aShapeKey];
+    }
+    somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
+        let relatedShape = this.shapesDictionary[model.id]
+        if (!relatedShape) {
+            return;
+        }
+        let newPreviousValue = previousValue;
+
+        if (!relatedShape.isFollowingMaster(changedPropertyName)) {
+            newPreviousValue = relatedShape.valueForProperty(changedPropertyName);
+            // newPreviousValue = relatedShape.version.nonZeroValue(changedPropertyName);
+        }
+
+        if (relatedShape.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
+            //Equal values, this shape should keep or start following the master
+            relatedShape.followMaster(changedPropertyName);
+
+            if (this.nextState) {
+                this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
+            }
+        } else {
+            logger("newPreviousValue is NOT equal to previousValue")
+
+            //Shape is getting it s own value, so its not following the materVersion anymore
+            if (relatedShape.isFollowingMaster(changedPropertyName)) {
+                relatedShape[changedPropertyName].value = changedValue
+            }
+        }
     }
 }
 
@@ -247,75 +431,26 @@ class ShapeModelVersion {
                 return value1.w == value2.w && value1.h == value2.h;
         }
     }
-}
-
-timelineAreaVM = new Vue({
-    el: '#timelineArea',
-    data: {
-        visualStates: [],
-        inputEvents: [],
-        isRecording: false
-    },
-    methods: {
-        toggleRecording() {
-            this.isRecording = !this.isRecording;
-            if (this.isRecording) {
-                socket.emit('message-from-desktop', { type: "START_RECORDING", message: undefined })
-            }
-        },
-        startPlaying() {
-            let animation = {}
-
-            let hiddedShapesKeys = []
-            for (let eachShapeKey = 0; eachShapeKey < outputAreaVM.shapeCounter; eachShapeKey++) {
-                let shapeKeyframes = {}
-                animation['shape' + eachShapeKey] = shapeKeyframes
-
-                let createKeyframe = function(aVisualState, currentPercentage) {
-                    let currentInputEventIndex = window.store.inputEvents.indexOf(aVisualState.currentInputEvent)
-                    if (currentPercentage == undefined) {
-                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / window.store.inputEvents.length), 0);
-                    }
-                    let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
-                    if (shapeInThisVisualState) {
-                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText;
-                    } else {
-                        if (currentPercentage == 0 || currentPercentage == 100) {
-                            if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
-                                hiddedShapesKeys.push(eachShapeKey)
-                            }
-                            //We need to find in which visual state this shape first appeared, get the attributes and hide
-                            for (let eachOtherVS of outputAreaVM.visualStates) {
-                                let missingShape = eachOtherVS.shapesDictionary[eachShapeKey]
-                                if (missingShape) {
-                                    var re = /opacity:?\s(\w+);/;
-
-                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText.replace(re, 'opacity:0;');
-
-                                    break;
-                                }
-                            }
-                        }
-
-                    }
-                }
-                for (let eachVisualState of outputAreaVM.visualStates) {
-                    createKeyframe(eachVisualState)
-                }
-
-                if (!shapeKeyframes['0%']) {
-                    createKeyframe(outputAreaVM.visualStates.first(), 0)
-                }
-
-                if (!shapeKeyframes['100%']) {
-                    createKeyframe(outputAreaVM.visualStates.last(), 100)
-                }
-            }
-
-            socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
-        }
+    isPointInside(x, y) {
+        return this.top < y && this.left < x && x < this.left + this.width && y < this.top + this.height;
     }
-});
+    diffArray(nextShapeWithTheSameModel) {
+        let changes = []
+        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor')) {
+            // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
+            changes.push({ backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
+        }
+        if (!nextShapeWithTheSameModel.isFollowingMaster('translation')) {
+            // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
+            changes.push({ translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
+        }
+        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling')) {
+            // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
+            changes.push({ scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
+        }
+        return changes
+    }
+}
 
 Vue.component('input-event-mark', {
     props: ['initialVisualState', 'initialInputEvent'],
@@ -337,12 +472,12 @@ Vue.component('input-event-mark', {
 
             let startingMousePositionX = e.x;
 
-            let initialIndex = window.store.inputEvents.indexOf(this.inputEvent);
+            let initialIndex = globalStore.inputEvents.indexOf(this.inputEvent);
             mouseMoveHandler = function(e) {
                 let deltaX = e.x - startingMousePositionX
                 let indexVariation = Math.floor(deltaX / 2);
-                let newIndex = Math.max(Math.min(initialIndex + indexVariation, window.store.inputEvents.length - 1), 0);
-                this.visualState.currentInputEvent = window.store.inputEvents[newIndex];
+                let newIndex = Math.max(Math.min(initialIndex + indexVariation, globalStore.inputEvents.length - 1), 0);
+                this.visualState.currentInputEvent = globalStore.inputEvents[newIndex];
                 this.visualState.showAllInputEvents = true;
             }.bind(this)
 
@@ -402,11 +537,13 @@ Vue.component('diff-element', {
     }
 });
 
-var VisualState = Vue.extend({
+var VisualState = Vue.component('visual-state', {
+    props: ['initialVisualStateModel'],
     template: `<div class='visualStateContainer'>
-                    <div v-on:mousedown='actionStarted' class='visualStateCanvas'>
-                        <input-event-mark v-for="anInputEvent in allInputEvents" v-if="showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
-                        <input-event-mark :initial-visual-state="this"></input-event-mark>
+                    <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
+                        <shape ref="shapes" v-for="shape in shapesModel" v-bind:shape-model="shape" v-bind:parent-visual-state="visualStateModel" ></shape>
+                        <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
+                        <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
                     </div>
                     <div class="diffContainer">
                         <a class='button visualStateDiff' :class=\"{ 'is-disabled' : nextState === undefined}\" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
@@ -416,17 +553,49 @@ var VisualState = Vue.extend({
                     </div>
                 </div>`,
     data: function() {
+        // return {
+        //     currentInputEvent: undefined,
+        //     shapesDictionary: {},
+        //     nextState: undefined,
+        //     previousState: undefined,
+        //     isDisplayingDiff: false,
+        //     showAllInputEvents: false,
+        // }
         return {
-            currentInputEvent: undefined,
-            shapesDictionary: {},
-            nextState: undefined,
-            previousState: undefined,
+            visualStateModel: this.initialVisualStateModel,
             isDisplayingDiff: false,
-            showAllInputEvents: false,
-            allInputEvents: window.store.inputEvents
+            // showAllInputEvents: false
         }
     },
     computed: {
+        currentInputEvent: {
+            get: function() {
+                return this.visualStateModel.currentInputEvent
+            },
+            set: function(newValue) {
+                this.visualStateModel.currentInputEvent = newValue
+            }
+        },
+        shapesModel: function() {
+            let result = []
+            for (var key in this.shapesDictionary) {
+                result.push(this.shapesDictionary[key])
+            }
+            return result
+        },
+        shapesDictionary: function() {
+            return this.visualStateModel.shapesDictionary
+        },
+        nextState: function() {
+            return this.visualStateModel.nextState
+        },
+        previousState: function() {
+            return this.visualStateModel.previousState
+        },
+        allInputEvents: function() {
+            //TODO check caching
+            return globalStore.inputEvents
+        },
         differencesWithNextState: {
             cache: false,
             get: function() {
@@ -489,8 +658,11 @@ var VisualState = Vue.extend({
         }
     },
     methods: {
-        shapeFor(aShapeKey) {
-            return this.shapesDictionary[aShapeKey];
+        shapesVM() {
+            if (this.$refs.hasOwnProperty('shapes')) {
+                return this.$refs.shapes
+            }
+            return []
         },
         displayDiff() {
             this.isDisplayingDiff = !this.isDisplayingDiff;
@@ -498,27 +670,23 @@ var VisualState = Vue.extend({
         canvasElement() {
             return this.$el.getElementsByClassName("visualStateCanvas")[0]
         },
-        shapes() {
-            let result = [];
-            for (let shapeModelId in this.shapesDictionary) {
-                result.push(this.shapesDictionary[shapeModelId]);
-            }
-            return result;
-        },
         selectedShapes: function() {
-            return this.shapes().filter(each => each.isSelected);
+            return this.shapesVM().filter(each => each.isSelected);
         },
         actionStarted: function(e) {
-            if (toolbarVM.drawMode) {
+            e.preventDefault()
+            if (globalStore.toolbarState.drawMode) {
                 this.drawingStarted(e);
-            } else if (toolbarVM.selectionMode) {
+            } else if (globalStore.toolbarState.selectionMode) {
                 let selectedShape = null;
 
                 //We traverse the shapes in backward order
-                let allShapes = this.shapes()
+                let allShapes = this.shapesVM()
                 for (var i = allShapes.length - 1; i >= 0; i--) {
                     var each = allShapes[i];
-                    if (each.isPointInside(e.x, e.y)) {
+                    let x = e.x - this.canvasElement().offsetLeft;
+                    let y = e.y - this.canvasElement().offsetTop;
+                    if (each.version.isPointInside(x, y)) {
                         each.toggleSelection();
 
                         if (each.isSelected) {
@@ -528,7 +696,7 @@ var VisualState = Vue.extend({
                     }
                 }
 
-                if (!toolbarVM.multiSelectionMode) {
+                if (!globalStore.toolbarState.multiSelectionMode) {
                     for (let previouslySelectedShape of this.selectedShapes()) {
                         if (!selectedShape || previouslySelectedShape !== selectedShape) {
                             previouslySelectedShape.deselect();
@@ -541,51 +709,53 @@ var VisualState = Vue.extend({
 
         //DRAWING METHODS
         drawingStarted: function(e) {
-            var newShapeVM = this.addNewShape();
+            var newShapeModel = this.visualStateModel.addNewShape();
 
             let startingWindowMousePosition = {
-                x: e.pageX + outputAreaVM.$el.scrollLeft,
-                y: e.pageY + outputAreaVM.$el.scrollTop
+                x: e.pageX + document.getElementById('outputArea').scrollLeft,
+                y: e.pageY + document.getElementById('outputArea').scrollTop
             };
 
             var mouseMoveHandler
 
             mouseMoveHandler = function(e) {
-                this.drawingChanged(e, newShapeVM, startingWindowMousePosition)
+                e.preventDefault()
+                this.drawingChanged(e, newShapeModel, startingWindowMousePosition)
             }.bind(this)
 
             var mouseUpHandler
             mouseUpHandler = function(e) {
-                this.drawingEnded(e, newShapeVM)
-                this.$el.removeEventListener('mousemove', mouseMoveHandler, false);
-                this.$el.removeEventListener('mouseup', mouseUpHandler, false);
+                e.preventDefault()
+                this.drawingEnded(e, newShapeModel)
+                window.removeEventListener('mousemove', mouseMoveHandler, false);
+                window.removeEventListener('mouseup', mouseUpHandler, false);
             }.bind(this)
 
-            this.$el.addEventListener('mousemove', mouseMoveHandler, false);
-            this.$el.addEventListener('mouseup', mouseUpHandler, false);
+            window.addEventListener('mousemove', mouseMoveHandler, false);
+            window.addEventListener('mouseup', mouseUpHandler, false);
 
-            if (outputAreaVM.visualStates[0] === this) {
+            if (globalStore.visualStates[0] === this.visualStateModel) {
                 // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
-                // socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
+                // globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
 
-                socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeVM.version.model.id, color: newShapeVM.version.color, width: newShapeVM.version.width, height: newShapeVM.version.height, top: newShapeVM.version.top, left: newShapeVM.version.left, opacity: newShapeVM.version.opacity } })
+                globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.model.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
             }
         },
 
-        drawingChanged: function(e, newShapeVM, startingWindowMousePosition) {
-            this.updateShapeProperties(e, newShapeVM, startingWindowMousePosition);
+        drawingChanged: function(e, newShapeModel, startingWindowMousePosition) {
+            this.updateShapeProperties(e, newShapeModel, startingWindowMousePosition);
         },
 
-        drawingEnded: function(e, newShapeVM) {
+        drawingEnded: function(e, newShapeModel) {
             if (this.nextState) {
-                this.nextState.didCreateShape(newShapeVM, this);
+                this.nextState.didCreateShape(newShapeModel, this);
             }
         },
 
-        updateShapeProperties: function(e, newShapeVM, startingWindowMousePosition) {
+        updateShapeProperties: function(e, newShapeModel, startingWindowMousePosition) {
             //Maybe this should go in Shape
-            let currentWindowMousePositionX = e.pageX + outputAreaVM.$el.scrollLeft;
-            let currentWindowMousePositionY = e.pageY + outputAreaVM.$el.scrollTop;
+            let currentWindowMousePositionX = e.pageX + document.getElementById('outputArea').scrollLeft;
+            let currentWindowMousePositionY = e.pageY + document.getElementById('outputArea').scrollTop;
             var topValue = startingWindowMousePosition.y
             if (currentWindowMousePositionY < startingWindowMousePosition.y) {
                 topValue = currentWindowMousePositionY;
@@ -598,42 +768,13 @@ var VisualState = Vue.extend({
             var widthValue = Math.abs(currentWindowMousePositionX - startingWindowMousePosition.x);
             var heightValue = Math.abs(currentWindowMousePositionY - startingWindowMousePosition.y)
 
-            newShapeVM.version.top = topValue - this.canvasOffsetTop();
-            newShapeVM.version.left = leftValue - this.canvasOffsetLeft();
-            newShapeVM.version.width = widthValue;
-            newShapeVM.version.height = heightValue;
+            newShapeModel.top = topValue - this.canvasOffsetTop();
+            newShapeModel.left = leftValue - this.canvasOffsetLeft();
+            newShapeModel.width = widthValue;
+            newShapeModel.height = heightValue;
         },
 
-        somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
-            let relatedShape = this.shapesDictionary[model.id]
-            if (!relatedShape) {
-                return;
-            }
-            let newPreviousValue = previousValue;
-
-            if (!relatedShape.version.isFollowingMaster(changedPropertyName)) {
-                newPreviousValue = relatedShape.version.valueForProperty(changedPropertyName);
-                // newPreviousValue = relatedShape.version.nonZeroValue(changedPropertyName);
-            }
-
-            if (relatedShape.version.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
-                //Equal values, this shape should keep or start following the master
-                relatedShape.version.followMaster(changedPropertyName);
-
-                if (this.nextState) {
-                    this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
-                }
-            } else {
-                logger("newPreviousValue is NOT equal to previousValue")
-
-                //Shape is getting it s own value, so its not following the materVersion anymore
-                if (relatedShape.version.isFollowingMaster(changedPropertyName)) {
-                    relatedShape.version[changedPropertyName].value = changedValue
-                }
-            }
-        },
         changeColorOnSelection: function(cssStyle) {
-            var currentVisualStateVM = this;
             for (let selectedShapeVM of this.selectedShapes()) {
                 //The first previousValue needs to be an actualValue
                 let previousValue = selectedShapeVM.version.color;
@@ -646,33 +787,11 @@ var VisualState = Vue.extend({
 
                     selectedShapeVM.version.color = newValue;
 
-                    if (currentVisualStateVM.nextState) {
-                        currentVisualStateVM.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'backgroundColor');
+                    if (this.nextState) {
+                        this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'backgroundColor');
                     }
                 }
             };
-        },
-        addNewShape(oldShapeVM) {
-            let correspondingVersion
-
-            if (oldShapeVM) {
-                //Cheap way of cloning the version
-                correspondingVersion = new ShapeModelVersion(oldShapeVM.version.model, oldShapeVM.version);
-            } else {
-                let newId = outputAreaVM.shapeCounter++;
-                correspondingVersion = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
-            }
-
-            // if (oldShapeVM) {
-            //     newShapeVM.isSelected = oldShapeVM.isSelected
-            // }
-            var newShapeVM = new ShapeVM({ data: { visualState: this, version: correspondingVersion } });
-
-            newShapeVM.$mount();
-            this.canvasElement().appendChild(newShapeVM.$el);
-            Vue.set(this.shapesDictionary, newShapeVM.version.model.id, newShapeVM);
-
-            return newShapeVM;
         },
         canvasOffsetLeft() {
             return this.canvasElement().offsetLeft;
@@ -680,19 +799,8 @@ var VisualState = Vue.extend({
         canvasOffsetTop() {
             return this.canvasElement().offsetTop;
         },
-
-        didCreateShape(newlyCreatedShape, previousState) {
-            if (this.previousState !== previousState) {
-                console.log("WARNING: THIS SHOULDN'T HAPPEN");
-            }
-
-            let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
-            if (this.nextState) {
-                this.nextState.didCreateShape(ourNewlyCreatedShape, this);
-            }
-        },
-        didSelect(aVisualState, aShapeVM) {
-            if (!toolbarVM.multiSelectionMode || aVisualState !== this) {
+        didSelect(aVisualStateModel, aShapeVM) {
+            if (!globalStore.toolbarState.multiSelectionMode || aVisualStateModel !== this.visualStateModel) {
                 this.selectedShapes().forEach(function(aSelectedShapeVM) {
                     if (aSelectedShapeVM !== aShapeVM) {
                         aSelectedShapeVM.toggleSelection(false)
@@ -729,13 +837,14 @@ class Handler {
     }
 }
 
-var ShapeVM = Vue.extend({
+var ShapeVM = Vue.component('shape', {
+    props: ['shapeModel', 'parentVisualState'],
     template: `<div :id="'shape'+version.model.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>`,
     data: function() {
         return {
-            visualState: undefined,
+            visualState: this.parentVisualState,
             isSelected: false,
-            version: undefined,
+            version: this.shapeModel,
             handlers: [new Handler('nw', -6, -6, 0, 0), new Handler('ne', 0, -6, -6, 0), new Handler('se', 0, 0, -6, -6), new Handler('sw', -6, 0, 0, -6)] //L T R B
         }
     },
@@ -759,28 +868,12 @@ var ShapeVM = Vue.extend({
     },
     watch: {
         styleObject: function(val) {
-            if (outputAreaVM.visualStates[0] === this.visualState) {
-                socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, color: this.version.color, width: this.version.width, height: this.version.height, top: this.version.top, left: this.version.left, opacity: this.version.opacity } })
+            if (globalStore.visualStates[0] === this.visualState) {
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, color: this.version.color, width: this.version.width, height: this.version.height, top: this.version.top, left: this.version.left, opacity: this.version.opacity } })
             }
         }
     },
     methods: {
-        diffArray(nextShapeWithTheSameModel) {
-            let changes = []
-            if (!nextShapeWithTheSameModel.version.isFollowingMaster('backgroundColor')) {
-                // changes.push('Changed color from ' + this.version.color + ' to ' + nextShapeWithTheSameModel.version.color)
-                changes.push({ backgroundColor: { previousValue: this.version.color, newValue: nextShapeWithTheSameModel.version.color } })
-            }
-            if (!nextShapeWithTheSameModel.version.isFollowingMaster('translation')) {
-                // changes.push('Changed position from ' + JSON.stringify(this.version.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.position))
-                changes.push({ translation: { previousValue: this.version.position, newValue: nextShapeWithTheSameModel.version.position } })
-            }
-            if (!nextShapeWithTheSameModel.version.isFollowingMaster('scaling')) {
-                // changes.push('Changed size from ' + JSON.stringify(this.version.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.version.scale))
-                changes.push({ scaling: { previousValue: this.version.scale, newValue: nextShapeWithTheSameModel.version.scale } })
-            }
-            return changes
-        },
         mouseDownStartedOnHandler(e) {
             if (!this.isSelected) {
                 console.log("THIS SHOULD NEVER HAPPEN")
@@ -789,8 +882,8 @@ var ShapeVM = Vue.extend({
             e.preventDefault();
             e.stopPropagation();
 
-            let startingShapePositionXInWindowCoordinates = this.version.left + this.visualState.canvasOffsetLeft();
-            let startingShapePositionYInWindowCoordinates = this.version.top + this.visualState.canvasOffsetTop();
+            let startingShapePositionXInWindowCoordinates = this.version.left + this.$parent.canvasOffsetLeft();
+            let startingShapePositionYInWindowCoordinates = this.version.top + this.$parent.canvasOffsetTop();
             let startingShapeWidth = this.version.scale.w
             let startingShapeHeight = this.version.scale.h
 
@@ -801,7 +894,7 @@ var ShapeVM = Vue.extend({
             mouseMoveHandler = function(e) {
                 this.scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight);
             }.bind(this)
-            let visualStateElement = this.visualState.canvasElement();
+            let visualStateElement = this.$parent.canvasElement();
             visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
 
             var mouseUpHandler
@@ -812,7 +905,7 @@ var ShapeVM = Vue.extend({
             visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
         },
         mouseDownStartedOnShape(e) {
-            if (toolbarVM.drawMode) {
+            if (globalStore.toolbarState.drawMode) {
                 return
             }
 
@@ -824,8 +917,8 @@ var ShapeVM = Vue.extend({
             }
 
             //Starting to move a shape
-            let currentWindowMousePositionX = e.x;
-            let currentWindowMousePositionY = e.y;
+            let currentWindowMousePositionX = e.pageX;
+            let currentWindowMousePositionY = e.pageY;
             var offsetX = currentWindowMousePositionX - this.version.left;
             var offsetY = currentWindowMousePositionY - this.version.top;
 
@@ -836,15 +929,14 @@ var ShapeVM = Vue.extend({
             var moveHandler = function(e) {
                 this.moveChanged(e, offsetX, offsetY);
             }.bind(this);
-            let visualStateElement = this.visualState.$el;
-            visualStateElement.addEventListener('mousemove', moveHandler, false);
+            window.addEventListener('mousemove', moveHandler, false);
 
             var upHandler
             upHandler = function(e) {
-                visualStateElement.removeEventListener('mousemove', moveHandler, false);
-                visualStateElement.removeEventListener('mouseup', upHandler, false);
+                window.removeEventListener('mousemove', moveHandler, false);
+                window.removeEventListener('mouseup', upHandler, false);
             }.bind(this);
-            visualStateElement.addEventListener('mouseup', upHandler, false);
+            window.addEventListener('mouseup', upHandler, false);
         },
 
         moveChanged: function(e, initialOffsetX, initialOffsetY) {
@@ -853,8 +945,8 @@ var ShapeVM = Vue.extend({
 
             let previousValue = { x: this.version.position.x, y: this.version.position.y };
             let newValue = {
-                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.canvasElement().clientWidth),
-                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.canvasElement().clientHeight)
+                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.maxWidth),
+                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.maxHeight)
             }
             logger('moveChanged');
             logger('previousValue: ' + JSON.stringify(previousValue));
@@ -869,11 +961,6 @@ var ShapeVM = Vue.extend({
                     this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'translation');
                 }
             }
-        },
-        isPointInside: function(windowX, windowY) {
-            let x = windowX - this.$el.parentElement.offsetLeft;
-            let y = windowY - this.$el.parentElement.offsetTop;
-            return this.version.top < y && this.version.left < x && x < this.version.left + this.version.width && y < this.version.top + this.version.height;
         },
         //deprecated
         handlerAtPoint(windowX, windowY) {
@@ -895,7 +982,11 @@ var ShapeVM = Vue.extend({
         toggleSelection(notify = true) {
             this.isSelected = !this.isSelected;
             if (this.isSelected && notify) {
-                outputAreaVM.didSelectShapeAtVisualState(this.visualState, this);
+
+                this.$parent.didSelect(this.visualState, this);
+                // for (let each of globalStore.visualStates) {
+                //     each.didSelect(this.visualState, this);
+                // }
             }
         },
         deselect() {
@@ -922,11 +1013,11 @@ var ShapeVM = Vue.extend({
                 case 'se':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
                         //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.version.left = currentWindowMousePositionX - this.visualState.canvasOffsetLeft()
+                        this.version.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft()
                     }
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                         //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop()
+                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop()
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
                     newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
@@ -936,34 +1027,34 @@ var ShapeVM = Vue.extend({
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
                         let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
 
-                        let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.visualState.canvasOffsetLeft();
+                        let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.$parent.canvasOffsetLeft();
                         this.version.left = startingShapePositionX - offsetX;
 
                         newValue.w = startingShapeWidth + offsetX;
                     } else {
-                        newValue.w = currentWindowMousePositionX - (this.version.left + this.visualState.canvasOffsetLeft());
+                        newValue.w = currentWindowMousePositionX - (this.version.left + this.$parent.canvasOffsetLeft());
                     }
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                         let offsetY = startingShapePositionYInWindowCoordinates - currentWindowMousePositionY;
-                        let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.visualState.canvasOffsetTop();
+                        let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.$parent.canvasOffsetTop();
                         this.version.top = startingShapePositionY - offsetY;
 
                         newValue.h = offsetY;
 
                     } else {
-                        newValue.h = currentWindowMousePositionY - (this.version.top + this.visualState.canvasOffsetTop());
+                        newValue.h = currentWindowMousePositionY - (this.version.top + this.$parent.canvasOffsetTop());
                     }
 
                     break;
                 case 'nw':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
-                        this.version.left = currentWindowMousePositionX - this.visualState.canvasOffsetLeft();
+                        this.version.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop();
+                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
 
                     newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
@@ -971,12 +1062,12 @@ var ShapeVM = Vue.extend({
                     break;
                 case 'ne':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                        this.version.left = (currentWindowMousePositionX - this.visualState.canvasOffsetLeft());
+                        this.version.left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.version.top = currentWindowMousePositionY - this.visualState.canvasOffsetTop();
+                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
                     newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
@@ -1000,24 +1091,19 @@ var ShapeVM = Vue.extend({
 var outputAreaVM = new Vue({
     el: '#outputArea',
     data: {
-        cursorType: 'auto',
-        shapeCounter: 0
+        cursorType: globalStore.cursorType,
+        shapeCounter: globalStore.shapeCounter
     },
     methods: {
         changeColorOfSelectedShapes: function(cssStyle) {
-            for (let each of this.visualStates) {
+            for (let each of this.$refs.visualStatesVM) {
                 each.changeColorOnSelection(cssStyle);
-            }
-        },
-        didSelectShapeAtVisualState(visualState, shape) {
-            for (let each of this.visualStates) {
-                each.didSelect(visualState, shape);
             }
         }
     },
     computed: {
         visualStates: function() {
-            return window.store.visualStates
+            return globalStore.visualStates
         }
     }
 });
@@ -1025,31 +1111,28 @@ var outputAreaVM = new Vue({
 var toolbarVM = new Vue({
     el: '#toolbar',
     data: {
-        drawMode: false,
-        selectionMode: true,
-        multiSelectionMode: false,
-        currentColor: '#1a60f3',
+        toolbarState: globalStore.toolbarState
     },
     methods: {
         drawSelected() {
-            this.drawMode = true;
-            this.selectionMode = false;
-            outputAreaVM.cursorType = "crosshair";
+            this.toolbarState.drawMode = true;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.cursorType = "crosshair";
         },
         selectionSelected() {
-            this.drawMode = false;
-            this.selectionMode = true;
-            outputAreaVM.cursorType = "default";
+            this.toolbarState.drawMode = false;
+            this.toolbarState.selectionMode = true;
+            this.toolbarState.cursorType = "default";
         },
         changeColor() {
             outputAreaVM.changeColorOfSelectedShapes({
-                'background-color': this.currentColor
+                'background-color': this.toolbarState.currentColor
             });
         },
 
         addVisualState() {
-            var allTheVisualStates = window.store.visualStates;
-            var newVisualState = new VisualState().$mount()
+            var allTheVisualStates = globalStore.visualStates;
+            var newVisualState = new VisualStateModel()
 
             if (allTheVisualStates.length > 0) {
                 let previousVisualState = allTheVisualStates.last();
@@ -1064,7 +1147,7 @@ var toolbarVM = new Vue({
                 newVisualState.previousState = previousVisualState;
             }
 
-            outputAreaVM.$el.appendChild(newVisualState.$el)
+            // outputAreaVM.$el.appendChild(newVisualState.$el)
 
             allTheVisualStates.push(newVisualState);
         }
@@ -1076,49 +1159,49 @@ var toolbarVM = new Vue({
 });
 
 window.addEventListener('load', function(e) {
-    context = document.getElementById('myCanvas').getContext("2d");
-    context.fillStyle = "#9ea7b8";
-    context.fillRect(0, 0, context.canvas.width, context.canvas.height);
-    // context.strokeStyle = "#df4b26";
-    // context.lineJoin = "round";
-    // context.lineWidth = 5;
+    globalStore.context = document.getElementById('myCanvas').getContext("2d");
+    globalStore.context.fillStyle = "#9ea7b8";
+    globalStore.context.fillRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
+    // globalStore.context.strokeStyle = "#df4b26";
+    // globalStore.context.lineJoin = "round";
+    // globalStore.context.lineWidth = 5;
 
-    // context.moveTo(0, 0);
-    // context.lineTo(200, 100);
-    // context.stroke();
+    // globalStore.context.moveTo(0, 0);
+    // globalStore.context.lineTo(200, 100);
+    // globalStore.context.stroke();
 
     function drawTouches() {
-        let points = window.store.inputEvents;
-        context.clearRect(0, 0, context.canvas.width, context.canvas.height);
-        context.lineWidth = 3;
+        let points = globalStore.inputEvents;
+        globalStore.context.clearRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
+        globalStore.context.lineWidth = 3;
         for (let i = 1; i < points.length; i++) {
             for (let j = 0; j < Math.max(Math.min(points[i - 1].touches.length, points[i].touches.length), 1); j++) {
-                context.beginPath();
-                context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
-                context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
-                context.strokeStyle = "black";
-                context.stroke();
+                globalStore.context.beginPath();
+                globalStore.context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
+                globalStore.context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
+                globalStore.context.strokeStyle = "black";
+                globalStore.context.stroke();
             }
         }
     }
 
     let amountOfTouchesLeft = 0
 
-    socket.on('message-from-server', function(data) {
+    globalStore.socket.on('message-from-server', function(data) {
         // console.log(data)
         let anInputEvent = data.message
 
         if (anInputEvent.type == 'touchend') {
             amountOfTouchesLeft -= 1;
             if (amountOfTouchesLeft == 0) {
-                window.store.isRecording = false
-                socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
+                globalStore.isRecording = false
+                globalStore.socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
             }
         } else {
             amountOfTouchesLeft = Math.max(amountOfTouchesLeft, anInputEvent.touches.length)
 
             if (anInputEvent.type == "touchstart") {
-                window.store.inputEvents.removeAll();
+                globalStore.inputEvents.removeAll();
             } else if (anInputEvent.type == 'touchmove') {
                 drawTouches()
             } else {
@@ -1126,6 +1209,6 @@ window.addEventListener('load', function(e) {
             }
         }
 
-        window.store.inputEvents.push(anInputEvent);
+        globalStore.inputEvents.push(anInputEvent);
     });
 });
