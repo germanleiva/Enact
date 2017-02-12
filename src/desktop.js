@@ -27,8 +27,8 @@ Vue.component('visual-state-mark', {
         },
         percentageInTimeline() {
             if (this.visualState.currentInputEvent) {
-                let totalEventCount = timelineAreaVM.inputEvents.length
-                let index = timelineAreaVM.inputEvents.indexOf(this.visualState.currentInputEvent)
+                let totalEventCount = window.store.inputEvents.length
+                let index = window.store.inputEvents.indexOf(this.visualState.currentInputEvent)
 
                 return index * 100 / totalEventCount;
             } else {
@@ -55,11 +55,11 @@ Vue.component('visual-state-mark', {
 
                 // visualStateMark.style.left = percentageInTimeline + '%';
 
-                let totalEventCount = timelineAreaVM.inputEvents.length
+                let totalEventCount = window.store.inputEvents.length
                 let index = Math.round(totalEventCount * percentageInTimeline / 100)
                 index = Math.max(Math.min(index, totalEventCount - 1), 0);
 
-                let correspondingInputEvent = timelineAreaVM.inputEvents[index]
+                let correspondingInputEvent = window.store.inputEvents[index]
 
                 // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + totalEventCount + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
 
@@ -272,9 +272,9 @@ timelineAreaVM = new Vue({
                 animation['shape' + eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
-                    let currentInputEventIndex = timelineAreaVM.inputEvents.indexOf(aVisualState.currentInputEvent)
+                    let currentInputEventIndex = window.store.inputEvents.indexOf(aVisualState.currentInputEvent)
                     if (currentPercentage == undefined) {
-                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / timelineAreaVM.inputEvents.length), 0);
+                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / window.store.inputEvents.length), 0);
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     if (shapeInThisVisualState) {
@@ -337,12 +337,12 @@ Vue.component('input-event-mark', {
 
             let startingMousePositionX = e.x;
 
-            let initialIndex = timelineAreaVM.inputEvents.indexOf(this.inputEvent);
+            let initialIndex = window.store.inputEvents.indexOf(this.inputEvent);
             mouseMoveHandler = function(e) {
                 let deltaX = e.x - startingMousePositionX
                 let indexVariation = Math.floor(deltaX / 2);
-                let newIndex = Math.max(Math.min(initialIndex + indexVariation, timelineAreaVM.inputEvents.length - 1), 0);
-                this.visualState.currentInputEvent = timelineAreaVM.inputEvents[newIndex];
+                let newIndex = Math.max(Math.min(initialIndex + indexVariation, window.store.inputEvents.length - 1), 0);
+                this.visualState.currentInputEvent = window.store.inputEvents[newIndex];
                 this.visualState.showAllInputEvents = true;
             }.bind(this)
 
@@ -423,7 +423,7 @@ var VisualState = Vue.extend({
             previousState: undefined,
             isDisplayingDiff: false,
             showAllInputEvents: false,
-            allInputEvents: timelineAreaVM.inputEvents
+            allInputEvents: window.store.inputEvents
         }
     },
     computed: {
@@ -1017,7 +1017,7 @@ var outputAreaVM = new Vue({
     },
     computed: {
         visualStates: function() {
-            return timelineAreaVM.visualStates
+            return window.store.visualStates
         }
     }
 });
@@ -1048,7 +1048,7 @@ var toolbarVM = new Vue({
         },
 
         addVisualState() {
-            var allTheVisualStates = timelineAreaVM.visualStates;
+            var allTheVisualStates = window.store.visualStates;
             var newVisualState = new VisualState().$mount()
 
             if (allTheVisualStates.length > 0) {
@@ -1088,7 +1088,7 @@ window.addEventListener('load', function(e) {
     // context.stroke();
 
     function drawTouches() {
-        let points = timelineAreaVM.inputEvents;
+        let points = window.store.inputEvents;
         context.clearRect(0, 0, context.canvas.width, context.canvas.height);
         context.lineWidth = 3;
         for (let i = 1; i < points.length; i++) {
@@ -1111,14 +1111,14 @@ window.addEventListener('load', function(e) {
         if (anInputEvent.type == 'touchend') {
             amountOfTouchesLeft -= 1;
             if (amountOfTouchesLeft == 0) {
-                timelineAreaVM.isRecording = false
+                window.store.isRecording = false
                 socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
             }
         } else {
             amountOfTouchesLeft = Math.max(amountOfTouchesLeft, anInputEvent.touches.length)
 
             if (anInputEvent.type == "touchstart") {
-                timelineAreaVM.inputEvents.removeAll();
+                window.store.inputEvents.removeAll();
             } else if (anInputEvent.type == 'touchmove') {
                 drawTouches()
             } else {
@@ -1126,6 +1126,6 @@ window.addEventListener('load', function(e) {
             }
         }
 
-        timelineAreaVM.inputEvents.push(anInputEvent);
+        window.store.inputEvents.push(anInputEvent);
     });
 });
