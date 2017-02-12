@@ -90,7 +90,7 @@ class VisualStateModel {
 
         let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
         if (this.nextState) {
-            this.nextState.didCreateShape(ourNewlyCreatedShape, this.visualStateModel);
+            this.nextState.didCreateShape(ourNewlyCreatedShape, this);
         }
     }
     shapeFor(aShapeKey) {
@@ -281,5 +281,5 @@ class ShapeModelVersion {
     }
 }
 
-export { VisualStateModel as VisualStateModel}
+export { VisualStateModel }
 export { logger }

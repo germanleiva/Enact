@@ -187,7 +187,9 @@ export default {
         //DRAWING METHODS
         drawingStarted: function(e) {
             var newShapeModel = this.visualStateModel.addNewShape();
-
+            if (this.nextState) {
+                this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
+            }
             let startingWindowMousePosition = {
                 x: e.pageX + document.getElementById('outputArea').scrollLeft,
                 y: e.pageY + document.getElementById('outputArea').scrollTop
@@ -224,9 +226,9 @@ export default {
         },
 
         drawingEnded: function(e, newShapeModel) {
-            if (this.nextState) {
-                this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
-            }
+            // if (this.nextState) {
+            //     this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
+            // }
         },
 
         updateShapeProperties: function(e, newShapeModel, startingWindowMousePosition) {
