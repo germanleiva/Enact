@@ -41,6 +41,8 @@ export default {
     'input-area': InputArea
   },
   mounted: function() {
+    globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
+
     this.prepareCanvas()
     var that = this;
     window.addEventListener('keydown', function(e) {
@@ -49,8 +51,8 @@ export default {
         console.log(" ---> " + e.keyCode)
 
         switch(e.keyCode) {
-            case 'AltLeft':
-            case 'AltRight':
+            case 18:
+                //AltLeft & AltRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = true;
                 break;
@@ -81,6 +83,16 @@ export default {
                 break;
         }
     });
+    window.addEventListener('keyup', function(e) {
+        switch(e.keyCode) {
+            case 18:
+                //AltLeft & AltRight
+                e.preventDefault()
+                globalStore.toolbarState.multiSelectionMode = false;
+                break;
+        }
+    });
+
   },
   methods: {
     changeColorOfSelectedShapes(cssStyle) {

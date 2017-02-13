@@ -45,7 +45,7 @@ export default {
         },
         startPlaying() {
             let animation = {}
-
+            debugger;
             let hiddedShapesKeys = []
             for (let i = 0; i < globalStore.shapeCounter; i++) {
                 let shapeKeyframes = {}
@@ -53,13 +53,15 @@ export default {
                 animation[eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
+                    debugger;
                     let currentInputEventIndex = globalStore.inputEvents.indexOf(aVisualState.currentInputEvent)
                     if (currentPercentage == undefined) {
                         currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / globalStore.inputEvents.length), 0);
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     if (shapeInThisVisualState) {
-                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.$el.style.cssText;
+
+                        shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.cssText();
                     } else {
                         if (currentPercentage == 0 || currentPercentage == 100) {
                             if (hiddedShapesKeys.indexOf(eachShapeKey) < 0) {
@@ -69,9 +71,7 @@ export default {
                             for (let eachOtherVS of globalStore.visualStates) {
                                 let missingShape = eachOtherVS.shapesDictionary[eachShapeKey]
                                 if (missingShape) {
-                                    var re = /opacity:?\s(\w+);/;
-
-                                    shapeKeyframes[currentPercentage + '%'] = missingShape.$el.style.cssText.replace(re, 'opacity:0;');
+                                    shapeKeyframes[currentPercentage + '%'] = missingShape.cssText(0);
 
                                     break;
                                 }

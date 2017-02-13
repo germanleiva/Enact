@@ -350,6 +350,13 @@ let ShapeVM = Vue.extend({
     }
 })
 
+function deleteShapeVM(id) {
+    let shapeVMToDelete = allShapes[id]
+    document.getElementById('mobileCanvas').removeChild(shapeVMToDelete.$el)
+    shapeVMToDelete.$destroy()
+    delete allShapes[id]
+}
+
 function createShapeVM(id, message) {
     let existingShape = allShapes[id];
     if (existingShape) {
@@ -374,8 +381,16 @@ function createShapeVM(id, message) {
 }
 
 socket.on('message-from-server', function(data) {
-    // console.log("Received something from server: " + JSON.stringify(data));
-
+    console.log("Received something from server: " + JSON.stringify(data));
+    if (data.type == "CLEAN") {
+        let allKeys = []
+        for (let eachShapeKey in allShapes) {
+            allKeys.push(eachShapeKey)
+        }
+        for (let shapeId of allKeys) {
+            deleteShapeVM(shapeId)
+        }
+    }
     if (data.type == "START_RECORDING") {
         mobileCanvasVM.isRecording = true;
     }
@@ -409,12 +424,7 @@ socket.on('message-from-server', function(data) {
         // var parentDOM = document.getElementById("mobileCanvas")
         // parentDOM.innerHTML = data.message;
         // debugger;
-        console.log("Trying to delete " + data.message.id)
-       let shapeVMToDelete = allShapes[data.message.id]
-        console.log("shapeVMToDelete " + shapeVMToDelete)
-        document.getElementById('mobileCanvas').removeChild(shapeVMToDelete.$el)
-       shapeVMToDelete.$destroy()
-       delete allShapes[data.message.id]
+       deleteShapeVM(data.message.id)
 
     }
     if (data.type == "NEW_ANIMATION") {

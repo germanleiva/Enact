@@ -157,6 +157,17 @@ class ShapeModelVersion {
         };
         this.masterVersion = aMasterVersion;
     }
+    cssText(opacityValue = 1) {
+        return 'background-color:' + this.color + ";" +
+            'position:' + 'absolute'  + ";" +
+            'left:' + this.left + 'px'  + ";" +
+            'top:' + this.top + 'px'  + ";" +
+            'width:' + this.width + 'px'  + ";" +
+            'height:' + this.height + 'px' + ";" +
+            'border:' + ('1px') + ' solid gray' + ";" +
+            'overflow:' + 'visible' + ";" +
+            'opacity:' + opacityValue
+    }
     get left() {
         if (this.translation.value.x == null) {
             return this.masterVersion.left;
