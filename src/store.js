@@ -120,7 +120,10 @@ class VisualStateModel {
 
         Vue.delete(this.shapesDictionary,aShapeModel.id)
         // this.shapesDictionary[aShapeModel.id] = undefined
-        globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
+
+        if (globalStore.visualStates[0] === this) {
+            globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
+        }
 
         if (this.nextState) {
             let connectedShape = this.nextState.shapeFor(aShapeModel.id)

@@ -1,5 +1,5 @@
 <template>
-    <div class="mark button is-dark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>
+    <div class="button is-dark mark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>
 </template>
 
 <script>
@@ -75,3 +75,11 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.mark {
+    width: 40px;
+    height: 40px;
+    position: absolute;
+}
+</style>

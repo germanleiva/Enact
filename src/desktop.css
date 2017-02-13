@@ -99,13 +99,6 @@
     border-radius: 3px;
 }
 
-.mark {
-    width: 40px;
-    height: 40px;
-    position: absolute;
-    text-align: center;
-}
-
 #timelineArea {
     display: flex;
     justify-content:center;
