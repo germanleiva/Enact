@@ -20,6 +20,8 @@ let logger = function(text) {
     }
 }
 
+export const globalBus = new Vue();
+
 export const globalStore = new Vue({
     data: {
         visualStates: [],

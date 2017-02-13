@@ -7,7 +7,7 @@
 <script>
 
 import Vue from 'vue'
-import {globalStore,logger} from '../store.js'
+import {globalStore,globalBus,logger} from '../store.js'
 
 class Handler {
     constructor(namePrefix, left, top, right, bottom) {
@@ -178,11 +178,8 @@ export default {
         toggleSelection(notify = true) {
             this.isSelected = !this.isSelected;
             if (this.isSelected && notify) {
-
-                this.$parent.didSelect(this.visualState, this);
-                // for (let each of globalStore.visualStates) {
-                //     each.didSelect(this.visualState, this);
-                // }
+                console.log("Sent event didSelectShapeVM")
+                globalBus.$emit('didSelectShapeVM', this);
             }
         },
         deselect() {

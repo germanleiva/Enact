@@ -16,7 +16,7 @@
 
 <script>
 
-import {globalStore} from '../store.js'
+import {globalStore, globalBus} from '../store.js'
 import Shape from './Shape.vue'
 import InputEventMark from './InputEventMark.vue'
 import DiffElement from './DiffElement.vue'
@@ -43,6 +43,20 @@ export default {
         'shape':Shape,
         'input-event-mark':InputEventMark,
         'diff-element':DiffElement,
+    },
+    mounted: function() {
+        globalBus.$on('didSelectShapeVM', theSelectedShapeVM => {
+            //A shape was selected in other VisualState, I need to deselect my shapes
+            //or, I'm not in multiSelectionMode and I need to deselect my shapes (except for theSelectedShapeVM)
+            if (!globalStore.toolbarState.multiSelectionMode || theSelectedShapeVM.visualState !== this.visualStateModel) {
+                for (let otherSelectedShapeVM of this.selectedShapes()) {
+                        if (otherSelectedShapeVM !== theSelectedShapeVM) {
+                            otherSelectedShapeVM.deselect()
+                        }
+                    }
+            }
+        });
+
     },
     computed: {
         shapeModels: function() {
@@ -290,18 +304,6 @@ export default {
         },
         canvasOffsetTop() {
             return this.canvasElement().offsetTop;
-        },
-        didSelect(aVisualStateModel, aShapeVM, notify = false) {
-            if (notify) {
-                this.$parent.didSelect(aVisualStateModel, aShapeVM)
-            }
-            if (!globalStore.toolbarState.multiSelectionMode || aVisualStateModel !== this.visualStateModel) {
-                this.selectedShapes().forEach(function(aSelectedShapeVM) {
-                    if (aSelectedShapeVM !== aShapeVM) {
-                        aSelectedShapeVM.toggleSelection(false)
-                    }
-                });
-            }
         }
     }
 }
