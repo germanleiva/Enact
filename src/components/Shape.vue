@@ -178,7 +178,6 @@ export default {
         toggleSelection(notify = true) {
             this.isSelected = !this.isSelected;
             if (this.isSelected && notify) {
-                console.log("Sent event didSelectShapeVM")
                 globalBus.$emit('didSelectShapeVM', this);
             }
         },

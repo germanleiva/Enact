@@ -119,22 +119,24 @@ class VisualStateModel {
         }
     }
     deleteShape(aShapeModel) {
+        aShapeModel.unfollowMaster()
+
+        if (this.nextState) {
+            let connectedShape = this.nextState.shapeFor(aShapeModel.id)
+            if (connectedShape) {
+                if (connectedShape.isFollowingMaster()) {
+                    this.nextState.deleteShape(connectedShape)
+                } else {
+                    connectedShape.unfollowMaster()
+                }
+            }
+        }
 
         Vue.delete(this.shapesDictionary,aShapeModel.id)
         // this.shapesDictionary[aShapeModel.id] = undefined
 
         if (globalStore.visualStates[0] === this) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
-        }
-
-        if (this.nextState) {
-            let connectedShape = this.nextState.shapeFor(aShapeModel.id)
-            if (connectedShape) {
-                if (connectedShape.isFollowingMaster()) {
-                    connectedShape.masterVersion = undefined
-                }
-                this.nextState.deleteShape(connectedShape)
-            }
         }
     }
 }
@@ -215,6 +217,9 @@ class ShapeModelVersion {
     set height(value) {
         this.scaling.value.h = value;
     }
+    set color(value) {
+        this.backgroundColor.value = value;
+    }
     get position() {
         if (this.isFollowingMaster('translation')) {
             return this.masterVersion.position;
@@ -226,9 +231,6 @@ class ShapeModelVersion {
             return this.masterVersion.scale;
         }
         return this.scaling.value;
-    }
-    set color(value) {
-        this.backgroundColor.value = value;
     }
     followMaster(property) {
         switch (property) {
@@ -245,6 +247,31 @@ class ShapeModelVersion {
                 break;
         }
     }
+    setOwnPropertiesFromMaster(property) {
+        switch (property) {
+            case 'backgroundColor':
+                this.color = this.color
+                break;
+            case 'translation':
+                this.left = this.left
+                this.top = this.top
+                break;
+            case 'scaling':
+                this.width = this.width
+                this.height = this.height
+                break;
+            case '':
+            default:
+                this.setOwnPropertiesFromMaster('backgroundColor')
+                this.setOwnPropertiesFromMaster('translation')
+                this.setOwnPropertiesFromMaster('scaling')
+                break;
+        }
+    }
+    unfollowMaster(property) {
+        this.setOwnPropertiesFromMaster(property)
+        this.masterVersion = undefined
+    }
     isFollowingMaster(property) {
         switch (property) {
             case 'backgroundColor':
@@ -254,6 +281,8 @@ class ShapeModelVersion {
             case 'scaling':
                 return this.scaling.value.w == null && this.scaling.value.h == null;
         }
+        console.log("check all properties")
+        return this.isFollowingMaster('backgroundColor') && this.isFollowingMaster('translation') && this.isFollowingMaster('scaling')
     }
     nonZeroValue(property) {
         switch (property) {

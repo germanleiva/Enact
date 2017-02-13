@@ -48,7 +48,7 @@ export default {
     window.addEventListener('keydown', function(e) {
         // e.preventDefault()
         let arrowDisplacement = 1;
-        console.log(" ---> " + e.keyCode)
+        console.log("keydown keyCode: " + e.keyCode)
 
         switch(e.keyCode) {
             case 18:
@@ -79,6 +79,9 @@ export default {
             case 46:
                 // MAC delete key
                 e.preventDefault()
+                if (!that.$refs.outputArea) {
+                    debugger;
+                }
                 that.$refs.outputArea.deleteSelectedShapes()
                 break;
         }
