@@ -53,22 +53,15 @@ class VisualStateModel {
         this.maxHeight = 667
         this.showAllInputEvents = false
     }
-    shapes() {
-        let result = [];
-        for (let shapeModelId in this.shapesDictionary) {
-            result.push(this.shapesDictionary[shapeModelId]);
-        }
-        return result;
-    }
     addNewShape(protoShape) {
         let correspondingVersion
 
         if (protoShape) {
             //Cheap way of cloning the version
-            correspondingVersion = new ShapeModelVersion(protoShape.model, protoShape);
+            correspondingVersion = new ShapeModelVersion(protoShape.id, protoShape);
         } else {
-            let newId = globalStore.shapeCounter++;
-            correspondingVersion = new ShapeModelVersion(new ShapeModel(newId), undefined, 'white', 0, 0, 0, 0);
+            let newShapeCount = globalStore.shapeCounter++;
+            correspondingVersion = new ShapeModelVersion('shape'+newShapeCount, undefined, 'white', 0, 0, 0, 0);
         }
 
         // if (oldShapeVM) {
@@ -78,8 +71,8 @@ class VisualStateModel {
 
         // newShapeVM.$mount();
         // this.canvasElement().appendChild(newShapeVM.$el);
-        // Vue.set(this.shapesDictionary, newShapeVM.version.model.id, newShapeVM);
-        Vue.set(this.shapesDictionary, correspondingVersion.model.id, correspondingVersion);
+        // Vue.set(this.shapesDictionary, newShapeVM.id, newShapeVM);
+        Vue.set(this.shapesDictionary, correspondingVersion.id, correspondingVersion);
 
         return correspondingVersion;
     }
@@ -96,8 +89,8 @@ class VisualStateModel {
     shapeFor(aShapeKey) {
         return this.shapesDictionary[aShapeKey];
     }
-    somethingChangedPreviousState(model, previousValue, changedValue, changedPropertyName) {
-        let relatedShape = this.shapesDictionary[model.id]
+    somethingChangedPreviousState(shapeId, previousValue, changedValue, changedPropertyName) {
+        let relatedShape = this.shapesDictionary[shapeId]
         if (!relatedShape) {
             return;
         }
@@ -105,7 +98,6 @@ class VisualStateModel {
 
         if (!relatedShape.isFollowingMaster(changedPropertyName)) {
             newPreviousValue = relatedShape.valueForProperty(changedPropertyName);
-            // newPreviousValue = relatedShape.version.nonZeroValue(changedPropertyName);
         }
 
         if (relatedShape.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
@@ -113,7 +105,7 @@ class VisualStateModel {
             relatedShape.followMaster(changedPropertyName);
 
             if (this.nextState) {
-                this.nextState.somethingChangedPreviousState(model, newPreviousValue, changedValue, changedPropertyName);
+                this.nextState.somethingChangedPreviousState(shapeId, newPreviousValue, changedValue, changedPropertyName);
             }
         } else {
             logger("newPreviousValue is NOT equal to previousValue")
@@ -124,17 +116,26 @@ class VisualStateModel {
             }
         }
     }
-}
+    deleteShape(aShapeModel) {
 
-class ShapeModel {
-    constructor(anId) {
-        this.id = anId;
+        Vue.delete(this.shapesDictionary,aShapeModel.id)
+        // this.shapesDictionary[aShapeModel.id] = undefined
+
+        if (this.nextState) {
+            let connectedShape = this.nextState.shapeFor(aShapeModel.id)
+            if (connectedShape) {
+                if (connectedShape.isFollowingMaster()) {
+                    connectedShape.masterVersion = undefined
+                }
+                this.nextState.deleteShape(connectedShape)
+            }
+        }
     }
 }
 
 class ShapeModelVersion {
-    constructor(model, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
-        this.model = model;
+    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
+        this.id = id;
 
         this.opacity = 1
 

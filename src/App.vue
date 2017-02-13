@@ -28,19 +28,6 @@ if (!Array.prototype.removeAll) {
     }
 }
 
-// window.addEventListener('load', function(e) {
-
-// });
-
-window.addEventListener('keydown', function(e) {
-    if (e.code === 'AltLeft' || e.code === 'AltRight') {
-        globalStore.toolbarState.multiSelectionMode = true;
-    }
-});
-window.addEventListener('keyup', function(e) {
-    globalStore.toolbarState.multiSelectionMode = false;
-});
-
 export default {
   name: 'app',
   data () {
@@ -55,6 +42,45 @@ export default {
   },
   mounted: function() {
     this.prepareCanvas()
+    var that = this;
+    window.addEventListener('keydown', function(e) {
+        // e.preventDefault()
+        let arrowDisplacement = 1;
+        console.log(" ---> " + e.keyCode)
+
+        switch(e.keyCode) {
+            case 'AltLeft':
+            case 'AltRight':
+                e.preventDefault()
+                globalStore.toolbarState.multiSelectionMode = true;
+                break;
+            case 38:
+                // up arrow
+                e.preventDefault()
+                that.$refs.outputArea.moveSelectedShapes(0,-arrowDisplacement)
+                break;
+            case 40:
+                // down arrow
+                e.preventDefault()
+                that.$refs.outputArea.moveSelectedShapes(0,arrowDisplacement)
+                break;
+            case 37:
+               // left arrow
+                e.preventDefault()
+                that.$refs.outputArea.moveSelectedShapes(-arrowDisplacement,0)
+               break;
+            case 39:
+               // right arrow
+                e.preventDefault()
+                that.$refs.outputArea.moveSelectedShapes(arrowDisplacement,0)
+               break;
+            case 46:
+                // MAC delete key
+                e.preventDefault()
+                that.$refs.outputArea.deleteSelectedShapes()
+                break;
+        }
+    });
   },
   methods: {
     changeColorOfSelectedShapes(cssStyle) {
@@ -119,6 +145,40 @@ export default {
 
             globalStore.inputEvents.push(anInputEvent);
         });
+    },
+    downArrowPressed(e){
+        console.log("ARE YOU HERE???")
+        this.$refs.outputArea.moveSelectedShapes(0,-arrowDisplacement)
+    },
+    keydownPressed(e) {
+        let arrowDisplacement = 5;
+        console.log("KEY DOWN EVENT " + typeof(e.keyCode))
+        switch(e.keyCode) {
+            case 'AltLeft':
+            case 'AltRight':
+                globalStore.toolbarState.multiSelectionMode = true;
+                break;
+            case 38:
+                // up arrow
+                this.$refs.outputArea.moveSelectedShapes(0,arrowDisplacement)
+                break;
+            case 40:
+                // down arrow
+                console.log("DOWN ARROW")
+                this.$refs.outputArea.moveSelectedShapes(0,-arrowDisplacement)
+                break;
+            case 37:
+               // left arrow
+                this.$refs.outputArea.moveSelectedShapes(-arrowDisplacement,0)
+               break;
+            case 39:
+               // right arrow
+                this.$refs.outputArea.moveSelectedShapes(arrowDisplacement,0)
+               break;
+        }
+    },
+    keyupPressed(e) {
+        globalStore.toolbarState.multiSelectionMode = false;
     }
   }
 }

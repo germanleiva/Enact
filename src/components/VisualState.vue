@@ -1,14 +1,14 @@
 <template>
     <div class='visualStateContainer'>
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-            <shape ref="shapes" v-for="shape in shapesModel" v-bind:shape-model="shape" v-bind:parent-visual-state="visualStateModel" ></shape>
+            <shape  ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model-id="aShapeModel.id" v-bind:parent-visual-state="visualStateModel"></shape>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
             <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
         </div>
         <div class="diffContainer">
             <a class='button visualStateDiff' :class="{ 'is-disabled' : nextState === undefined}" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
             <div v-show='isDisplayingDiff' class='box diffBox'>
-                <diff-element v-for="diff in differencesWithNextState" :diff-data="diff"></div>
+                <diff-element v-for="diff in differencesWithNextState" :diff-data="diff"></diff-element>
             </div>
         </div>
     </div>
@@ -45,6 +45,16 @@ export default {
         'diff-element':DiffElement,
     },
     computed: {
+        shapeModels: function() {
+            let result = []
+            for (let shapeKey in this.visualStateModel.shapesDictionary) {
+                let shape = this.visualStateModel.shapesDictionary[shapeKey]
+                if (shape) {
+                    result.push(shape)
+                }
+            }
+            return result;
+        },
         currentInputEvent: {
             get: function() {
                 return this.visualStateModel.currentInputEvent
@@ -52,16 +62,6 @@ export default {
             set: function(newValue) {
                 this.visualStateModel.currentInputEvent = newValue
             }
-        },
-        shapesModel: function() {
-            let result = []
-            for (var key in this.shapesDictionary) {
-                result.push(this.shapesDictionary[key])
-            }
-            return result
-        },
-        shapesDictionary: function() {
-            return this.visualStateModel.shapesDictionary
         },
         nextState: function() {
             return this.visualStateModel.nextState
@@ -77,20 +77,20 @@ export default {
             cache: false,
             get: function() {
                 let result = []
-                this.shapesDictionary
+                this.visualStateModel.shapesDictionary
                 if (this.hasNextState) {
                     let comparedShapesKey = []
-                    for (let shapeKey in this.shapesDictionary) {
+                    for (let shapeKey in this.visualStateModel.shapesDictionary) {
                         comparedShapesKey.push(shapeKey)
-                        let aShape = this.shapesDictionary[shapeKey];
+                        let aShape = this.visualStateModel.shapesDictionary[shapeKey];
                         let comparingShape = this.nextState.shapeFor(shapeKey)
                         if (comparingShape) {
                             for (let eachDiff of aShape.diffArray(comparingShape)) {
                                 result.push(eachDiff);
                             }
                         } else {
-                            // result.push('Removed Shape ' + aShape.version.model.id)
-                            result.push({ removed: { previousValue: undefined, newValue: aShape.model.id } })
+                            // result.push('Removed Shape ' + aShape.id)
+                            result.push({ removed: { previousValue: undefined, newValue: aShape.id } })
                         }
                     }
                     for (let nextShapeKey in this.nextState.shapesDictionary) {
@@ -138,8 +138,10 @@ export default {
         shapesVM() {
             if (this.$refs.hasOwnProperty('shapes')) {
                 return this.$refs.shapes
+            } else {
+                console.log("why does this happen?")
+                return []
             }
-            return []
         },
         displayDiff() {
             this.isDisplayingDiff = !this.isDisplayingDiff;
@@ -163,7 +165,7 @@ export default {
                     var each = allShapes[i];
                     let x = e.x - this.canvasElement().offsetLeft;
                     let y = e.y - this.canvasElement().offsetTop;
-                    if (each.version.isPointInside(x, y)) {
+                    if (each.shapeModel().isPointInside(x, y)) {
                         each.toggleSelection();
 
                         if (each.isSelected) {
@@ -217,7 +219,7 @@ export default {
                 // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
                 // globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
 
-                globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.model.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
+                globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
             }
         },
 
@@ -256,21 +258,32 @@ export default {
         changeColorOnSelection: function(cssStyle) {
             for (let selectedShapeVM of this.selectedShapes()) {
                 //The first previousValue needs to be an actualValue
-                let previousValue = selectedShapeVM.version.color;
+                let previousValue = selectedShapeVM.shapeModel().color;
                 let newValue = cssStyle['background-color'];
 
                 //First we need to check if we are followingMaster in that property
-                if (selectedShapeVM.version.isFollowingMaster('backgroundColor') && previousValue == newValue) {
+                if (selectedShapeVM.shapeModel().isFollowingMaster('backgroundColor') && previousValue == newValue) {
                     //Don't do anything, keep following master and do not propagate
                 } else {
 
-                    selectedShapeVM.version.color = newValue;
+                    selectedShapeVM.shapeModel().color = newValue;
 
                     if (this.nextState) {
-                        this.nextState.somethingChangedPreviousState(selectedShapeVM.version.model, previousValue, newValue, 'backgroundColor');
+                        this.nextState.somethingChangedPreviousState(selectedShapeVM.shapeModel().id, previousValue, newValue, 'backgroundColor');
                     }
                 }
             };
+        },
+        moveSelectedShapes(deltaX,deltaY) {
+            for (let eachSelectedShape of this.selectedShapes()) {
+                eachSelectedShape.shapeModel().left += deltaX
+                eachSelectedShape.shapeModel().top += deltaY
+            }
+        },
+        deleteSelectedShapes() {
+            for (let shapeVMToDelete of this.selectedShapes()) {
+                this.visualStateModel.deleteShape(shapeVMToDelete.shapeModel())
+            }
         },
         canvasOffsetLeft() {
             return this.canvasElement().offsetLeft;
@@ -278,7 +291,10 @@ export default {
         canvasOffsetTop() {
             return this.canvasElement().offsetTop;
         },
-        didSelect(aVisualStateModel, aShapeVM) {
+        didSelect(aVisualStateModel, aShapeVM, notify = false) {
+            if (notify) {
+                this.$parent.didSelect(aVisualStateModel, aShapeVM)
+            }
             if (!globalStore.toolbarState.multiSelectionMode || aVisualStateModel !== this.visualStateModel) {
                 this.selectedShapes().forEach(function(aSelectedShapeVM) {
                     if (aSelectedShapeVM !== aShapeVM) {

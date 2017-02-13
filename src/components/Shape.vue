@@ -1,8 +1,12 @@
 <template>
-    <div :id="'shape'+version.model.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" ><div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + version.model.id" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler"></div>
+    <div :id="shapeModelId" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape">
+        <div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + shapeModelId" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler">
+        </div>
+    </div>
 </template>
 <script>
 
+import Vue from 'vue'
 import {globalStore,logger} from '../store.js'
 
 class Handler {
@@ -33,42 +37,57 @@ class Handler {
 
 export default {
     name: 'shape',
-    props: ['shapeModel', 'parentVisualState'],
-    template: ``,
+    props: ['shapeModelId', 'parentVisualState'],
     data: function() {
         return {
             visualState: this.parentVisualState,
             isSelected: false,
-            version: this.shapeModel,
             handlers: [new Handler('nw', -6, -6, 0, 0), new Handler('ne', 0, -6, -6, 0), new Handler('se', 0, 0, -6, -6), new Handler('sw', -6, 0, 0, -6)] //L T R B
         }
     },
     computed: {
         styleObject: function() {
-            // if (this.version) {
-            return {
-                'backgroundColor': this.version.color,
-                'position': 'absolute',
-                'left': this.version.left + 'px',
-                'top': this.version.top + 'px',
-                'width': this.version.width + 'px',
-                'height': this.version.height + 'px',
-                'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
-                'overflow': 'visible',
-                'opacity': '1'
-            }
-            // }
+
+            // if (this.shapeModel()) {
+                return {
+                    'backgroundColor': this.shapeModel().color,
+                    'position': 'absolute',
+                    'left': this.shapeModel().left + 'px',
+                    'top': this.shapeModel().top + 'px',
+                    'width': this.shapeModel().width + 'px',
+                    'height': this.shapeModel().height + 'px',
+                    'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
+                    'overflow': 'visible',
+                    'opacity': '1'
+                }
+            // } else {
+                // console.log("shapeModel() was undefined in " + this + " with shapeModelId " + this.shapeModelId)
             // return {}
+            // }
         }
+    },
+    destroyed: function() {
+        console.log("WE DESTROYED SHAPE (the original props of this has: " + this.shapeModelId +")")
     },
     watch: {
         styleObject: function(val) {
-            if (globalStore.visualStates[0] === this.visualState) {
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.version.model.id, color: this.version.color, width: this.version.width, height: this.version.height, top: this.version.top, left: this.version.left, opacity: this.version.opacity } })
+            if (this.shapeModel()) {
+                // console.log("IN COMPUTED styleObject the shapeModel().color is "+ this.shapeModel().color)
+
+                if (globalStore.visualStates[0] === this.visualState) {
+                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.shapeModel().id, color: this.shapeModel().color, width: this.shapeModel().width, height: this.shapeModel().height, top: this.shapeModel().top, left: this.shapeModel().left, opacity: this.shapeModel().opacity } })
+               }
+            } else {
+                //I WAS DELETED
+                console.log("I WAS DELETED " + this.shapeModelId)
+                globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: this.shapeModelId } })
             }
         }
     },
     methods: {
+        shapeModel(){
+            return this.parentVisualState.shapesDictionary[this.shapeModelId]
+        },
         mouseDownStartedOnHandler(e) {
             if (!this.isSelected) {
                 console.log("THIS SHOULD NEVER HAPPEN")
@@ -77,10 +96,10 @@ export default {
             e.preventDefault();
             e.stopPropagation();
 
-            let startingShapePositionXInWindowCoordinates = this.version.left + this.$parent.canvasOffsetLeft();
-            let startingShapePositionYInWindowCoordinates = this.version.top + this.$parent.canvasOffsetTop();
-            let startingShapeWidth = this.version.scale.w
-            let startingShapeHeight = this.version.scale.h
+            let startingShapePositionXInWindowCoordinates = this.shapeModel().left + this.$parent.canvasOffsetLeft();
+            let startingShapePositionYInWindowCoordinates = this.shapeModel().top + this.$parent.canvasOffsetTop();
+            let startingShapeWidth = this.shapeModel().scale.w
+            let startingShapeHeight = this.shapeModel().scale.h
 
             let handlerType = e.target.id.substring(0, 2);
 
@@ -114,12 +133,12 @@ export default {
             //Starting to move a shape
             let currentWindowMousePositionX = e.pageX;
             let currentWindowMousePositionY = e.pageY;
-            var offsetX = currentWindowMousePositionX - this.version.left;
-            var offsetY = currentWindowMousePositionY - this.version.top;
+            var offsetX = currentWindowMousePositionX - this.shapeModel().left;
+            var offsetY = currentWindowMousePositionY - this.shapeModel().top;
 
-            var parentElement = this.$el.parentNode;
+            // var parentElement = this.$el.parentNode;
             //When the second parameter is null in insertBefore the element is added as the last child
-            parentElement.insertBefore(this.$el, null);
+            // parentElement.insertBefore(this.$el, null);
 
             var moveHandler = function(e) {
                 this.moveChanged(e, offsetX, offsetY);
@@ -138,7 +157,7 @@ export default {
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
 
-            let previousValue = { x: this.version.position.x, y: this.version.position.y };
+            let previousValue = { x: this.shapeModel().position.x, y: this.shapeModel().position.y };
             let newValue = {
                 x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.maxWidth),
                 y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.maxHeight)
@@ -147,32 +166,15 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            if (this.version.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
+            if (this.shapeModel().isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
                 //Don't do anything, keep following master and do not propagate
             } else {
-                this.version.left = newValue.x
-                this.version.top = newValue.y
+                this.shapeModel().left = newValue.x
+                this.shapeModel().top = newValue.y
                 if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'translation');
+                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel().id, previousValue, newValue, 'translation');
                 }
             }
-        },
-        //deprecated
-        handlerAtPoint(windowX, windowY) {
-            let mouseVisualOutputX = windowX - this.$el.parentElement.offsetLeft;
-            let mouseVisualOutputY = windowY - this.$el.parentElement.offsetTop;
-
-            let codes = ['nw', 'ne', 'se', 'sw']
-            for (var i = 0; i < codes.length; i++) {
-                let handlerCode = codes[i];
-                let handler = window.document.getElementById(handlerCode + this.version.model.id);
-                let handlerVisualOuputLeft = handler.offsetLeft + this.canvasOffsetLeft();
-                let handlerVisualOuputTop = handler.offsetTop + this.canvasOffsetTop();
-                if (mouseVisualOutputX > handlerVisualOuputLeft && handlerVisualOuputLeft < handlerVisualOuputLeft + 10 && mouseVisualOutputY > handlerVisualOuputTop && mouseVisualOutputY < handlerVisualOuputTop + 10) {
-                    return handler
-                }
-            }
-            return undefined;
         },
         toggleSelection(notify = true) {
             this.isSelected = !this.isSelected;
@@ -191,13 +193,13 @@ export default {
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = { w: this.version.scale.w, h: this.version.scale.h };
+            let previousValue = { w: this.shapeModel().scale.w, h: this.shapeModel().scale.h };
 
             let currentWindowMousePositionX = e.x;
             let currentWindowMousePositionY = e.y;
 
-            // let currentShapePositionXInWindowCoordinates = this.version.left + this.visualState.canvasOffsetLeft();
-            // let currentShapePositionYInWindowCoordinates = this.version.top + this.visualState.canvasOffsetTop();
+            // let currentShapePositionXInWindowCoordinates = this.shapeModel().left + this.visualState.canvasOffsetLeft();
+            // let currentShapePositionYInWindowCoordinates = this.shapeModel().top + this.visualState.canvasOffsetTop();
 
             let newValue = {
                 w: previousValue.w,
@@ -208,11 +210,11 @@ export default {
                 case 'se':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
                         //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.version.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft()
+                        this.shapeModel().left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft()
                     }
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                         //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop()
+                        this.shapeModel().top = currentWindowMousePositionY - this.$parent.canvasOffsetTop()
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
                     newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
@@ -223,33 +225,33 @@ export default {
                         let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
 
                         let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.$parent.canvasOffsetLeft();
-                        this.version.left = startingShapePositionX - offsetX;
+                        this.shapeModel().left = startingShapePositionX - offsetX;
 
                         newValue.w = startingShapeWidth + offsetX;
                     } else {
-                        newValue.w = currentWindowMousePositionX - (this.version.left + this.$parent.canvasOffsetLeft());
+                        newValue.w = currentWindowMousePositionX - (this.shapeModel().left + this.$parent.canvasOffsetLeft());
                     }
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
                         let offsetY = startingShapePositionYInWindowCoordinates - currentWindowMousePositionY;
                         let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.$parent.canvasOffsetTop();
-                        this.version.top = startingShapePositionY - offsetY;
+                        this.shapeModel().top = startingShapePositionY - offsetY;
 
                         newValue.h = offsetY;
 
                     } else {
-                        newValue.h = currentWindowMousePositionY - (this.version.top + this.$parent.canvasOffsetTop());
+                        newValue.h = currentWindowMousePositionY - (this.shapeModel().top + this.$parent.canvasOffsetTop());
                     }
 
                     break;
                 case 'nw':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
-                        this.version.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
+                        this.shapeModel().left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
+                        this.shapeModel().top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
 
                     newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
@@ -257,25 +259,25 @@ export default {
                     break;
                 case 'ne':
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                        this.version.left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
+                        this.shapeModel().left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
                     }
                     newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.version.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
+                        this.shapeModel().top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
                     newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                     break;
             }
 
-            if (this.version.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
+            if (this.shapeModel().isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
                 //Don't do anything, keep following master and do not propagate
             } else {
-                this.version.width = newValue.w;
-                this.version.height = newValue.h;
+                this.shapeModel().width = newValue.w;
+                this.shapeModel().height = newValue.h;
                 if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.version.model, previousValue, newValue, 'scaling');
+                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel().id, previousValue, newValue, 'scaling');
                 }
             }
         }

@@ -47,9 +47,10 @@ export default {
             let animation = {}
 
             let hiddedShapesKeys = []
-            for (let eachShapeKey = 0; eachShapeKey < globalStore.shapeCounter; eachShapeKey++) {
+            for (let i = 0; i < globalStore.shapeCounter; i++) {
                 let shapeKeyframes = {}
-                animation['shape' + eachShapeKey] = shapeKeyframes
+                let eachShapeKey = 'shape'+i
+                animation[eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
                     let currentInputEventIndex = globalStore.inputEvents.indexOf(aVisualState.currentInputEvent)

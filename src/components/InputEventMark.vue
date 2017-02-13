@@ -1,5 +1,7 @@
 <template>
-    <div v-if="inputEvent !== undefined"><div v-for="touch in inputEvent.touches" :style="styleObject(touch)" v-on:mousedown="draggedInputEventMark"></div></div>
+    <div v-if="inputEvent !== undefined">
+        <div v-for="touch in inputEvent.touches" :style="styleObject(touch)" v-on:mousedown="draggedInputEventMark"></div>
+    </div>
 </template>
 <script>
 
