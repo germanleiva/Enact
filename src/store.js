@@ -281,7 +281,7 @@ class ShapeModelVersion {
             case 'scaling':
                 return this.scaling.value.w == null && this.scaling.value.h == null;
         }
-        console.log("check all properties")
+        // "check all properties"
         return this.isFollowingMaster('backgroundColor') && this.isFollowingMaster('translation') && this.isFollowingMaster('scaling')
     }
     nonZeroValue(property) {
