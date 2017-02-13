@@ -53,10 +53,10 @@ class MeasureInput {
         this.measureFunction = measureFunction
     }
     get shape1Id() {
-        return allShapes[0].id;
+        return allShapes['shape0'].id;
     }
     get shape2Id() {
-        return allShapes[1].id;
+        return allShapes['shape1'].id;
     }
     shouldActivate(aRule, anEvent) {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
@@ -227,20 +227,20 @@ let r1_initial_height
 
 let exampleRule1 = new Rule(
     new TouchInput(0, 'position', ['y'], isInside),
-    { id: '0', property: 'position', axis: ['y'] },
+    { id: 'shape0', property: 'position', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r1_initial_y_position) {
-            r1_initial_y_position = allShapes[0].top;
+            r1_initial_y_position = allShapes['shape0'].top;
         }
         return newValue <= r1_initial_y_position
     }
 )
 let exampleRule2 = new Rule(
     new TouchInput(1, 'position', ['y'], isInside),
-    { id: '1', property: 'position', axis: ['y'] },
+    { id: 'shape1', property: 'position', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r2_initial_y_position) {
-            r2_initial_y_position = allShapes[1].top;
+            r2_initial_y_position = allShapes['shape1'].top;
         }
         return newValue >= r2_initial_y_position
     }
@@ -249,7 +249,7 @@ let exampleRule3 = new Rule(
     new MeasureInput(function(aRule,newEvent){
         let r1 = allShapes[this.shape1Id];
         let r2 = allShapes[this.shape2Id];
-        let r3 = allShapes[2]
+        let r3 = allShapes['shape2']
         let previousValue = {x:r3.width,y:r3.height}
         let r1bottom = r1.top + r1.height
         let newValue = {x:r3.width,y:r2.top - r1bottom}
@@ -257,10 +257,10 @@ let exampleRule3 = new Rule(
 
         return {previousValue,newValue}
     },['y']),
-    { id: '2', property: 'size', axis: ['y'] },
+    { id: 'shape2', property: 'size', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r1_initial_height) {
-            r1_initial_height = allShapes[0].height;
+            r1_initial_height = allShapes['shape0'].height;
         }
         return newValue < r1_initial_height
     }
@@ -269,14 +269,14 @@ let exampleRule4 = new Rule(
     new MeasureInput(function(aRule,newEvent){
         let r1 = allShapes[this.shape1Id];
         let r2 = allShapes[this.shape2Id];
-        let r3 = allShapes[2]
+        let r3 = allShapes['shape2']
         let previousValue = {x: r3.centerX, y: r3.centerY};
         let r1bottom = r1.top + r1.height
         let newValue = {x: r3.centerX, y: r1bottom + (r2.top - r1bottom) / 2}
         // console.log("Calculating measure center r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
         return {previousValue,newValue}
     },['y']),
-    { id: '2', property: 'center', axis: ['y'] },
+    { id: 'shape2', property: 'center', axis: ['y'] },
     function(oldValue, newValue) {
         return true;
     }
@@ -298,7 +298,7 @@ let mobileCanvasVM = new Vue({
 })
 
 let ShapeVM = Vue.extend({
-    template: `<div :id="'shape'+id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
+    template: `<div :id="id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
     data: function() {
         return {
             id: null,
@@ -402,6 +402,19 @@ socket.on('message-from-server', function(data) {
         } else {
             console.log("Are we editing a shape that was not created????? WERID!" + data.message.id)
         }
+
+    }
+    if (data.type == "DELETE_SHAPE") {
+        // console.log(data.message);
+        // var parentDOM = document.getElementById("mobileCanvas")
+        // parentDOM.innerHTML = data.message;
+        // debugger;
+        console.log("Trying to delete " + data.message.id)
+       let shapeVMToDelete = allShapes[data.message.id]
+        console.log("shapeVMToDelete " + shapeVMToDelete)
+        document.getElementById('mobileCanvas').removeChild(shapeVMToDelete.$el)
+       shapeVMToDelete.$destroy()
+       delete allShapes[data.message.id]
 
     }
     if (data.type == "NEW_ANIMATION") {
@@ -564,7 +577,7 @@ document.addEventListener("touchstart", function(event) {
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     } else {
-        //We are interacting
+        console.log("We are interacting")
         for (let aRule of rules) {
             //Does the event has a rule that control that touch?
             if (aRule.activate(event, allShapes)) {

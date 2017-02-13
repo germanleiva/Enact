@@ -79,8 +79,7 @@ export default {
                }
             } else {
                 //I WAS DELETED
-                console.log("I WAS DELETED " + this.shapeModelId)
-                globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: this.shapeModelId } })
+                console.log("Should i worry? " + this.shapeModelId)
             }
         }
     },
