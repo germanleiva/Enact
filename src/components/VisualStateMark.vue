@@ -15,17 +15,7 @@ export default {
     computed: {
         styleObject() {
             return {
-                left: this.percentageInTimeline + '%'
-            }
-        },
-        percentageInTimeline() {
-            if (this.visualState.currentInputEvent) {
-                let totalEventCount = globalStore.inputEvents.length
-                let index = globalStore.inputEvents.indexOf(this.visualState.currentInputEvent)
-
-                return index * 100 / totalEventCount;
-            } else {
-                return 0;
+                left: this.visualState.percentageInTimeline + '%'
             }
         }
     },

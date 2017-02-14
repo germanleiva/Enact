@@ -55,6 +55,19 @@ class VisualStateModel {
         this.maxHeight = 667
         this.showAllInputEvents = false
     }
+    get currentInputEventIndex() {
+        return globalStore.inputEvents.indexOf(this.currentInputEvent)
+    }
+    get percentageInTimeline() {
+        if (this.currentInputEventIndex >= 0) {
+            let totalEventCount = globalStore.inputEvents.length
+            return this.currentInputEventIndex * 100 / totalEventCount;
+        } else {
+            // return globalStore.visualStates.indexOf(this) * 100 / (globalStore.visualStates.length - 1);
+            return globalStore.visualStates.indexOf(this) * 100 / globalStore.visualStates.length;
+
+        }
+    }
     addNewShape(protoShape) {
         let correspondingVersion
 

@@ -118,48 +118,6 @@ export default {
         // globalStore.context.moveTo(0, 0);
         // globalStore.context.lineTo(200, 100);
         // globalStore.context.stroke();
-
-        function drawTouches() {
-            let points = globalStore.inputEvents;
-            globalStore.context.clearRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
-            globalStore.context.lineWidth = 3;
-            for (let i = 1; i < points.length; i++) {
-                for (let j = 0; j < Math.max(Math.min(points[i - 1].touches.length, points[i].touches.length), 1); j++) {
-                    globalStore.context.beginPath();
-                    globalStore.context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
-                    globalStore.context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
-                    globalStore.context.strokeStyle = "black";
-                    globalStore.context.stroke();
-                }
-            }
-        }
-
-        let amountOfTouchesLeft = 0
-
-        globalStore.socket.on('message-from-server', function(data) {
-            // console.log(data)
-            let anInputEvent = data.message
-
-            if (anInputEvent.type == 'touchend') {
-                amountOfTouchesLeft -= 1;
-                if (amountOfTouchesLeft == 0) {
-                    globalStore.isRecording = false
-                    globalStore.socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
-                }
-            } else {
-                amountOfTouchesLeft = Math.max(amountOfTouchesLeft, anInputEvent.touches.length)
-
-                if (anInputEvent.type == "touchstart") {
-                    globalStore.inputEvents.removeAll();
-                } else if (anInputEvent.type == 'touchmove') {
-                    drawTouches()
-                } else {
-                    console.log("UNKNOWN INPUT TYPE");
-                }
-            }
-
-            globalStore.inputEvents.push(anInputEvent);
-        });
     },
     downArrowPressed(e){
         console.log("ARE YOU HERE???")
