@@ -7,8 +7,17 @@
         </div>
         <div class="diffContainer">
             <a class='button visualStateDiff' :class="{ 'is-disabled' : nextState === undefined}" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
-            <div v-show='isDisplayingDiff' class='box diffBox'>
-                <diff-element v-for="diff in differencesWithNextState" :diff-data="diff"></diff-element>
+            <div v-show='isDisplayingDiff' class='diffBox'>
+                <div>
+                    <div class='box' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
+                        {{'F'+touchIndex}}<diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                    </div>
+                </div>
+                <div>
+                    <div class='box' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
+                        {{shapeKey}}<diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -87,11 +96,73 @@ export default {
             //TODO check caching
             return globalStore.inputEvents
         },
-        differencesWithNextState: {
+        inputDifferencesWithNextState: {
             cache: false,
             get: function() {
-                let result = []
-                this.visualStateModel.shapesDictionary
+                let result = {}
+
+                let atIfNone = function(key,ifNoneValue) {
+                    if (!result[key]) {
+                        result[key] = ifNoneValue
+                    }
+                    return result[key]
+                }
+
+                if (this.hasNextState) {
+
+                    if (this.currentInputEvent) {
+                        if (this.nextState.currentInputEvent) {
+                            //Both states have an input event
+                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
+                                //TODO there's a difference that needs to be informed
+                                console.log("another WERID!!!!!")
+                            } else {
+                                for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
+                                    if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
+
+                                        atIfNone(i,[]).push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                    }
+                                }
+                            }
+                        } else {
+                            //The next state removed the input event or didn't set one
+                            for (let eachTouch in this.currentInputEvent.touches) {
+                                let i = this.currentInputEvent.touches.indexOf(eachTouch)
+
+                                atIfNone(i,[]).push({ isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
+                            }
+
+                        }
+                    } else {
+                        if (this.nextState.currentInputEvent) {
+                            //The next state added an input event and I don't have one
+
+                            for (let eachTouch in this.nextState.currentInputEvent.touches) {
+                                let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
+
+                                atIfNone(i,[]).push({ isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
+                            }
+
+                        } else {
+                            //Both states don't have an input event
+                        }
+                    }
+                }
+                return result
+            }
+        },
+        outputDifferencesWithNextState: {
+            cache: false,
+            get: function() {
+                let result = {}
+
+                let atIfNone = function(key,ifNoneValue) {
+                    if (!result[key]) {
+                        result[key] = ifNoneValue
+                    }
+                    return result[key]
+                }
+
                 if (this.hasNextState) {
                     let comparedShapesKey = []
                     for (let shapeKey in this.visualStateModel.shapesDictionary) {
@@ -100,43 +171,18 @@ export default {
                         let comparingShape = this.nextState.shapeFor(shapeKey)
                         if (comparingShape) {
                             for (let eachDiff of aShape.diffArray(comparingShape)) {
-                                result.push(eachDiff);
+                                atIfNone(shapeKey,[]).push(eachDiff);
                             }
                         } else {
                             // result.push('Removed Shape ' + aShape.id)
-                            result.push({ removed: { previousValue: undefined, newValue: aShape.id } })
+                            atIfNone(shapeKey,[]).push({ removed: { previousValue: undefined, newValue: aShape.id } })
                         }
                     }
                     for (let nextShapeKey in this.nextState.shapesDictionary) {
                         if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                             //key not found
                             // result.push('Added Shape ' + nextShapeKey)
-                            result.push({ added: { previousValue: undefined, newValue: nextShapeKey } })
-                        }
-                    }
-
-                    if (this.currentInputEvent) {
-                        if (this.nextState.currentInputEvent) {
-                            //Both states have an input event
-                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
-                                //TODO there's a difference that needs to be informed
-                            } else {
-                                for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
-                                    if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
-                                        result.push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
-                                    }
-                                }
-                            }
-                        } else {
-                            //The next state removed the input event or didn't set one
-                            result.push({ isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
-                        }
-                    } else {
-                        if (this.nextState.currentInputEvent) {
-                            //The next state added an input event and I don't have one
-                            result.push({ isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
-                        } else {
-                            //Both states don't have an input event
+                            atIfNone(nextShapeKey,[]).push({ added: { previousValue: undefined, newValue: nextShapeKey } })
                         }
                     }
                 }

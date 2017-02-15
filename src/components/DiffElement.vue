@@ -24,6 +24,7 @@ export default {
                     'fa-arrows-alt': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
                     'fa-tint': this.diffData['backgroundColor'] != undefined,
                     'fa-plus': this.diffData['added'] != undefined,
+                    'fa-minus': this.diffData['removed'] != undefined,
                 }
             }
         },
