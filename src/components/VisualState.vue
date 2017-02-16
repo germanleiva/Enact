@@ -1,7 +1,8 @@
 <template>
     <div class='visualStateContainer'>
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-            <shape  ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model-id="aShapeModel.id" v-bind:parent-visual-state="visualStateModel"></shape>
+            <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model-id="aShapeModel.id" v-bind:parent-visual-state="visualStateModel"></shape>
+            <measure v-for="aMeasureModel in measureModels" v-bind:measure-model="aMeasureModel"></measure>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
             <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
         </div>
@@ -27,6 +28,7 @@
 
 import {globalStore, globalBus} from '../store.js'
 import Shape from './Shape.vue'
+import Measure from './Measure.vue'
 import InputEventMark from './InputEventMark.vue'
 import DiffElement from './DiffElement.vue'
 
@@ -50,6 +52,7 @@ export default {
     },
     components: {
         Shape,
+        Measure,
         InputEventMark,
         DiffElement,
     },
@@ -77,6 +80,9 @@ export default {
                 }
             }
             return result;
+        },
+        measureModels: function() {
+            return this.visualStateModel.measures;
         },
         currentInputEvent: {
             get: function() {
@@ -211,6 +217,18 @@ export default {
         },
         selectedShapes: function() {
             return this.shapesVM().filter(each => each.isSelected);
+        },
+
+        handlerFor: function(mouseEvent) {
+            let x = mouseEvent.pageX - this.canvasOffsetLeft()
+            let y = mouseEvent.pageY - this.canvasOffsetTop()
+            for (let eachShapeVM of this.$refs.shapes) {
+                let result = eachShapeVM.handlerFor(x,y)
+                if (result) {
+                    return result
+                }
+            }
+            return undefined
         },
         actionStarted: function(e) {
             e.preventDefault()

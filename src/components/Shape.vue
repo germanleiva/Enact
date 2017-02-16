@@ -1,6 +1,6 @@
 <template>
     <div :id="shapeModelId" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape">
-        <div v-for="eachHandler in handlers" v-if="isSelected" class="shapeHandler" :id="eachHandler.namePrefix + shapeModelId" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler">
+        <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" class="shapeHandler" :id="eachHandler.namePrefix + shapeModelId" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler">
         </div>
     </div>
 </template>
@@ -46,6 +46,9 @@ export default {
         }
     },
     computed: {
+        shouldShowHandlers: function() {
+            return this.isSelected || globalStore.toolbarState.measureMode
+        },
         styleObject: function() {
 
             // if (this.shapeModel()) {
@@ -87,20 +90,65 @@ export default {
         shapeModel(){
             return this.parentVisualState.shapesDictionary[this.shapeModelId]
         },
-        mouseDownStartedOnHandler(e) {
-            if (!this.isSelected) {
-                console.log("THIS SHOULD NEVER HAPPEN")
-                return
+        handlerFor(x,y) {
+
+            for(let eachHandlerDOMElement of this.$refs.handlerElements) {
+                let isInside = x > this.shapeModel().left + eachHandlerDOMElement.offsetLeft && x < this.shapeModel().left + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y > this.shapeModel().top + eachHandlerDOMElement.offsetTop && y < this.shapeModel().top + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
+                if (isInside) {
+                    return {shape: this.shapeModel(), handlerName: eachHandlerDOMElement.getAttribute('id').substring(0,2)}
+                }
             }
+            return undefined
+        },
+        mouseDownStartedOnHandler(e) {
             e.preventDefault();
             e.stopPropagation();
+
+            let handlerType = e.target.id.substring(0, 2);
+
+            if (!this.isSelected) {
+                if (globalStore.toolbarState.measureMode) {
+                    console.log("WE ARE IN mouseDownStartedOnHandler AFTER MEASURE MODE")
+                    let newMeasure = this.visualState.addNewMeasure(this.shapeModel(),handlerType,e.x  - this.$parent.canvasOffsetLeft(),e.y  - this.$parent.canvasOffsetTop())
+
+                    var mouseMoveHandler
+                    mouseMoveHandler = function(e) {
+                        let initial = newMeasure.initialPoint
+
+                        newMeasure.cachedFinalX =  e.x  - this.$parent.canvasOffsetLeft()
+                        newMeasure.cachedFinalY = e.y  - this.$parent.canvasOffsetTop()
+                    }.bind(this)
+                    let visualStateVM = this.$parent;
+                    let visualStateElement = visualStateVM.canvasElement();
+                    visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
+
+                    var mouseUpHandler
+                    mouseUpHandler = function(e) {
+                        let objectForMouseEvent = visualStateVM.handlerFor(e)
+                        console.log("MOUSE UP HANDLER " + JSON.stringify(objectForMouseEvent))
+                        if (objectForMouseEvent) {
+                            newMeasure.toShape = objectForMouseEvent.shape
+                            newMeasure.toHandlerName = objectForMouseEvent.handlerName
+                        } else {
+                            //delete measure?
+                            console.log("WE SHOULD DELETE THE newMeasure")
+                        }
+                        visualStateElement.removeEventListener('mousemove', mouseMoveHandler, false);
+                        visualStateElement.removeEventListener('mouseup', mouseUpHandler, false);
+                    }.bind(this)
+                    visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
+                    return
+                } else {
+                    console.log("THIS SHOULD NEVER HAPPEN")
+                    return
+                }
+            }
 
             let startingShapePositionXInWindowCoordinates = this.shapeModel().left + this.$parent.canvasOffsetLeft();
             let startingShapePositionYInWindowCoordinates = this.shapeModel().top + this.$parent.canvasOffsetTop();
             let startingShapeWidth = this.shapeModel().scale.w
             let startingShapeHeight = this.shapeModel().scale.h
 
-            let handlerType = e.target.id.substring(0, 2);
 
             var mouseMoveHandler
 

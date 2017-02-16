@@ -20,6 +20,8 @@ let logger = function(text) {
     }
 }
 
+export { VisualStateModel, RuleModel, MeasureInput, TouchInput, logger }
+
 export const globalBus = new Vue();
 
 export const globalStore = new Vue({
@@ -32,6 +34,7 @@ export const globalStore = new Vue({
             drawMode: false,
             selectionMode: true,
             multiSelectionMode: false,
+            measureMode: false,
             currentColor: '#1a60f3'
         },
         cursorType: 'auto',
@@ -48,9 +51,36 @@ export const globalStore = new Vue({
     }
 })
 
+class Measure {
+    constructor(fromShape, fromHandlerName, toShape, toHandlerName) {
+        this.fromShape = fromShape
+        this.fromHandlerName = fromHandlerName
+        this.toShape = toShape
+        this.toHandlerName = toHandlerName
+        this.cachedFinalX = undefined
+        this.cachedFinalY = undefined
+    }
+    get initialPoint() {
+        return this.fromShape.positionOfHandler(this.fromHandlerName)
+    }
+    get finalPoint() {
+        if (this.toShape) {
+            return this.toShape.positionOfHandler(this.toHandlerName)
+        }
+        return {x: this.cachedFinalX, y: this.cachedFinalY}
+    }
+    get width() {
+        return this.finalPoint.x - this.initialPoint.x
+    }
+    get height() {
+        return this.finalPoint.y - this.initialPoint.y
+    }
+}
+
 class VisualStateModel {
     constructor() {
         this.shapesDictionary = {}
+        this.measures = []
         this.currentInputEvent = undefined
         this.nextState = undefined
         this.previousState = undefined
@@ -70,6 +100,15 @@ class VisualStateModel {
             return globalStore.visualStates.indexOf(this) * 100 / globalStore.visualStates.length;
 
         }
+    }
+    addNewMeasure(fromShape,fromHandlerName,cachedX, cachedY) {
+        let toShape = undefined
+        let toHandlerName = undefined
+        let newMeasure = new Measure(fromShape, fromHandlerName, toShape, toHandlerName)
+        newMeasure.cachedFinalX = cachedX
+        newMeasure.cachedFinalY = cachedY
+        this.measures.push(newMeasure)
+        return newMeasure
     }
     addNewShape(protoShape) {
         let correspondingVersion
@@ -342,6 +381,19 @@ class ShapeModelVersion {
         }
         return changes
     }
+    positionOfHandler(handlerName) {
+        switch (handlerName) {
+            case 'ne':
+                return {x: this.left + this.width, y: this.top }
+            case 'nw':
+                return {x: this.left, y: this.top }
+            case 'sw':
+                return {x: this.left, y: this.top + this.height}
+            case 'se':
+                return {x: this.left + this.width, y: this.top + this.height}
+        }
+        console.log("WERIDDDDDDDDDD")
+    }
 }
 
 class RuleModel {
@@ -542,5 +594,3 @@ class MeasureInput {
         aRule.actuallyApply(delta, newEvent)
     }
 }
-
-export { VisualStateModel, RuleModel, MeasureInput, TouchInput, logger }

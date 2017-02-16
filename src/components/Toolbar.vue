@@ -6,7 +6,7 @@
                 <a class="button" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
                 <a class="button" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
             </p>
-            <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span> </a>
+            <a class="button" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
             <input type="color" v-on:change="changeColor()" id="color-picker" class="button" v-model="toolbarState.currentColor">
             <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
             <a class="button is-alone" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
@@ -29,11 +29,19 @@ export default {
         drawSelected() {
             this.toolbarState.drawMode = true;
             this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = false;
             this.toolbarState.cursorType = "crosshair";
         },
         selectionSelected() {
             this.toolbarState.drawMode = false;
             this.toolbarState.selectionMode = true;
+            this.toolbarState.measureMode = false;
+            this.toolbarState.cursorType = "default";
+        },
+        measureSelected() {
+            this.toolbarState.drawMode = false;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = true;
             this.toolbarState.cursorType = "default";
         },
         changeColor() {
