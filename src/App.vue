@@ -2,7 +2,11 @@
   <div id="app">
     <toolbar></toolbar>
     <output-area ref="outputArea"></output-area>
-    <input-area><input-area>
+    <input-area></input-area>
+    <div id="lowerArea" style="display:flex">
+        <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+        <rule-area></rule-area>
+    </div>
   </div>
 </template>
 
@@ -11,6 +15,7 @@ import {globalStore} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
+import RuleArea from './components/RuleArea.vue'
 
 if (!Array.prototype.first) {
     Array.prototype.first = function() {
@@ -32,13 +37,15 @@ export default {
   name: 'app',
   data () {
     return {
-
+        canvasWidth: globalStore.mobileWidth,
+        canvasHeight: globalStore.mobileHeight
     }
   },
   components: {
-    'toolbar': Toolbar,
-    'output-area': OutputArea,
-    'input-area': InputArea
+    Toolbar,
+    OutputArea,
+    InputArea,
+    RuleArea
   },
   mounted: function() {
     globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
@@ -102,12 +109,7 @@ export default {
         this.$refs.outputArea.changeColorOfSelectedShapes(cssStyle)
     },
     prepareCanvas() {
-        let newCanvasElement = document.createElement('canvas');
-        newCanvasElement.setAttribute('id','myCanvas');
-        newCanvasElement.setAttribute('width','375');
-        newCanvasElement.setAttribute('height','667');
-        this.$el.appendChild(newCanvasElement)
-        globalStore.context = newCanvasElement.getContext("2d");
+        globalStore.context = document.getElementById('myCanvas').getContext("2d");
 
         globalStore.context.fillStyle = "#9ea7b8";
         globalStore.context.fillRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
@@ -267,14 +269,9 @@ export default {
     text-align: center;
 }
 
-#timelineArea {
+#inputArea {
     display: flex;
     justify-content:center;
     padding: 8px;
-}
-
-#myCanvas {
-    display: block;
-    margin: 0 auto; /*centered */
 }
 </style>

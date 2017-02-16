@@ -49,9 +49,9 @@ export default {
         }
     },
     components: {
-        'shape':Shape,
-        'input-event-mark':InputEventMark,
-        'diff-element':DiffElement,
+        Shape,
+        InputEventMark,
+        DiffElement,
     },
     mounted: function() {
         globalBus.$on('didSelectShapeVM', theSelectedShapeVM => {
@@ -120,7 +120,7 @@ export default {
                                 for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
                                     if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
 
-                                        atIfNone(i,[]).push({ isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                        atIfNone(i,[]).push({id: i, isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                     }
                                 }
                             }
@@ -129,7 +129,7 @@ export default {
                             for (let eachTouch in this.currentInputEvent.touches) {
                                 let i = this.currentInputEvent.touches.indexOf(eachTouch)
 
-                                atIfNone(i,[]).push({ isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
+                                atIfNone(i,[]).push({id: i, isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
                             }
 
                         }
@@ -140,7 +140,7 @@ export default {
                             for (let eachTouch in this.nextState.currentInputEvent.touches) {
                                 let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
 
-                                atIfNone(i,[]).push({ isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
+                                atIfNone(i,[]).push({id: i, isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
                             }
 
                         } else {
@@ -175,14 +175,14 @@ export default {
                             }
                         } else {
                             // result.push('Removed Shape ' + aShape.id)
-                            atIfNone(shapeKey,[]).push({ removed: { previousValue: undefined, newValue: aShape.id } })
+                            atIfNone(shapeKey,[]).push({id: shapeKey, removed: { previousValue: undefined, newValue: aShape.id } })
                         }
                     }
                     for (let nextShapeKey in this.nextState.shapesDictionary) {
                         if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                             //key not found
                             // result.push('Added Shape ' + nextShapeKey)
-                            atIfNone(nextShapeKey,[]).push({ added: { previousValue: undefined, newValue: nextShapeKey } })
+                            atIfNone(nextShapeKey,[]).push({id: nextShapeKey, added: { previousValue: undefined, newValue: nextShapeKey } })
                         }
                     }
                 }

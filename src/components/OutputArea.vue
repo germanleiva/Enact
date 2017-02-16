@@ -17,7 +17,7 @@ export default {
         }
     },
     components: {
-        'visual-state':VisualState
+        VisualState
     },
     methods: {
         changeColorOfSelectedShapes: function(cssStyle) {

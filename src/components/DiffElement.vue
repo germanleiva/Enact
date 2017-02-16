@@ -1,5 +1,5 @@
 <template>
-    <a class='button' :style="styleObject"><i class='fa' v-bind:class="classObject"></i></a>
+    <a draggable="true" v-on:dragstart="drag" class='button' :style="styleObject"><i class='fa' v-bind:class="classObject"></i></a>
 </template>
 
 <script>
@@ -32,6 +32,15 @@ export default {
             return {
                 backgroundColor: this.diffData['isInput'] ? 'PeachPuff' : ''
             }
+        }
+    },
+    methods: {
+        drag(e) {
+            let dataType = "text/output"
+            if (this.diffData.isInput) {
+                dataType = "text/input"
+            }
+            e.dataTransfer.setData(dataType, JSON.stringify(this.diffData));
         }
     }
 }

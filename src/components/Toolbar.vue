@@ -9,13 +9,14 @@
             <a class="button"><span class="icon is-small"><i class="fa fa-arrows-h"></i></span> </a>
             <input type="color" v-on:change="changeColor()" id="color-picker" class="button" v-model="toolbarState.currentColor">
             <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+            <a class="button is-alone" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
         </div>
     </div>
 </template>
 
 <script>
 
-import {globalStore,VisualStateModel} from '../store.js'
+import {globalStore,VisualStateModel,RuleModel} from '../store.js'
 
 export default {
   name: 'toolbar',
@@ -40,7 +41,6 @@ export default {
                 'background-color': this.toolbarState.currentColor
             });
         },
-
         addVisualState() {
             var newVisualState = new VisualStateModel()
 
@@ -60,6 +60,11 @@ export default {
             // outputAreaVM.$el.appendChild(newVisualState.$el)
 
             globalStore.visualStates.push(newVisualState);
+        },
+        addNewRule() {
+            var newRuleModel = new RuleModel()
+
+            globalStore.rules.push(newRuleModel);
         }
     },
     created: function() {

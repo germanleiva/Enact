@@ -35,7 +35,10 @@ export const globalStore = new Vue({
             currentColor: '#1a60f3'
         },
         cursorType: 'auto',
-        context: undefined
+        context: undefined,
+        rules: [],
+        mobileWidth: 375,
+        mobileHeight: 667
     },
     computed: {
         socket() {
@@ -51,8 +54,8 @@ class VisualStateModel {
         this.currentInputEvent = undefined
         this.nextState = undefined
         this.previousState = undefined
-        this.maxWidth = 375
-        this.maxHeight = 667
+        this.maxWidth = globalStore.mobileWidth
+        this.maxHeight = globalStore.mobileHeight
         this.showAllInputEvents = false
     }
     get currentInputEventIndex() {
@@ -327,19 +330,217 @@ class ShapeModelVersion {
         let changes = []
         if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor')) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({ backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
+            changes.push({id:this.id, backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('translation')) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({ translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
+            changes.push({id:this.id,  translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('scaling')) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({ scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
+            changes.push({id:this.id,  scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
         }
         return changes
     }
 }
 
-export { VisualStateModel }
-export { logger }
+class RuleModel {
+    constructor(input, output, shouldKeepApplying) {
+        this.input = input;
+        this.output = output;
+        this.shouldKeepApplying = shouldKeepApplying;
+        this.enforce = true;
+        this.currentOutput = undefined;
+    }
+    activate(anEvent, globalShapeDictionary) {
+        if (this.input.shouldActivate(this, anEvent)) {
+            //Does it affect one of the current shapes?
+            let controlledShape = globalShapeDictionary[this.output.id]
+            if (controlledShape) {
+                // if (this.input.condition(event, controlledShape)) {
+                    this.currentEvent = anEvent
+                    this.currentOutput = controlledShape
+                    return true
+                // }
+            }
+        }
+        return false
+    }
+    applyNewInput(newEvent) {
+        // let touch = event.touches[0]
+        this.input.applyNewInput(this,newEvent)
+        this.currentEvent = newEvent
+
+    }
+    actuallyApply(delta, newEvent) {
+        if (!this.input.condition(newEvent,this.currentOutput)) {
+            return
+        }
+        switch (this.output.property) {
+            case 'center':
+                for (let i = 0; i < this.output.axis.length; i++) {
+                    let eachOutputAxis = this.output.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
+                    if (!correspondingInputAxis) {
+                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                        correspondingInputAxis = this.input.axis[0];
+                    }
+                    let outputProperty = ''
+                    switch (eachOutputAxis) {
+                        case 'x':
+                            outputProperty = 'centerX';
+                            break
+                        case 'y':
+                            outputProperty = 'centerY';
+                            break;
+                    }
+                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                        this.currentOutput[outputProperty] = newValue
+                    }
+                }
+                break;
+            case 'position':
+                for (let i = 0; i < this.output.axis.length; i++) {
+                    let eachOutputAxis = this.output.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
+                    if (!correspondingInputAxis) {
+                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                        correspondingInputAxis = this.input.axis[0];
+                    }
+                    let outputProperty = ''
+                    switch (eachOutputAxis) {
+                        case 'x':
+                            outputProperty = 'left';
+                            break
+                        case 'y':
+                            outputProperty = 'top';
+                            break;
+                    }
+                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                        this.currentOutput[outputProperty] = newValue
+                    }
+                }
+                break;
+            case 'size':
+                for (let i = 0; i < this.output.axis.length; i++) {
+                    let eachOutputAxis = this.output.axis[i];
+                    let correspondingInputAxis = this.input.axis[i];
+                    if (!correspondingInputAxis) {
+                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                        correspondingInputAxis = this.input.axis[0];
+                    }
+                    let outputProperty = ''
+                    let complementaryProperty = undefined
+                    switch (eachOutputAxis) {
+                        case 'x':
+                            outputProperty = 'width';
+                            complementaryProperty = 'left'
+                            break
+                        case 'y':
+                            outputProperty = 'height';
+                            complementaryProperty = 'top'
+                                    //             target.height = newValue
+        //             target.top -= (newValue - previousValue) / 2
+                            break;
+                    }
+
+                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                        this.currentOutput[outputProperty] = newValue
+                        if (complementaryProperty) {
+                            this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
+                        }
+                    }
+                }
+                break;
+            }
+    }
+}
+
+class TouchInput {
+    constructor(touchId, property, listOfAxis, aShouldApplyFn) {
+        this.touchId = touchId
+        this.property = property
+        this.axis = listOfAxis
+        this.condition = function(event, aShape) { return aShouldApplyFn(this.touchFor(event),aShape); }
+    }
+    shouldActivate(aRule, anEvent) {
+        //The event has the corresponding touch
+        return anEvent.touches[this.touchId] != undefined
+    }
+    touchFor(event) {
+        return event.touches[this.touchId]
+    }
+    applyNewInput(aRule, newEvent) {
+        let previousTouch = aRule.currentEvent.touches[this.touchId]
+
+        let touch = newEvent.touches[this.touchId]
+
+        if (this.axis.length > aRule.output.axis.length) {
+            console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
+            abort()
+        }
+
+        let delta = { x: 0, y: 0 }
+        if (this.property == 'position') {
+            for (let eachInputAxis of this.axis) {
+                delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
+            }
+        }
+
+        aRule.actuallyApply(delta, newEvent)
+    }
+}
+
+class MeasureInput {
+    constructor(measureFunction,listOfAxis) {
+        this.axis = listOfAxis
+        this.measureFunction = measureFunction
+    }
+    shouldActivate(aRule, anEvent) {
+        //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
+        return true;
+    }
+    condition(event,aShape) {
+        return true;
+    }
+    applyNewInput(aRule,newEvent) {
+        let result = this.measureFunction(aRule,newEvent)
+        let previousValue = result.previousValue
+        let newValue = result.newValue
+
+        if (this.axis.length > aRule.output.axis.length) {
+            console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
+            abort()
+        }
+
+        let delta = { x: 0, y: 0 }
+        for (let eachInputAxis of this.axis) {
+            delta[eachInputAxis] = newValue[eachInputAxis] - previousValue[eachInputAxis]
+        }
+
+        // if (aRule.shouldKeepApplying(previousValue, newValue)) {
+        //     switch(this.propertyToChange) {
+        //         case 'height':
+        //             target.height = newValue
+        //             target.top -= (newValue - previousValue) / 2
+
+        //             break;
+        //         case 'width':
+        //             target.width = newValue
+        //             target.left -= (newValue - previousValue) / 2
+
+        //             break;
+        //         case 'center':
+        //             target.center = newValue
+
+        //             break;
+        //     }
+        // }
+        aRule.actuallyApply(delta, newEvent)
+    }
+}
+
+export { VisualStateModel, RuleModel, MeasureInput, TouchInput, logger }

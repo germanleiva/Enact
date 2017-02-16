@@ -1,5 +1,5 @@
 <template>
-    <div id='timelineArea'>
+    <div id='inputArea'>
        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
@@ -96,7 +96,7 @@ export default {
         },
         startPlaying() {
             let animation = {}
-            debugger;
+
             let hiddedShapesKeys = []
             for (let i = 0; i < globalStore.shapeCounter; i++) {
                 let shapeKeyframes = {}
@@ -104,7 +104,6 @@ export default {
                 animation[eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
-                    debugger;
                     let currentInputEventIndex = globalStore.inputEvents.indexOf(aVisualState.currentInputEvent)
                     if (currentPercentage == undefined) {
                         currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / globalStore.inputEvents.length), 0);
