@@ -109,7 +109,10 @@ export default {
             if (!this.isSelected) {
                 if (globalStore.toolbarState.measureMode) {
                     let cachedPosition = {x: e.pageX  - this.$parent.canvasOffsetLeft(), y: e.pageY  - this.$parent.canvasOffsetTop()}
-                    let newMeasure = this.visualState.addNewMeasure(this.shapeModel().id,handlerType,undefined,undefined, cachedPosition)
+
+                    //TODO this is nasty, sorry future Germán
+                    let presentAndFutureMeasures = this.visualState.addNewMeasure(this.shapeModel().id,handlerType,undefined,undefined, cachedPosition)
+                    let newMeasure = presentAndFutureMeasures[0]
 
                     var mouseMoveHandler
                     mouseMoveHandler = function(e) {
@@ -127,12 +130,16 @@ export default {
                         let objectForMouseEvent = visualStateVM.handlerFor(e)
 
                         if (objectForMouseEvent) {
-                            newMeasure.cachedPosition = undefined
-                            newMeasure.toShapeId = objectForMouseEvent.shape.id
-                            newMeasure.toHandlerName = objectForMouseEvent.handlerName
+                            for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
+                                eachPresentAndFutureMeasure.cachedPosition = undefined
+                                eachPresentAndFutureMeasure.toShapeId = objectForMouseEvent.shape.id
+                                eachPresentAndFutureMeasure.toHandlerName = objectForMouseEvent.handlerName
+                            }
                         } else {
                             //delete measure?
-                            this.visualState.removeMeasure(newMeasure)
+                            for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
+                                eachPresentAndFutureMeasure.deleteYourself()
+                            }
                         }
                         visualStateElement.removeEventListener('mousemove', mouseMoveHandler, false);
                         visualStateElement.removeEventListener('mouseup', mouseUpHandler, false);

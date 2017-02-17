@@ -61,11 +61,17 @@ class Measure {
         this.cachedPosition = cachedPosition
     }
     get id() {
-        let suffix = ""
-        if (this.toShapeId) {
-            suffix = this.toShapeId
+        let p3=this.toShapeId, p4=this.toHandlerName
+
+        if (!p3) {
+            p3 = ""
         }
-        return this.fromShapeId + "-" + suffix
+
+        if (!p4) {
+            p4 = ""
+        }
+
+        return this.fromShapeId+"-"+this.fromHandlerName+"-"+p3+"-"+p4
     }
     get fromShape() {
         return this.visualState.shapesDictionary[this.fromShapeId];
@@ -93,6 +99,39 @@ class Measure {
     }
     get height() {
         return Math.abs(this.finalPoint.y - this.initialPoint.y)
+    }
+    diffArray(nextMeasureWithTheSameModel) {
+        let changes = []
+        let myStartingPoint = this.initialPoint
+        let myEndingPoint = this.finalPoint
+
+        let hisStartingPoint = nextMeasureWithTheSameModel.initialPoint
+        let hisEndingPoint = nextMeasureWithTheSameModel.finalPoint
+
+        if (myStartingPoint.x == hisStartingPoint.x && myStartingPoint.y == hisStartingPoint.y ) {
+            //No diff in starting point
+        } else {
+            changes.push({id:this.id,  translation: { previousValue: myStartingPoint, newValue: hisStartingPoint } })
+        }
+
+        if (myEndingPoint.x == hisEndingPoint.x && myEndingPoint.y == hisEndingPoint.y) {
+            //No diff in ending point
+        }  else {
+            changes.push({id:this.id,  translation: { previousValue: myEndingPoint, newValue: hisEndingPoint } })
+        }
+
+        if (changes.length > 0) {
+            changes.push({id:this.id,  scaling: { previousValue: {w: this.width,h:this.height}, newValue: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+        }
+
+        return changes
+    }
+    deleteYourself(aMeasure) {
+        let index = this.visualState.measures.indexOf(this)
+        if (index >= 0) {
+            this.visualState.measures.splice(index,1)
+        }
+        this.visualState = undefined
     }
 }
 
@@ -130,19 +169,17 @@ class VisualStateModel {
     }
 
     addNewMeasure(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedPosition) {
+        let result = []
         let newMeasure = new Measure(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition)
+        result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
-            this.nextState.importMeasure(newMeasure)
+            let importedMeasures = this.nextState.importMeasure(newMeasure)
+            for (let anImportedMeasure of importedMeasures) {
+                result.push(anImportedMeasure)
+            }
         }
-        return newMeasure
-    }
-    removeMeasure(aMeasure) {
-        let index = this.measures.indexOf(aMeasure)
-        if (index >= 0) {
-            this.measures.splice(index,1)
-        }
-        aMeasure.visualState = undefined
+        return result
     }
     addNewShape(protoShape) {
         let correspondingVersion
@@ -180,6 +217,9 @@ class VisualStateModel {
     shapeFor(aShapeKey) {
         return this.shapesDictionary[aShapeKey];
     }
+    measureFor(measureToCompare) {
+        return this.measures.find(aMeasure => aMeasure.id === measureToCompare.id)
+    }
     somethingChangedPreviousState(shapeId, previousValue, changedValue, changedPropertyName) {
         let relatedShape = this.shapesDictionary[shapeId]
         if (!relatedShape) {
@@ -209,6 +249,12 @@ class VisualStateModel {
     }
     deleteShape(aShapeModel) {
         aShapeModel.unfollowMaster()
+
+        let involvedMeasures = this.measures.filter(aMeasure => aMeasure.fromShapeId == aShapeModel.id || aMeasure.toShapeId == aShapeModel.id)
+
+        for (let anInvolvedMeasure of involvedMeasures) {
+            anInvolvedMeasure.deleteYourself()
+        }
 
         if (this.nextState) {
             let connectedShape = this.nextState.shapeFor(aShapeModel.id)

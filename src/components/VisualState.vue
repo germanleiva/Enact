@@ -116,102 +116,127 @@ export default {
             //TODO check caching
             return globalStore.inputEvents
         },
-        inputDifferencesWithNextState: {
-            // cache: false,
-            get: function() {
-                let result = {}
+        inputDifferencesWithNextState: function() {
+            let result = {}
 
-                let atIfNone = function(key,ifNoneValue) {
-                    if (!result[key]) {
-                        result[key] = ifNoneValue
-                    }
-                    return result[key]
+            let atIfNone = function(key,ifNoneValue) {
+                if (!result[key]) {
+                    result[key] = ifNoneValue
                 }
+                return result[key]
+            }
 
-                if (this.hasNextState) {
+            if (this.hasNextState) {
 
-                    if (this.currentInputEvent) {
-                        if (this.nextState.currentInputEvent) {
-                            //Both states have an input event
-                            if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
-                                //TODO there's a difference that needs to be informed
-                                console.log("another WERID!!!!!")
-                            } else {
-                                for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
-                                    if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
+                if (this.currentInputEvent) {
+                    if (this.nextState.currentInputEvent) {
+                        //Both states have an input event
+                        if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
+                            //TODO there's a difference that needs to be informed
+                            console.log("another WERID!!!!!")
+                        } else {
+                            for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
+                                if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
 
-                                        atIfNone(i,[]).push({id: i, isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
-                                    }
+                                    atIfNone(i,[]).push({id: i, isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                 }
                             }
-                        } else {
-                            //The next state removed the input event or didn't set one
-                            for (let eachTouch in this.currentInputEvent.touches) {
-                                let i = this.currentInputEvent.touches.indexOf(eachTouch)
-
-                                atIfNone(i,[]).push({id: i, isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
-                            }
-
                         }
                     } else {
-                        if (this.nextState.currentInputEvent) {
-                            //The next state added an input event and I don't have one
+                        //The next state removed the input event or didn't set one
+                        for (let eachTouch in this.currentInputEvent.touches) {
+                            let i = this.currentInputEvent.touches.indexOf(eachTouch)
 
-                            for (let eachTouch in this.nextState.currentInputEvent.touches) {
-                                let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
-
-                                atIfNone(i,[]).push({id: i, isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
-                            }
-
-                        } else {
-                            //Both states don't have an input event
+                            atIfNone(i,[]).push({id: i, isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
                         }
+
+                    }
+                } else {
+                    if (this.nextState.currentInputEvent) {
+                        //The next state added an input event and I don't have one
+
+                        for (let eachTouch in this.nextState.currentInputEvent.touches) {
+                            let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
+
+                            atIfNone(i,[]).push({id: i, isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
+                        }
+
+                    } else {
+                        //Both states don't have an input event
                     }
                 }
-                return result
             }
+            return result
         },
-        outputDifferencesWithNextState: {
-            // cache: false,
-            get: function() {
-                let result = {}
+        measuresDifferencesWithNextState: function() {
+            let result = {}
 
-                let atIfNone = function(key,ifNoneValue) {
-                    if (!result[key]) {
-                        result[key] = ifNoneValue
-                    }
-                    return result[key]
+            let atIfNone = function(key,ifNoneValue) {
+                if (!result[key]) {
+                    result[key] = ifNoneValue
                 }
-
-                if (this.hasNextState) {
-                    let comparedShapesKey = []
-                    for (let shapeKey in this.visualStateModel.shapesDictionary) {
-                        comparedShapesKey.push(shapeKey)
-                        let aShape = this.visualStateModel.shapesDictionary[shapeKey];
-                        let comparingShape = this.nextState.shapeFor(shapeKey)
-                        if (comparingShape) {
-                            for (let eachDiff of aShape.diffArray(comparingShape)) {
-                                atIfNone(shapeKey,[]).push(eachDiff);
-                            }
-                        } else {
-                            // result.push('Removed Shape ' + aShape.id)
-                            atIfNone(shapeKey,[]).push({id: shapeKey, removed: { previousValue: undefined, newValue: aShape.id } })
-                        }
-                    }
-                    for (let nextShapeKey in this.nextState.shapesDictionary) {
-                        if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
-                            //key not found
-                            // result.push('Added Shape ' + nextShapeKey)
-                            atIfNone(nextShapeKey,[]).push({id: nextShapeKey, added: { previousValue: undefined, newValue: nextShapeKey } })
-                        }
-                    }
-                }
-                console.log("outputDifferencesWithNextState:" + JSON.stringify(result))
-                return result
+                return result[key]
             }
+
+            if (this.hasNextState) {
+                let comparedMeasuresKey = []
+                for (let aMeasure of this.visualStateModel.measures) {
+                    let aMeasureKey = aMeasure.id
+                    comparedMeasuresKey.push(aMeasureKey)
+                    let comparingMeasure = this.nextState.measureFor(aMeasure)
+                    if (comparingMeasure) {
+                        for (let eachDiff of aMeasure.diffArray(comparingMeasure)) {
+                            atIfNone(aMeasureKey,[]).push(eachDiff);
+                        }
+                    } else {
+                        // result.push('Removed Measure ' + aShape.id)
+                        atIfNone(aMeasureKey,[]).push({id: aMeasureKey, removed: { previousValue: undefined, newValue: aMeasureKey } })
+                    }
+                }
+                for (let nextMeasure of this.nextState.measures) {
+                    let nextMeasureKey = nextMeasure.id
+                    if (comparedMeasuresKey.indexOf(nextMeasureKey) < 0) {
+                        //key not found
+                        // result.push('Added Shape ' + nextShapeKey)
+                        atIfNone(nextMeasureKey,[]).push({id: nextMeasureKey, added: { previousValue: undefined, newValue: nextMeasureKey } })
+                    }
+                }
+            }
+            return result
         },
-        measuresDifferencesWithNextState() {
-            return []
+        outputDifferencesWithNextState() {
+            let result = {}
+
+            let atIfNone = function(key,ifNoneValue) {
+                if (!result[key]) {
+                    result[key] = ifNoneValue
+                }
+                return result[key]
+            }
+            if (this.hasNextState) {
+                let comparedShapesKey = []
+                for (let shapeKey in this.visualStateModel.shapesDictionary) {
+                    comparedShapesKey.push(shapeKey)
+                    let aShape = this.visualStateModel.shapesDictionary[shapeKey];
+                    let comparingShape = this.nextState.shapeFor(shapeKey)
+                    if (comparingShape) {
+                        for (let eachDiff of aShape.diffArray(comparingShape)) {
+                            atIfNone(shapeKey,[]).push(eachDiff);
+                        }
+                    } else {
+                        // result.push('Removed Shape ' + aShape.id)
+                        atIfNone(shapeKey,[]).push({id: shapeKey, removed: { previousValue: undefined, newValue: aShape.id } })
+                    }
+                }
+                for (let nextShapeKey in this.nextState.shapesDictionary) {
+                    if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
+                        //key not found
+                        // result.push('Added Shape ' + nextShapeKey)
+                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey, added: { previousValue: undefined, newValue: nextShapeKey } })
+                    }
+                }
+            }
+            return result
         },
         hasNextState() {
             return this.nextState !== undefined;
