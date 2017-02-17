@@ -60,6 +60,13 @@ class Measure {
         this.toHandlerName = toHandlerName
         this.cachedPosition = cachedPosition
     }
+    get id() {
+        let suffix = ""
+        if (this.toShapeId) {
+            suffix = this.toShapeId
+        }
+        return this.fromShapeId + "-" + suffix
+    }
     get fromShape() {
         return this.visualState.shapesDictionary[this.fromShapeId];
     }
@@ -394,15 +401,15 @@ class ShapeModelVersion {
     }
     diffArray(nextShapeWithTheSameModel) {
         let changes = []
-        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor')) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor',this.backgroundColor.value,nextShapeWithTheSameModel.backgroundColor.value)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
             changes.push({id:this.id, backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('translation')) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation',this.translation.value,nextShapeWithTheSameModel.translation.value)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
             changes.push({id:this.id,  translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling')) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling',this.scaling.value,nextShapeWithTheSameModel.scaling.value)) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
             changes.push({id:this.id,  scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
         }

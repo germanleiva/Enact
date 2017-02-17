@@ -11,12 +11,26 @@
             <div v-show='isDisplayingDiff' class='diffBox'>
                 <div>
                     <div class='box' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
-                        {{'F'+touchIndex}}<diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        <div v-if="diffArray.length > 0">
+                            {{'F'+touchIndex}}
+                            <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        </div>
                     </div>
                 </div>
                 <div>
                     <div class='box' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
-                        {{shapeKey}}<diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        <div v-if="diffArray.length > 0">
+                            {{shapeKey}}
+                            <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class='box' v-for="(diffArray,measureKey) in measuresDifferencesWithNextState">
+                        <div v-if="diffArray.length > 0">
+                            {{measureKey}}
+                            <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -103,7 +117,7 @@ export default {
             return globalStore.inputEvents
         },
         inputDifferencesWithNextState: {
-            cache: false,
+            // cache: false,
             get: function() {
                 let result = {}
 
@@ -158,7 +172,7 @@ export default {
             }
         },
         outputDifferencesWithNextState: {
-            cache: false,
+            // cache: false,
             get: function() {
                 let result = {}
 
@@ -192,10 +206,13 @@ export default {
                         }
                     }
                 }
+                console.log("outputDifferencesWithNextState:" + JSON.stringify(result))
                 return result
             }
         },
-
+        measuresDifferencesWithNextState() {
+            return []
+        },
         hasNextState() {
             return this.nextState !== undefined;
         }
