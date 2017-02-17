@@ -109,19 +109,19 @@ class Measure {
         let hisStartingPoint = nextMeasureWithTheSameModel.initialPoint
         let hisEndingPoint = nextMeasureWithTheSameModel.finalPoint
 
-        if (myStartingPoint.x == hisStartingPoint.x && myStartingPoint.y == hisStartingPoint.y ) {
-            //No diff in starting point
-        } else {
-            changes.push({id:this.id,  translation: { previousValue: myStartingPoint, newValue: hisStartingPoint } })
-        }
+        // if (myStartingPoint.x == hisStartingPoint.x && myStartingPoint.y == hisStartingPoint.y ) {
+        //     //No diff in starting point
+        // } else {
+        //     changes.push({id:this.id,  translation: { previousValue: myStartingPoint, newValue: hisStartingPoint } })
+        // }
 
-        if (myEndingPoint.x == hisEndingPoint.x && myEndingPoint.y == hisEndingPoint.y) {
-            //No diff in ending point
-        }  else {
-            changes.push({id:this.id,  translation: { previousValue: myEndingPoint, newValue: hisEndingPoint } })
-        }
+        // if (myEndingPoint.x == hisEndingPoint.x && myEndingPoint.y == hisEndingPoint.y) {
+        //     //No diff in ending point
+        // }  else {
+        //     changes.push({id:this.id,  translation: { previousValue: myEndingPoint, newValue: hisEndingPoint } })
+        // }
 
-        if (changes.length > 0) {
+        if (myStartingPoint.x != hisStartingPoint.x || myStartingPoint.y != hisStartingPoint.y || myEndingPoint.x != hisEndingPoint.x || myEndingPoint.y != hisEndingPoint.y) {
             changes.push({id:this.id,  scaling: { previousValue: {w: this.width,h:this.height}, newValue: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
         }
 
