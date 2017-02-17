@@ -52,28 +52,40 @@ export const globalStore = new Vue({
 })
 
 class Measure {
-    constructor(fromShape, fromHandlerName, toShape, toHandlerName) {
-        this.fromShape = fromShape
+    constructor(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition) {
+        this.visualState = visualState
+        this.fromShapeId = fromShapeId
         this.fromHandlerName = fromHandlerName
-        this.toShape = toShape
+        this.toShapeId = toShapeId
         this.toHandlerName = toHandlerName
-        this.cachedFinalX = undefined
-        this.cachedFinalY = undefined
+        this.cachedPosition = cachedPosition
+    }
+    get fromShape() {
+        return this.visualState.shapesDictionary[this.fromShapeId];
+    }
+    get toShape() {
+        return this.visualState.shapesDictionary[this.toShapeId];
     }
     get initialPoint() {
         return this.fromShape.positionOfHandler(this.fromHandlerName)
     }
     get finalPoint() {
-        if (this.toShape) {
+        if (this.toShapeId) {
             return this.toShape.positionOfHandler(this.toHandlerName)
         }
-        return {x: this.cachedFinalX, y: this.cachedFinalY}
+        return this.cachedPosition
     }
-    get width() {
+    get deltaX() {
         return this.finalPoint.x - this.initialPoint.x
     }
-    get height() {
+    get width() {
+        return Math.abs(this.finalPoint.x - this.initialPoint.x)
+    }
+    get deltaY() {
         return this.finalPoint.y - this.initialPoint.y
+    }
+    get height() {
+        return Math.abs(this.finalPoint.y - this.initialPoint.y)
     }
 }
 
@@ -101,14 +113,29 @@ class VisualStateModel {
 
         }
     }
-    addNewMeasure(fromShape,fromHandlerName,cachedX, cachedY) {
-        let toShape = undefined
-        let toHandlerName = undefined
-        let newMeasure = new Measure(fromShape, fromHandlerName, toShape, toHandlerName)
-        newMeasure.cachedFinalX = cachedX
-        newMeasure.cachedFinalY = cachedY
+    importMeasuresFrom(previousState) {
+        for (let previousMeasure of previousState.measures) {
+            let newMeasure = this.importMeasure(previousMeasure)
+        }
+    }
+    importMeasure(previousMeasure){
+        return this.addNewMeasure(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+    }
+
+    addNewMeasure(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedPosition) {
+        let newMeasure = new Measure(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition)
         this.measures.push(newMeasure)
+        if (this.nextState) {
+            this.nextState.importMeasure(newMeasure)
+        }
         return newMeasure
+    }
+    removeMeasure(aMeasure) {
+        let index = this.measures.indexOf(aMeasure)
+        if (index >= 0) {
+            this.measures.splice(index,1)
+        }
+        aMeasure.visualState = undefined
     }
     addNewShape(protoShape) {
         let correspondingVersion

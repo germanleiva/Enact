@@ -26,31 +26,31 @@ export default {
                 'position': 'absolute',
                 'left': this.startingX + 'px',
                 'top': this.startingY + 'px',
-                'width': Math.abs(this.measureModel.width) + 'px',
-                'height': Math.abs(this.measureModel.height) + 'px',
+                'width': Math.max(this.measureModel.width,2) + 'px',
+                'height': Math.max(this.measureModel.height,2) + 'px',
                 'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the measure
             }
         },
         startingX: function() {
             let initialX = this.measureModel.initialPoint.x
             if (initialX >= this.measureModel.finalPoint.x) {
-                initialX = this.measureModel.initialPoint.x + this.measureModel.width
+                initialX = this.measureModel.initialPoint.x + this.measureModel.deltaX
             }
             return initialX
         },
         startingY: function() {
             let initialY = this.measureModel.initialPoint.y
             if (initialY >= this.measureModel.finalPoint.y) {
-                initialY = this.measureModel.initialPoint.y + this.measureModel.height
+                initialY = this.measureModel.initialPoint.y + this.measureModel.deltaY
             }
             return initialY
         },
         path: function() {
 
-            let pathStartingX = this.measureModel.width < 0 ? Math.abs(this.measureModel.width) : 0
-            let pathStartingY = this.measureModel.height < 0 ? Math.abs(this.measureModel.height) : 0
+            let pathStartingX = this.measureModel.deltaX < 0 ? this.measureModel.width : 0
+            let pathStartingY = this.measureModel.deltaY < 0 ? this.measureModel.height : 0
 
-            return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.width+" "+this.measureModel.height
+            return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.deltaX+" "+this.measureModel.deltaY
         },
         measureColor() {
             switch(this.measureModel.fromHandlerName){
@@ -63,6 +63,7 @@ export default {
                 case 'sw':
                     return 'orange'
             }
+            return 'red'
         }
     },
     destroyed: function() {

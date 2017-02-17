@@ -59,6 +59,8 @@ export default {
                     newVisualState.addNewShape(previousVisualState.shapesDictionary[shapeKey]);
                 }
 
+                newVisualState.importMeasuresFrom(previousVisualState);
+
                 //TODO: Should we send didCreateShape?
 
                 previousVisualState.nextState = newVisualState;

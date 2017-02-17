@@ -108,15 +108,15 @@ export default {
 
             if (!this.isSelected) {
                 if (globalStore.toolbarState.measureMode) {
-                    console.log("WE ARE IN mouseDownStartedOnHandler AFTER MEASURE MODE")
-                    let newMeasure = this.visualState.addNewMeasure(this.shapeModel(),handlerType,e.x  - this.$parent.canvasOffsetLeft(),e.y  - this.$parent.canvasOffsetTop())
+                    let cachedPosition = {x: e.pageX  - this.$parent.canvasOffsetLeft(), y: e.pageY  - this.$parent.canvasOffsetTop()}
+                    let newMeasure = this.visualState.addNewMeasure(this.shapeModel().id,handlerType,undefined,undefined, cachedPosition)
 
                     var mouseMoveHandler
                     mouseMoveHandler = function(e) {
                         let initial = newMeasure.initialPoint
 
-                        newMeasure.cachedFinalX =  e.x  - this.$parent.canvasOffsetLeft()
-                        newMeasure.cachedFinalY = e.y  - this.$parent.canvasOffsetTop()
+                        newMeasure.cachedPosition.x =  e.pageX  - this.$parent.canvasOffsetLeft()
+                        newMeasure.cachedPosition.y = e.pageY  - this.$parent.canvasOffsetTop()
                     }.bind(this)
                     let visualStateVM = this.$parent;
                     let visualStateElement = visualStateVM.canvasElement();
@@ -125,13 +125,14 @@ export default {
                     var mouseUpHandler
                     mouseUpHandler = function(e) {
                         let objectForMouseEvent = visualStateVM.handlerFor(e)
-                        console.log("MOUSE UP HANDLER " + JSON.stringify(objectForMouseEvent))
+
                         if (objectForMouseEvent) {
-                            newMeasure.toShape = objectForMouseEvent.shape
+                            newMeasure.cachedPosition = undefined
+                            newMeasure.toShapeId = objectForMouseEvent.shape.id
                             newMeasure.toHandlerName = objectForMouseEvent.handlerName
                         } else {
                             //delete measure?
-                            console.log("WE SHOULD DELETE THE newMeasure")
+                            this.visualState.removeMeasure(newMeasure)
                         }
                         visualStateElement.removeEventListener('mousemove', mouseMoveHandler, false);
                         visualStateElement.removeEventListener('mouseup', mouseUpHandler, false);
