@@ -1,5 +1,5 @@
 <template>
-    <a draggable="true" v-on:dragstart="drag" class='button' :style="styleObject"><i class='fa' v-bind:class="classObject"></i></a>
+    <a draggable="true" v-on:dragstart="drag" class='button' :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"></i></a>
 </template>
 
 <script>
@@ -41,6 +41,12 @@ export default {
                 dataType = "text/input"
             }
             e.dataTransfer.setData(dataType, JSON.stringify(this.diffData));
+        },
+        mouseOver(e) {
+            this.$parent.didMouseOver(this)
+        },
+        mouseOut(e) {
+            this.$parent.didMouseOut(this)
         }
     }
 }

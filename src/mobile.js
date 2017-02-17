@@ -176,7 +176,7 @@ function createShapeVM(id, message) {
 }
 
 socket.on('message-from-server', function(data) {
-    console.log("Received something from server: " + JSON.stringify(data));
+    // console.log("Received something from server: " + JSON.stringify(data));
     if (data.type == "CLEAN") {
         let allKeys = []
         for (let eachShapeKey in allShapes) {

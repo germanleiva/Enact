@@ -410,6 +410,18 @@ export default {
         },
         canvasOffsetTop() {
             return this.canvasElement().offsetTop;
+        },
+        didMouseOver(diffElementVM) {
+            this.highlightInvolvedElement(diffElementVM,true)
+        },
+        didMouseOut(diffElementVM) {
+            this.highlightInvolvedElement(diffElementVM,false)
+        },
+        highlightInvolvedElement(diffElementVM,aBoolean){
+            let data = diffElementVM.diffData
+            let shapeOrMeasureId = data.id
+
+            this.visualStateModel.toggleHighlightForInvolvedElement(shapeOrMeasureId,aBoolean)
         }
     }
 }

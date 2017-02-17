@@ -3,7 +3,7 @@
     </div> -->
     <svg :style="styleObject">
         <g fill= "none">
-            <path :stroke="measureColor" stroke-width="2" :d="path"/>
+            <path :stroke="measureColor" :stroke-width="strokeWidth" :d="path"/>
         </g>
     </svg>
 </template>
@@ -46,10 +46,8 @@ export default {
             return initialY
         },
         path: function() {
-
             let pathStartingX = this.measureModel.deltaX < 0 ? this.measureModel.width : 0
             let pathStartingY = this.measureModel.deltaY < 0 ? this.measureModel.height : 0
-
             return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.deltaX+" "+this.measureModel.deltaY
         },
         measureColor() {
@@ -64,6 +62,12 @@ export default {
                     return 'orange'
             }
             return 'red'
+        },
+        strokeWidth() {
+            if (this.measureModel.highlight) {
+                return 5
+            }
+            return 2
         }
     },
     destroyed: function() {

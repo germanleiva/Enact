@@ -1,8 +1,11 @@
 <template>
     <div :id="shapeModelId" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape">
+        <div v-show="this.shapeModel().highlight" v-bind:style="overlayStyleObject">
+        </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" class="shapeHandler" :id="eachHandler.namePrefix + shapeModelId" :style="eachHandler.styleObject" @mousedown="mouseDownStartedOnHandler">
         </div>
     </div>
+
 </template>
 <script>
 
@@ -67,6 +70,15 @@ export default {
                 // console.log("shapeModel() was undefined in " + this + " with shapeModelId " + this.shapeModelId)
             // return {}
             // }
+        },
+        overlayStyleObject: function() {
+            return {
+                'backgroundColor':'gray',
+                'opacity':0.3,
+                'width': this.shapeModel().width + 'px',
+                'height': this.shapeModel().height + 'px',
+                'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the shape overlay
+            }
         }
     },
     destroyed: function() {

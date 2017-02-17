@@ -59,6 +59,7 @@ class Measure {
         this.toShapeId = toShapeId
         this.toHandlerName = toHandlerName
         this.cachedPosition = cachedPosition
+        this.highlight = false
     }
     get id() {
         let p3=this.toShapeId, p4=this.toHandlerName
@@ -274,6 +275,24 @@ class VisualStateModel {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
         }
     }
+    toggleHighlightForInvolvedElement(shapeOrMeasureId,aBoolean) {
+        function togglingHelper(aVisualState) {
+            let involvedShape = aVisualState.shapesDictionary[shapeOrMeasureId]
+            if (involvedShape) {
+                //We need to hightlighted and also the nextShape with the same id
+                involvedShape.highlight = aBoolean
+            } else {
+                //Maybe the diff was talking about a measure
+                let involvedMeasure = aVisualState.measures.find(aMeasure => aMeasure.id == shapeOrMeasureId)
+                if (involvedMeasure) {
+                    involvedMeasure.highlight = aBoolean
+                }
+            }
+        }
+
+        togglingHelper(this)
+        togglingHelper(this.nextState)
+    }
 }
 
 class ShapeModelVersion {
@@ -298,6 +317,7 @@ class ShapeModelVersion {
             }
         };
         this.masterVersion = aMasterVersion;
+        this.highlight = false
     }
     cssText(opacityValue = 1) {
         return 'background-color:' + this.color + ";" +
