@@ -48,6 +48,13 @@ export const globalStore = new Vue({
             //TODO check if putting this as a computed property is legit
             return io.connect('http://localhost:3000')
         }
+    },
+    methods: {
+        deselectAllShapes() {
+            for (let eachVisualState of this.visualStates) {
+                eachVisualState.deselectShapes()
+            }
+        }
     }
 })
 
@@ -293,6 +300,12 @@ class VisualStateModel {
         togglingHelper(this)
         togglingHelper(this.nextState)
     }
+    deselectShapes(){
+        for (let eachShapeKey in this.shapesDictionary) {
+            let eachShape = this.shapesDictionary[eachShapeKey]
+            eachShape.deselect()
+        }
+    }
 }
 
 class ShapeModelVersion {
@@ -318,6 +331,7 @@ class ShapeModelVersion {
         };
         this.masterVersion = aMasterVersion;
         this.highlight = false
+        this.isSelected = false
     }
     cssText(opacityValue = 1) {
         return 'background-color:' + this.color + ";" +
@@ -493,6 +507,9 @@ class ShapeModelVersion {
                 return {x: this.left + this.width, y: this.top + this.height}
         }
         console.log("WERIDDDDDDDDDD")
+    }
+    deselect() {
+        this.isSelected = false
     }
 }
 

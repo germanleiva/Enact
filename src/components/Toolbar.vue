@@ -42,6 +42,7 @@ export default {
             this.toolbarState.drawMode = false;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = true;
+            globalStore.deselectAllShapes()
             this.toolbarState.cursorType = "default";
         },
         changeColor() {

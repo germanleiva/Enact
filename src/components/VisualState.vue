@@ -258,7 +258,7 @@ export default {
             return this.$el.getElementsByClassName("visualStateCanvas")[0]
         },
         selectedShapes: function() {
-            return this.shapesVM().filter(each => each.isSelected);
+            return this.shapesVM().filter(each => each.shapeModel().isSelected);
         },
 
         handlerFor: function(mouseEvent) {

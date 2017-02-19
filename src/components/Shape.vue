@@ -44,13 +44,12 @@ export default {
     data: function() {
         return {
             visualState: this.parentVisualState,
-            isSelected: false,
             handlers: [new Handler('nw', -6, -6, 0, 0), new Handler('ne', 0, -6, -6, 0), new Handler('se', 0, 0, -6, -6), new Handler('sw', -6, 0, 0, -6)] //L T R B
         }
     },
     computed: {
         shouldShowHandlers: function() {
-            return this.isSelected || globalStore.toolbarState.measureMode
+            return this.shapeModel().isSelected || globalStore.toolbarState.measureMode
         },
         styleObject: function() {
 
@@ -62,7 +61,7 @@ export default {
                     'top': this.shapeModel().top + 'px',
                     'width': this.shapeModel().width + 'px',
                     'height': this.shapeModel().height + 'px',
-                    'border': (this.isSelected ? '4px' : '1px') + ' solid gray',
+                    'border': (this.shapeModel().isSelected ? '4px' : '1px') + ' solid gray',
                     'overflow': 'visible',
                     'opacity': '1'
                 }
@@ -118,7 +117,7 @@ export default {
 
             let handlerType = e.target.id.substring(0, 2);
 
-            if (!this.isSelected) {
+            if (!this.shapeModel().isSelected) {
                 if (globalStore.toolbarState.measureMode) {
                     let cachedPosition = {x: e.pageX  - this.$parent.canvasOffsetLeft(), y: e.pageY  - this.$parent.canvasOffsetTop()}
 
@@ -193,7 +192,7 @@ export default {
             e.preventDefault();
             e.stopPropagation();
 
-            if (!this.isSelected) {
+            if (!this.shapeModel().isSelected) {
                 this.toggleSelection();
             }
 
@@ -244,15 +243,13 @@ export default {
             }
         },
         toggleSelection(notify = true) {
-            this.isSelected = !this.isSelected;
-            if (this.isSelected && notify) {
+            this.shapeModel().isSelected = !this.shapeModel().isSelected;
+            if (this.shapeModel().isSelected && notify) {
                 globalBus.$emit('didSelectShapeVM', this);
             }
         },
         deselect() {
-            if (this.isSelected) {
-                this.isSelected = false;
-            }
+            this.shapeModel().deselect()
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
