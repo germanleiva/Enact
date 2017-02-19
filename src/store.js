@@ -200,10 +200,10 @@ class VisualStateModel {
 
         if (protoShape) {
             //Cheap way of cloning the version
-            correspondingVersion = new ShapeModelVersion(protoShape.id, protoShape);
+            correspondingVersion = new ShapeModel(protoShape.id, protoShape);
         } else {
             let newShapeCount = globalStore.shapeCounter++;
-            correspondingVersion = new ShapeModelVersion('shape'+newShapeCount, undefined, 'white', 0, 0, 0, 0);
+            correspondingVersion = new ShapeModel('shape'+newShapeCount, undefined, 'white', 0, 0, 0, 0);
         }
 
         // if (oldShapeVM) {
@@ -315,7 +315,7 @@ class VisualStateModel {
     }
 }
 
-class ShapeModelVersion {
+class ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         this.id = id;
 
