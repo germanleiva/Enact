@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {RuleModel, MeasureInput, TouchInput} from './store.js'
+import {globalStore, RuleModel, MeasureInput, TouchInput} from './store.js'
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
@@ -41,7 +41,7 @@ let exampleRule2 = new RuleModel(
     }
 )
 let exampleRule3 = new RuleModel(
-    new MeasureInput(function(aRule,newEvent){
+    new MeasureInput(function(newEvent){
         let r1 = allShapes['shape0'];
         let r2 = allShapes['shape1'];
         let r3 = allShapes['shape2']
@@ -61,7 +61,7 @@ let exampleRule3 = new RuleModel(
     }
 )
 let exampleRule4 = new RuleModel(
-    new MeasureInput(function(aRule,newEvent){
+    new MeasureInput(function(newEvent){
         let r1 = allShapes['shape0'];
         let r2 = allShapes['shape1'];
         let r3 = allShapes['shape2']
@@ -87,7 +87,11 @@ let mobileCanvasVM = new Vue({
     },
     computed: {
         styleObject() {
-            return { 'backgroundColor': (this.isRecording ? 'red' : 'white'), width: '375px', height: '667px' }
+            return {
+                'backgroundColor': (this.isRecording ? 'red' : 'white'),
+                width: globalStore.mobileWidth +'px',
+                height: globalStore.mobileHeight + 'px'
+            }
         }
     }
 })

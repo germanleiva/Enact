@@ -30,16 +30,14 @@ export default {
         },
         styleObject() {
             return {
-                backgroundColor: this.diffData['isInput'] ? 'PeachPuff' : ''
+                backgroundColor: this.diffData.type == 'input' ? 'PeachPuff' : ''
             }
         }
     },
     methods: {
         drag(e) {
-            let dataType = "text/output"
-            if (this.diffData.isInput) {
-                dataType = "text/input"
-            }
+            let dataType = "text/" + this.diffData.type
+
             e.dataTransfer.setData(dataType, JSON.stringify(this.diffData));
         },
         mouseOver(e) {

@@ -40,8 +40,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rules: [],
-        mobileWidth: 375,
-        mobileHeight: 667
+        mobileWidth: 410, //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
     computed: {
         socket() {
@@ -103,11 +103,11 @@ class Measure {
     }
     diffArray(nextMeasureWithTheSameModel) {
         let changes = []
-        let myStartingPoint = this.initialPoint
-        let myEndingPoint = this.finalPoint
+        // let myStartingPoint = this.initialPoint
+        // let myEndingPoint = this.finalPoint
 
-        let hisStartingPoint = nextMeasureWithTheSameModel.initialPoint
-        let hisEndingPoint = nextMeasureWithTheSameModel.finalPoint
+        // let hisStartingPoint = nextMeasureWithTheSameModel.initialPoint
+        // let hisEndingPoint = nextMeasureWithTheSameModel.finalPoint
 
         // if (myStartingPoint.x == hisStartingPoint.x && myStartingPoint.y == hisStartingPoint.y ) {
         //     //No diff in starting point
@@ -121,8 +121,8 @@ class Measure {
         //     changes.push({id:this.id,  translation: { previousValue: myEndingPoint, newValue: hisEndingPoint } })
         // }
 
-        if (myStartingPoint.x != hisStartingPoint.x || myStartingPoint.y != hisStartingPoint.y || myEndingPoint.x != hisEndingPoint.x || myEndingPoint.y != hisEndingPoint.y) {
-            changes.push({id:this.id,  scaling: { previousValue: {w: this.width,h:this.height}, newValue: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+        if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
+            changes.push({id:this.id, type: 'measure', scaling: { previousValue: {w: this.width,h:this.height}, newValue: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
         }
 
         return changes
@@ -469,15 +469,15 @@ class ShapeModelVersion {
         let changes = []
         if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor',this.backgroundColor.value,nextShapeWithTheSameModel.backgroundColor.value)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({id:this.id, backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
+            changes.push({id:this.id, type: 'output', backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation',this.translation.value,nextShapeWithTheSameModel.translation.value)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({id:this.id,  translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
+            changes.push({id:this.id, type: 'output', translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling',this.scaling.value,nextShapeWithTheSameModel.scaling.value)) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({id:this.id,  scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
+            changes.push({id:this.id, type: 'output', scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
         }
         return changes
     }
@@ -630,6 +630,9 @@ class TouchInput {
 
         let touch = newEvent.touches[this.touchId]
 
+        if (!touch) {
+            console.log("TouchInput >> applyNewInput: there isn't a touch = "+touch)
+        }
         if (this.axis.length > aRule.output.axis.length) {
             console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
             abort()
@@ -659,7 +662,7 @@ class MeasureInput {
         return true;
     }
     applyNewInput(aRule,newEvent) {
-        let result = this.measureFunction(aRule,newEvent)
+        let result = this.measureFunction(newEvent)
         let previousValue = result.previousValue
         let newValue = result.newValue
 

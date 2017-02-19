@@ -138,7 +138,7 @@ export default {
                             for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
                                 if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
 
-                                    atIfNone(i,[]).push({id: i, isInput: true, translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                    atIfNone(i,[]).push({id: i, type: 'input', translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                 }
                             }
                         }
@@ -147,7 +147,7 @@ export default {
                         for (let eachTouch in this.currentInputEvent.touches) {
                             let i = this.currentInputEvent.touches.indexOf(eachTouch)
 
-                            atIfNone(i,[]).push({id: i, isInput: true, removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
+                            atIfNone(i,[]).push({id: i, type: 'input', removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
                         }
 
                     }
@@ -158,7 +158,7 @@ export default {
                         for (let eachTouch in this.nextState.currentInputEvent.touches) {
                             let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
 
-                            atIfNone(i,[]).push({id: i, isInput: true, added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
+                            atIfNone(i,[]).push({id: i, type: 'input', added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
                         }
 
                     } else {
@@ -190,7 +190,7 @@ export default {
                         }
                     } else {
                         // result.push('Removed Measure ' + aShape.id)
-                        atIfNone(aMeasureKey,[]).push({id: aMeasureKey, removed: { previousValue: undefined, newValue: aMeasureKey } })
+                        atIfNone(aMeasureKey,[]).push({id: aMeasureKey, type: 'measure', removed: { previousValue: undefined, newValue: aMeasureKey } })
                     }
                 }
                 for (let nextMeasure of this.nextState.measures) {
@@ -198,7 +198,7 @@ export default {
                     if (comparedMeasuresKey.indexOf(nextMeasureKey) < 0) {
                         //key not found
                         // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(nextMeasureKey,[]).push({id: nextMeasureKey, added: { previousValue: undefined, newValue: nextMeasureKey } })
+                        atIfNone(nextMeasureKey,[]).push({id: nextMeasureKey, type: 'measure', added: { previousValue: undefined, newValue: nextMeasureKey } })
                     }
                 }
             }
@@ -225,14 +225,14 @@ export default {
                         }
                     } else {
                         // result.push('Removed Shape ' + aShape.id)
-                        atIfNone(shapeKey,[]).push({id: shapeKey, removed: { previousValue: undefined, newValue: aShape.id } })
+                        atIfNone(shapeKey,[]).push({id: shapeKey,type: 'output', removed: { previousValue: undefined, newValue: aShape.id } })
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
                         // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey, added: { previousValue: undefined, newValue: nextShapeKey } })
+                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey,type: 'output', added: { previousValue: undefined, newValue: nextShapeKey } })
                     }
                 }
             }
