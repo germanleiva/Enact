@@ -122,7 +122,7 @@ export default {
                     let cachedPosition = {x: e.pageX  - this.$parent.canvasOffsetLeft(), y: e.pageY  - this.$parent.canvasOffsetTop()}
 
                     //TODO this is nasty, sorry future Germán
-                    let presentAndFutureMeasures = this.visualState.addNewMeasure(this.shapeModel().id,handlerType,undefined,undefined, cachedPosition)
+                    let presentAndFutureMeasures = this.visualState.addNewMeasureUntilLastState(this.shapeModel().id,handlerType,undefined,undefined, cachedPosition)
                     let newMeasure = presentAndFutureMeasures[0]
 
                     var mouseMoveHandler

@@ -169,6 +169,7 @@ export default {
             return result
         },
         measuresDifferencesWithNextState: function() {
+            debugger;
             let result = {}
 
             let atIfNone = function(key,ifNoneValue) {
@@ -188,19 +189,21 @@ export default {
                         for (let eachDiff of aMeasure.diffArray(comparingMeasure)) {
                             atIfNone(aMeasureKey,[]).push(eachDiff);
                         }
-                    } else {
-                        // result.push('Removed Measure ' + aShape.id)
-                        atIfNone(aMeasureKey,[]).push({id: aMeasureKey, type: 'measure', removed: { previousValue: undefined, newValue: aMeasureKey } })
-                    }
+                    } //else {
+                        //There's no point in showing the deleted measures
+                        // atIfNone(aMeasureKey,[]).push({id: aMeasureKey, type: 'measure', removed: { previousValue: undefined, newValue: aMeasureKey } })
+                    // }
                 }
-                for (let nextMeasure of this.nextState.measures) {
-                    let nextMeasureKey = nextMeasure.id
-                    if (comparedMeasuresKey.indexOf(nextMeasureKey) < 0) {
-                        //key not found
-                        // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(nextMeasureKey,[]).push({id: nextMeasureKey, type: 'measure', added: { previousValue: undefined, newValue: nextMeasureKey } })
-                    }
-                }
+
+                //There's no point in showing the added measures
+                // for (let nextMeasure of this.nextState.measures) {
+                //     let nextMeasureKey = nextMeasure.id
+                //     if (comparedMeasuresKey.indexOf(nextMeasureKey) < 0) {
+                //         //key not found
+                //         // result.push('Added Shape ' + nextShapeKey)
+                //         atIfNone(nextMeasureKey,[]).push({id: nextMeasureKey, type: 'measure', added: { previousValue: undefined, newValue: nextMeasureKey } })
+                //     }
+                // }
             }
             return result
         },

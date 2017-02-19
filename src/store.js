@@ -169,20 +169,26 @@ class VisualStateModel {
     }
     importMeasuresFrom(previousState) {
         for (let previousMeasure of previousState.measures) {
-            let newMeasure = this.importMeasure(previousMeasure)
+            this.importMeasureUntilLastVisualState(previousMeasure)
         }
     }
-    importMeasure(previousMeasure){
-        return this.addNewMeasure(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+    importMeasureUntilLastVisualState(previousMeasure){
+        for (let shapeKey in this.shapesDictionary) {
+            if (previousMeasure.fromShapeId == shapeKey) {
+                //This VisualState has the starting Shape so we import the measure
+                return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+            }
+        }
+        return []
     }
 
-    addNewMeasure(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedPosition) {
+    addNewMeasureUntilLastState(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedPosition) {
         let result = []
         let newMeasure = new Measure(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition)
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
-            let importedMeasures = this.nextState.importMeasure(newMeasure)
+            let importedMeasures = this.nextState.importMeasureUntilLastVisualState(newMeasure)
             for (let anImportedMeasure of importedMeasures) {
                 result.push(anImportedMeasure)
             }
@@ -261,6 +267,7 @@ class VisualStateModel {
         let involvedMeasures = this.measures.filter(aMeasure => aMeasure.fromShapeId == aShapeModel.id || aMeasure.toShapeId == aShapeModel.id)
 
         for (let anInvolvedMeasure of involvedMeasures) {
+            console.log("We deleted the measure "+anInvolvedMeasure.id)
             anInvolvedMeasure.deleteYourself()
         }
 
