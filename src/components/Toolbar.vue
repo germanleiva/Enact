@@ -16,6 +16,8 @@
 
 <script>
 
+import {extendArray} from '../collections.js'
+extendArray(Array);
 import {globalStore,VisualStateModel,RuleModel} from '../store.js'
 
 export default {

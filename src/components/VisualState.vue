@@ -1,7 +1,9 @@
 <template>
     <div class='visualStateContainer'>
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-            <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model-id="aShapeModel.id" v-bind:parent-visual-state="visualStateModel"></shape>
+            <div ref="originRelevantPoint" v-if="shouldShowOrigin" id="origin-canvas" style="left:-6px;top:-6px;width:10px;height:10px;background-color:red;border-radius:5px" @mousedown="measureStartedOnRelevantPoint">
+            </div>
+            <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
             <measure v-for="aMeasureModel in measureModels" v-bind:measure-model="aMeasureModel"></measure>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
             <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
@@ -40,6 +42,8 @@
 
 <script>
 
+import {extendArray} from '../collections.js'
+extendArray(Array);
 import {globalStore, globalBus} from '../store.js'
 import Shape from './Shape.vue'
 import Measure from './Measure.vue'
@@ -85,6 +89,9 @@ export default {
 
     },
     computed: {
+        shouldShowOrigin: function() {
+            return globalStore.toolbarState.measureMode
+        },
         shapeModels: function() {
             let result = []
             for (let shapeKey in this.visualStateModel.shapesDictionary) {
@@ -169,7 +176,6 @@ export default {
             return result
         },
         measuresDifferencesWithNextState: function() {
-            debugger;
             let result = {}
 
             let atIfNone = function(key,ifNoneValue) {
@@ -246,6 +252,54 @@ export default {
         }
     },
     methods: {
+        measureStartedOnRelevantPoint(e,shapeModelId) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (shapeModelId == undefined) {
+                //I will assume that we are talking about the origin
+                shapeModelId = 'canvas'
+            }
+
+            let handlerType = e.target.id.split('-')[0];
+
+            let cachedPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
+
+            //TODO this is nasty, sorry future Germán
+            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(shapeModelId,handlerType,undefined,undefined, cachedPosition)
+            let newMeasure = presentAndFutureMeasures[0]
+            var mouseMoveHandler
+            mouseMoveHandler = function(e) {
+                let initial = newMeasure.initialPoint
+
+                newMeasure.cachedPosition.x =  e.pageX  - this.canvasOffsetLeft()
+                newMeasure.cachedPosition.y = e.pageY  - this.canvasOffsetTop()
+            }.bind(this)
+            let visualStateVM = this;
+            let visualStateElement = visualStateVM.canvasElement();
+            visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
+
+            var mouseUpHandler
+            mouseUpHandler = function(e) {
+                let objectForMouseEvent = visualStateVM.handlerFor(e)
+
+                if (objectForMouseEvent) {
+                    for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
+                        eachPresentAndFutureMeasure.cachedPosition = undefined
+                        eachPresentAndFutureMeasure.toShapeId = objectForMouseEvent.shapeId
+                        eachPresentAndFutureMeasure.toHandlerName = objectForMouseEvent.handlerName
+                    }
+                } else {
+                    //delete measure?
+                    for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
+                        eachPresentAndFutureMeasure.deleteYourself()
+                    }
+                }
+                visualStateElement.removeEventListener('mousemove', mouseMoveHandler, false);
+                visualStateElement.removeEventListener('mouseup', mouseUpHandler, false);
+            }.bind(this)
+            visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
+        },
         shapesVM() {
             if (this.$refs.hasOwnProperty('shapes')) {
                 return this.$refs.shapes
@@ -261,12 +315,18 @@ export default {
             return this.$el.getElementsByClassName("visualStateCanvas")[0]
         },
         selectedShapes: function() {
-            return this.shapesVM().filter(each => each.shapeModel().isSelected);
+            return this.shapesVM().filter(each => each.shapeModel.isSelected);
         },
 
         handlerFor: function(mouseEvent) {
             let x = mouseEvent.pageX - this.canvasOffsetLeft()
             let y = mouseEvent.pageY - this.canvasOffsetTop()
+            console.log("X: "+x+  " Y: "+y)
+            if (Math.abs(x) < 6 && Math.abs(y) < 6) {
+                //We are in the origin?
+                return {shapeId: 'canvas', handlerName: this.$refs.originRelevantPoint.getAttribute('id').split('-')[0]}
+            }
+
             for (let eachShapeVM of this.$refs.shapes) {
                 let result = eachShapeVM.handlerFor(x,y)
                 if (result) {
@@ -288,7 +348,7 @@ export default {
                     var each = allShapes[i];
                     let x = e.x - this.canvasElement().offsetLeft;
                     let y = e.y - this.canvasElement().offsetTop;
-                    if (each.shapeModel().isPointInside(x, y)) {
+                    if (each.shapeModel.isPointInside(x, y)) {
                         each.toggleSelection();
 
                         if (each.isSelected) {
@@ -381,31 +441,31 @@ export default {
         changeColorOnSelection: function(cssStyle) {
             for (let selectedShapeVM of this.selectedShapes()) {
                 //The first previousValue needs to be an actualValue
-                let previousValue = selectedShapeVM.shapeModel().color;
+                let previousValue = selectedShapeVM.shapeModel.color;
                 let newValue = cssStyle['background-color'];
 
                 //First we need to check if we are followingMaster in that property
-                if (selectedShapeVM.shapeModel().isFollowingMaster('backgroundColor') && previousValue == newValue) {
+                if (selectedShapeVM.shapeModel.isFollowingMaster('backgroundColor') && previousValue == newValue) {
                     //Don't do anything, keep following master and do not propagate
                 } else {
 
-                    selectedShapeVM.shapeModel().color = newValue;
+                    selectedShapeVM.shapeModel.color = newValue;
 
                     if (this.nextState) {
-                        this.nextState.somethingChangedPreviousState(selectedShapeVM.shapeModel().id, previousValue, newValue, 'backgroundColor');
+                        this.nextState.somethingChangedPreviousState(selectedShapeVM.shapeModel.id, previousValue, newValue, 'backgroundColor');
                     }
                 }
             };
         },
         moveSelectedShapes(deltaX,deltaY) {
             for (let eachSelectedShape of this.selectedShapes()) {
-                eachSelectedShape.shapeModel().left += deltaX
-                eachSelectedShape.shapeModel().top += deltaY
+                eachSelectedShape.shapeModel.left += deltaX
+                eachSelectedShape.shapeModel.top += deltaY
             }
         },
         deleteSelectedShapes() {
             for (let shapeVMToDelete of this.selectedShapes()) {
-                this.visualStateModel.deleteShape(shapeVMToDelete.shapeModel())
+                this.visualStateModel.deleteShape(shapeVMToDelete.shapeModel)
             }
         },
         canvasOffsetLeft() {

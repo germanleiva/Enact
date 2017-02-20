@@ -10,6 +10,8 @@
 //     }
 // });
 
+import {extendArray} from './collections.js'
+extendArray(Array);
 import Vue from 'vue';
 import io from 'socket.io-client';
 
@@ -82,10 +84,10 @@ class Measure {
         return this.fromShapeId+"-"+this.fromHandlerName+"-"+p3+"-"+p4
     }
     get fromShape() {
-        return this.visualState.shapesDictionary[this.fromShapeId];
+        return this.visualState.shapeFor(this.fromShapeId);
     }
     get toShape() {
-        return this.visualState.shapesDictionary[this.toShapeId];
+        return this.visualState.shapeFor(this.toShapeId);
     }
     get initialPoint() {
         return this.fromShape.positionOfHandler(this.fromHandlerName)
@@ -179,6 +181,11 @@ class VisualStateModel {
                 return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
             }
         }
+
+        if (previousMeasure.fromShapeId == 'canvas') {
+            return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+        }
+
         return []
     }
 
@@ -229,6 +236,9 @@ class VisualStateModel {
         }
     }
     shapeFor(aShapeKey) {
+        if (aShapeKey == 'canvas'){
+            return CanvasShape;
+        }
         return this.shapesDictionary[aShapeKey];
     }
     measureFor(measureToCompare) {
@@ -282,8 +292,11 @@ class VisualStateModel {
             }
         }
 
+        aShapeModel.prepareForDeletion()
+
         Vue.delete(this.shapesDictionary,aShapeModel.id)
         // this.shapesDictionary[aShapeModel.id] = undefined
+
 
         if (globalStore.visualStates[0] === this) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
@@ -315,6 +328,36 @@ class VisualStateModel {
     }
 }
 
+class RelevantPoint {
+    constructor(shape,namePrefix, percentualX, percentualY) {
+        this.shape = shape
+        this.namePrefix = namePrefix;
+        this.percentualX = percentualX;
+        this.percentualY = percentualY;
+        this.isHandler = [0,1].includes(percentualX) && [0,1].includes(percentualY)
+        this.leftMargin = -6
+        this.topMargin = -6
+    }
+    get left() {
+        return this.shape.width * this.percentualX + this.leftMargin
+    }
+    get top() {
+        return this.shape.height * this.percentualY + this.topMargin
+    }
+}
+
+let CanvasShape = {
+    id: 'canvas',
+    relevantPoints: [{namePrefix:'origin',isHandler:false,left:0,right:0}],
+    positionOfHandler: function(handlerName) {
+        if (handlerName == 'origin') {
+            return {x:0,y:0}
+        } else {
+            console.log("SUPER WEIRD")
+        }
+    }
+}
+
 class ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         this.id = id;
@@ -339,6 +382,18 @@ class ShapeModel {
         this.masterVersion = aMasterVersion;
         this.highlight = false
         this.isSelected = false
+
+        this.relevantPoints = [new RelevantPoint(this,'northWest',0,0), new RelevantPoint(this,'northEast',1,0), new RelevantPoint(this,'southEast',1,1), new RelevantPoint(this,'southWest',0,1), new RelevantPoint(this,'middleRight',1,0.5), new RelevantPoint(this,'middleLeft',0,0.5), new RelevantPoint(this,'middleTop',0.5,0), new RelevantPoint(this,'middleBottom',0.5,1), new RelevantPoint(this,'center',0.5,0.5)];
+    }
+
+    prepareForDeletion() {
+        for (let point of this.relevantPoints) {
+            point.shape = undefined
+        }
+    }
+
+    get handlers() {
+        return this.relevantPoints.filter(eachPoint => eachPoint.isHandler)
     }
     cssText(opacityValue = 1) {
         return 'background-color:' + this.color + ";" +
@@ -504,14 +559,24 @@ class ShapeModel {
     }
     positionOfHandler(handlerName) {
         switch (handlerName) {
-            case 'ne':
+            case 'northEast':
                 return {x: this.left + this.width, y: this.top }
-            case 'nw':
+            case 'northWest':
                 return {x: this.left, y: this.top }
-            case 'sw':
+            case 'southWest':
                 return {x: this.left, y: this.top + this.height}
-            case 'se':
+            case 'southEast':
                 return {x: this.left + this.width, y: this.top + this.height}
+            case 'middleRight':
+                return {x: this.left + this.width, y: this.top + this.height / 2}
+            case 'middleLeft':
+                return {x: this.left, y: this.top + this.height / 2}
+            case 'middleTop':
+                return {x: this.left + this.width / 2, y: this.top}
+            case 'middleBottom':
+                return {x: this.left + this.width / 2, y: this.top + this.height}
+            case 'center':
+                return {x: this.left + this.width / 2, y: this.top + this.height / 2}
         }
         console.log("WERIDDDDDDDDDD")
     }

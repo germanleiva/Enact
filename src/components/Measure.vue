@@ -9,6 +9,8 @@
 </template>
 <script>
 
+import {extendArray} from '../collections.js'
+extendArray(Array);
 import {globalStore,globalBus,logger} from '../store.js'
 
 export default {

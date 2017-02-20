@@ -11,27 +11,14 @@
 </template>
 
 <script>
+import {extendArray} from './collections.js'
+extendArray(Array);
+
 import {globalStore} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
 import RuleArea from './components/RuleArea.vue'
-
-if (!Array.prototype.first) {
-    Array.prototype.first = function() {
-        return this[0];
-    }
-}
-if (!Array.prototype.last) {
-    Array.prototype.last = function() {
-        return this[this.length - 1];
-    }
-}
-if (!Array.prototype.removeAll) {
-    Array.prototype.removeAll = function() {
-        return this.splice(0, this.length);
-    }
-}
 
 export default {
   name: 'app',
@@ -202,14 +189,6 @@ export default {
     in order to get the scrolling to work*/
     overflow-x : scroll;
     white-space: nowrap;
-}
-
-.shapeHandler {
-    width: 10px;
-    height: 10px;
-    background-color: #ffffff;
-    border: 1px solid #000000;
-    position:absolute;
 }
 
 #toolbar{

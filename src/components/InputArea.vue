@@ -10,6 +10,8 @@
 
 <script>
 
+import {extendArray} from '../collections.js'
+extendArray(Array);
 import {globalStore} from '../store.js'
 import VisualStateMark from './VisualStateMark.vue'
 

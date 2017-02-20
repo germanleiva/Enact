@@ -222,7 +222,6 @@ socket.on('message-from-server', function(data) {
         // console.log(data.message);
         // var parentDOM = document.getElementById("mobileCanvas")
         // parentDOM.innerHTML = data.message;
-        // debugger;
        deleteShapeVM(data.message.id)
 
     }

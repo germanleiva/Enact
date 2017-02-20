@@ -4,6 +4,9 @@
 
 <script>
 
+import {extendArray} from '../collections.js'
+extendArray(Array);
+
 export default {
     name: 'diff-element',
     props: ['diffData'],
