@@ -145,7 +145,7 @@ export default {
                             for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
                                 if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
 
-                                    atIfNone(i,[]).push({id: i, type: 'input', translation: { previousValue: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, newValue: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                    atIfNone(i,[]).push({id: i, type: 'input', property: { name: "translation" , before: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, after: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                 }
                             }
                         }
@@ -154,7 +154,7 @@ export default {
                         for (let eachTouch in this.currentInputEvent.touches) {
                             let i = this.currentInputEvent.touches.indexOf(eachTouch)
 
-                            atIfNone(i,[]).push({id: i, type: 'input', removed: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent } })
+                            atIfNone(i,[]).push({id: i, type: 'input', property: { name: "removed", before: this.currentInputEvent, after: this.nextState.currentInputEvent } })
                         }
 
                     }
@@ -165,7 +165,7 @@ export default {
                         for (let eachTouch in this.nextState.currentInputEvent.touches) {
                             let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
 
-                            atIfNone(i,[]).push({id: i, type: 'input', added: { previousValue: this.currentInputEvent, newValue: this.nextState.currentInputEvent }} );
+                            atIfNone(i,[]).push({id: i, type: 'input', property: { name:"added" , before: this.currentInputEvent, after: this.nextState.currentInputEvent }} );
                         }
 
                     } else {
@@ -234,14 +234,14 @@ export default {
                         }
                     } else {
                         // result.push('Removed Shape ' + aShape.id)
-                        atIfNone(shapeKey,[]).push({id: shapeKey,type: 'output', removed: { previousValue: undefined, newValue: aShape.id } })
+                        atIfNone(shapeKey,[]).push({id: shapeKey,type: 'output', property: {name: "removed", before: undefined, after: aShape.id } })
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
                         // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey,type: 'output', added: { previousValue: undefined, newValue: nextShapeKey } })
+                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey,type: 'output', property: { name: "added", before: undefined, after: nextShapeKey } })
                     }
                 }
             }
@@ -380,6 +380,8 @@ export default {
                 y: e.pageY + document.getElementById('outputArea').scrollTop
             };
 
+            this.updateShapeProperties(e,newShapeModel,startingWindowMousePosition)
+
             var mouseMoveHandler
 
             mouseMoveHandler = function(e) {
@@ -401,7 +403,6 @@ export default {
             if (globalStore.visualStates[0] === this.visualStateModel) {
                 // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
                 // globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
-
                 globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
             }
         },

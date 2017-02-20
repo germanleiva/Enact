@@ -21,8 +21,8 @@ let r2_initial_y_position
 let r1_initial_height
 
 let exampleRule1 = new RuleModel(
-    new TouchInput(0, 'position', ['y'], isInside),
-    { id: 'shape0', property: 'position', axis: ['y'] },
+    new TouchInput(0, 'translation', ['y'], isInside),
+    { id: 'shape0', property: 'translation', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r1_initial_y_position) {
             r1_initial_y_position = allShapes['shape0'].top;
@@ -31,8 +31,8 @@ let exampleRule1 = new RuleModel(
     }
 )
 let exampleRule2 = new RuleModel(
-    new TouchInput(1, 'position', ['y'], isInside),
-    { id: 'shape1', property: 'position', axis: ['y'] },
+    new TouchInput(1, 'translation', ['y'], isInside),
+    { id: 'shape1', property: 'translation', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r2_initial_y_position) {
             r2_initial_y_position = allShapes['shape1'].top;
@@ -52,7 +52,7 @@ let exampleRule3 = new RuleModel(
 
         return {previousValue,newValue}
     },['y']),
-    { id: 'shape2', property: 'size', axis: ['y'] },
+    { id: 'shape2', property: 'scaling', axis: ['y'] },
     function(oldValue, newValue) {
         if (!r1_initial_height) {
             r1_initial_height = allShapes['shape0'].height;
@@ -134,14 +134,15 @@ let ShapeVM = Vue.extend({
             get: function() {
                 return {
                     'backgroundColor': this.color,
-                    'position': 'absolute',
+                    'translation': 'absolute',
                     'left': this.left + 'px',
                     'top': this.top + 'px',
                     'width': this.width + 'px',
                     'height': this.height + 'px',
                     'border': '1px solid gray',
                     'overflow': 'visible',
-                    'opacity': this.opacity
+                    'opacity': this.opacity,
+                    'position': 'absolute'
                 }
             }
         }
@@ -385,7 +386,7 @@ document.addEventListener("touchstart", function(event) {
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     } else {
-        console.log("We are interacting")
+        // console.log("We are interacting")
         for (let aRule of rules) {
             //Does the event has a rule that control that touch?
             if (aRule.activate(event, allShapes)) {

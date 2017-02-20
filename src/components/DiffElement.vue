@@ -18,16 +18,19 @@ export default {
         classObject: {
             cache: false,
             get: function() {
+                let propertyName = this.diffData.property.name
+                let before = this.diffData.property.before
+                let after = this.diffData.property.after
                 return {
-                    'fa-arrows-h': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x != this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y == this.diffData['translation'].newValue.y),
-                    'fa-arrows-v': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x == this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y != this.diffData['translation'].newValue.y),
-                    'fa-arrows': this.diffData['translation'] != undefined && (this.diffData['translation'].previousValue.x != this.diffData['translation'].newValue.x) && (this.diffData['translation'].previousValue.y != this.diffData['translation'].newValue.y),
-                    'fa-expand fa-rotate-135': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w == this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
-                    'fa-expand fa-rotate-45': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h == this.diffData['scaling'].newValue.h),
-                    'fa-arrows-alt': this.diffData['scaling'] != undefined && (this.diffData['scaling'].previousValue.w != this.diffData['scaling'].newValue.w) && (this.diffData['scaling'].previousValue.h != this.diffData['scaling'].newValue.h),
-                    'fa-tint': this.diffData['backgroundColor'] != undefined,
-                    'fa-plus': this.diffData['added'] != undefined,
-                    'fa-minus': this.diffData['removed'] != undefined,
+                    'fa-arrows-h': propertyName == 'translation' && (before.x != after.x) && (before.y == after.y),
+                    'fa-arrows-v': propertyName == 'translation' && (before.x == after.x) && (before.y != after.y),
+                    'fa-arrows': propertyName == 'translation' && (before.x != after.x) && (before.y != after.y),
+                    'fa-expand fa-rotate-135': propertyName == 'scaling' && (before.w == after.w) && (before.h != after.h),
+                    'fa-expand fa-rotate-45': propertyName == 'scaling' && (before.w != after.w) && (before.h == after.h),
+                    'fa-arrows-alt': propertyName == 'scaling' && (before.w != after.w) && (before.h != after.h),
+                    'fa-tint': propertyName == 'backgroundColor',
+                    'fa-plus': propertyName == 'added',
+                    'fa-minus': propertyName == 'removed',
                 }
             }
         },

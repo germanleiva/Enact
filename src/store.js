@@ -131,7 +131,7 @@ class Measure {
         // }
 
         if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-            changes.push({id:this.id, type: 'measure', scaling: { previousValue: {w: this.width,h:this.height}, newValue: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+            changes.push({id:this.id, type: 'measure', property: { name: "scaling", before: {w: this.width,h:this.height}, after: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
         }
 
         return changes
@@ -545,15 +545,15 @@ class ShapeModel {
         let changes = []
         if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor',this.backgroundColor.value,nextShapeWithTheSameModel.backgroundColor.value)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({id:this.id, type: 'output', backgroundColor: { previousValue: this.color, newValue: nextShapeWithTheSameModel.color } })
+            changes.push({id:this.id, type: 'output', property: {name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation',this.translation.value,nextShapeWithTheSameModel.translation.value)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({id:this.id, type: 'output', translation: { previousValue: this.position, newValue: nextShapeWithTheSameModel.position } })
+            changes.push({id:this.id, type: 'output', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling',this.scaling.value,nextShapeWithTheSameModel.scaling.value)) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({id:this.id, type: 'output', scaling: { previousValue: this.scale, newValue: nextShapeWithTheSameModel.scale } })
+            changes.push({id:this.id, type: 'output', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
         }
         return changes
     }
@@ -641,7 +641,7 @@ class RuleModel {
                     }
                 }
                 break;
-            case 'position':
+            case 'translation':
                 for (let i = 0; i < this.output.axis.length; i++) {
                     let eachOutputAxis = this.output.axis[i];
                     let correspondingInputAxis = this.input.axis[i];
@@ -664,7 +664,7 @@ class RuleModel {
                     }
                 }
                 break;
-            case 'size':
+            case 'scaling':
                 for (let i = 0; i < this.output.axis.length; i++) {
                     let eachOutputAxis = this.output.axis[i];
                     let correspondingInputAxis = this.input.axis[i];
@@ -728,7 +728,7 @@ class TouchInput {
         }
 
         let delta = { x: 0, y: 0 }
-        if (this.property == 'position') {
+        if (this.property == 'translation') {
             for (let eachInputAxis of this.axis) {
                 delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
             }
