@@ -1,10 +1,10 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape">
+    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover="isHovered = true" v-on:mouseout="isHovered = false">
         <div v-show="this.shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
         </div>
-        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint">
+        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint">
         </div>
 
     </div>
@@ -49,7 +49,8 @@ export default {
     data: function() {
         return {
             visualState: this.parentVisualState,
-            handlers: this.shapeModel.handlers
+            handlers: this.shapeModel.handlers,
+            isHovered: false
         }
     },
     computed: {
