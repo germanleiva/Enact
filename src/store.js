@@ -22,7 +22,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RuleModel, MeasureInput, TouchInput, logger }
+export { VisualStateModel, MeasureModel, RuleModel, MeasureInput, TouchInput, logger }
 
 export const globalBus = new Vue();
 
@@ -37,6 +37,7 @@ export const globalStore = new Vue({
             selectionMode: true,
             multiSelectionMode: false,
             measureMode: false,
+            linkingObject: undefined,
             currentColor: '#1a60f3'
         },
         cursorType: 'auto',
@@ -60,15 +61,16 @@ export const globalStore = new Vue({
     }
 })
 
-class Measure {
-    constructor(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition) {
+class MeasureModel {
+    constructor(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition) {
         this.visualState = visualState
         this.fromShapeId = fromShapeId
         this.fromHandlerName = fromHandlerName
         this.toShapeId = toShapeId
         this.toHandlerName = toHandlerName
-        this.cachedPosition = cachedPosition
+        this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
+        this.cachedInitialPosition = undefined
     }
     get id() {
         let p3=this.toShapeId, p4=this.toHandlerName
@@ -90,13 +92,16 @@ class Measure {
         return this.visualState.shapeFor(this.toShapeId);
     }
     get initialPoint() {
+        if (this.cachedInitialPosition) {
+            return this.cachedInitialPosition
+        }
         return this.fromShape.positionOfHandler(this.fromHandlerName)
     }
     get finalPoint() {
         if (this.toShapeId) {
             return this.toShape.positionOfHandler(this.toHandlerName)
         }
-        return this.cachedPosition
+        return this.cachedFinalPosition
     }
     get deltaX() {
         return this.finalPoint.x - this.initialPoint.x
@@ -136,7 +141,7 @@ class Measure {
 
         return changes
     }
-    deleteYourself(aMeasure) {
+    deleteYourself() {
         let index = this.visualState.measures.indexOf(this)
         if (index >= 0) {
             this.visualState.measures.splice(index,1)
@@ -178,20 +183,20 @@ class VisualStateModel {
         for (let shapeKey in this.shapesDictionary) {
             if (previousMeasure.fromShapeId == shapeKey) {
                 //This VisualState has the starting Shape so we import the measure
-                return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+                return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedFinalPosition)
             }
         }
 
         if (previousMeasure.fromShapeId == 'canvas') {
-            return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedPosition)
+            return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedFinalPosition)
         }
 
         return []
     }
 
-    addNewMeasureUntilLastState(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedPosition) {
+    addNewMeasureUntilLastState(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedFinalPosition) {
         let result = []
-        let newMeasure = new Measure(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedPosition)
+        let newMeasure = new MeasureModel(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition)
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {

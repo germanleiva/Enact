@@ -18,7 +18,7 @@ export default {
     props: ['measureModel'],
     data: function() {
         return {
-
+            measureColor: 'red'
         }
     },
     computed: {
@@ -51,19 +51,6 @@ export default {
             let pathStartingX = this.measureModel.deltaX < 0 ? this.measureModel.width : 0
             let pathStartingY = this.measureModel.deltaY < 0 ? this.measureModel.height : 0
             return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.deltaX+" "+this.measureModel.deltaY
-        },
-        measureColor() {
-            switch(this.measureModel.fromHandlerName){
-                case 'ne':
-                    return 'red'
-                case 'nw':
-                    return 'green'
-                case 'se':
-                    return 'blue'
-                case 'sw':
-                    return 'orange'
-            }
-            return 'red'
         },
         strokeWidth() {
             if (this.measureModel.highlight) {

@@ -45,10 +45,18 @@ export default {
         console.log("keydown keyCode: " + e.keyCode)
 
         switch(e.keyCode) {
+            case 16:
+                //ShiftLeft & ShiftRight
+                e.preventDefault()
+                globalStore.toolbarState.multiSelectionMode = true;
+                break;
+            case 17:
+                //Ctrl
+                e.preventDefault()
+                break;
             case 18:
                 //AltLeft & AltRight
                 e.preventDefault()
-                globalStore.toolbarState.multiSelectionMode = true;
                 break;
             case 38:
                 // up arrow
@@ -82,13 +90,24 @@ export default {
     });
     window.addEventListener('keyup', function(e) {
         switch(e.keyCode) {
-            case 18:
-                //AltLeft & AltRight
+            case 16:
+                //ShiftLeft & ShiftRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = false;
                 break;
+            case 17:
+                //Ctrl
+                e.preventDefault()
+                break;
+            case 18:
+                //AltLeft & AltRight
+                e.preventDefault()
+                break;
         }
     });
+    window.addEventListener('onContextMenu', function(e) {
+        e.preventDefault();
+    })
 
   },
   methods: {

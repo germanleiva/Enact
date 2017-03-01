@@ -2,29 +2,65 @@
     <div class='rule'>
         <input class="condition" v-model="mainCondition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
-            <input v-model="inputRule" style="width: 100%">
+            <input v-model="inputRule" style="width: 100%" v-on:mouseup="mouseUpForInput">
         </div>
         <div class="rightSide" >
-            <input v-model="outputRule" style="width: 100%" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">
-            <input class="outputCondition" v-model="outputMinimum" placeholder="Min output">
-            <input class="outputCondition" v-model="outputMaximum" placeholder="Max output">
+            <input v-model="outputRule" style="width: 100%" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpForOutput">
+            <input class="outputCondition" v-model="outputMinimum" v-on:mouseup="mouseUpForOutputMinimum" placeholder="Min output">
+            <input class="outputCondition" v-model="outputMaximum" v-on:mouseup="mouseUpForOutputMaximum" placeholder="Max output">
         </div>
     </div>
 </template>
 <script>
 
+import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
 import Rule from './Rule.vue'
 
+let ContextMenu = Vue.extend({
+    template: `<div :style="styleObject">
+    <p class="menu-label">
+        Select property
+      </p>
+      <ul class="menu-list">
+        <li><a v-on:click="clickedOn('translation')">Translation</a></li>
+        <li><a v-on:click="clickedOn('scaling')">Scaling</a></li>
+        <li><a v-on:click="clickedOn('color')">Color</a></li>
+      </ul>
+      </div>`,
+      data: function() {
+        return {
+            startingX: 0,
+            startingY: 0,
+            onSelectedProperty: undefined
+        }
+      },
+      computed: {
+        styleObject: function() {
+            return {
+                left: this.startingX + 'px',
+                top: this.startingY + 'px',
+                position: 'absolute',
+                'background-color': 'white'
+            }
+        }
+      },
+      methods: {
+        clickedOn: function(propertyName) {
+            this.onSelectedProperty(propertyName,['y'])
+        }
+      }
+});
+
 export default {
     name: 'rule-area',
     data: function() {
         return {
-            mainCondition: "function(touch, shape) { return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;}",
-            inputRule: "F1 ↕",
-            outputRule: "R1 ↕",
+            mainCondition: "",
+            inputRule: "",
+            outputRule: "",
             outputMinimum: "",
             outputMaximum: ""
         }
@@ -77,7 +113,53 @@ export default {
             if (dataType == "text/output") {
                 event.preventDefault()
             }
-        }
+        },
+        mouseUpForInput(event) {
+            if (globalStore.toolbarState.linkingObject) {
+            }
+        },
+        mouseUpForOutput(event) {
+            if (globalStore.toolbarState.linkingObject) {
+
+            }
+        },
+        mouseUpForOutputMinimum(event) {
+            if (globalStore.toolbarState.linkingObject) {
+
+            }
+        },
+        mouseUpForOutputMaximum(event) {
+            let linkingObject = globalStore.toolbarState.linkingObject
+            if (linkingObject) {
+                let value = {}
+                if (this.outputRule) {
+                    console.log("No outputRule")
+                    for (let eachAxis of this.outputRule.axis) {
+                        value[eachAxis] = linkingObject[outputRule.property].value[eachAxis]
+                    }
+                    this.outputMaximum = value
+                } else {
+                    console.log("Si outputRule")
+                    let newContextMenu = new ContextMenu()
+                    newContextMenu.startingX = event.pageX;
+                    newContextMenu.startingY = event.pageY;
+
+                    newContextMenu.onSelectedProperty = function(property,axis) {
+                        for (let eachAxis of axis) {
+                            value[eachAxis] = linkingObject[property].value[eachAxis]
+                        }
+                        console.log(JSON.stringify(value))
+                        this.outputMaximum = value
+
+                        newContextMenu.$el.remove()
+                        newContextMenu.$destroy()
+                    }.bind(this)
+
+                    newContextMenu.$mount()
+                    window.document.body.appendChild(newContextMenu.$el)
+                }
+            }
+        },
     },
     computed: {
         rulesModel: function() {

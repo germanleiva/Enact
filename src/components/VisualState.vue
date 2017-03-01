@@ -263,17 +263,17 @@ export default {
 
             let handlerType = e.target.id.split('-')[0];
 
-            let cachedPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
+            let cachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
 
             //TODO this is nasty, sorry future Germán
-            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(shapeModelId,handlerType,undefined,undefined, cachedPosition)
+            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(shapeModelId,handlerType,undefined,undefined, cachedFinalPosition)
             let newMeasure = presentAndFutureMeasures[0]
             var mouseMoveHandler
             mouseMoveHandler = function(e) {
                 let initial = newMeasure.initialPoint
 
-                newMeasure.cachedPosition.x =  e.pageX  - this.canvasOffsetLeft()
-                newMeasure.cachedPosition.y = e.pageY  - this.canvasOffsetTop()
+                newMeasure.cachedFinalPosition.x =  e.pageX  - this.canvasOffsetLeft()
+                newMeasure.cachedFinalPosition.y = e.pageY  - this.canvasOffsetTop()
             }.bind(this)
             let visualStateVM = this;
             let visualStateElement = visualStateVM.canvasElement();
@@ -285,7 +285,7 @@ export default {
 
                 if (objectForMouseEvent) {
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
-                        eachPresentAndFutureMeasure.cachedPosition = undefined
+                        eachPresentAndFutureMeasure.cachedFinalPosition = undefined
                         eachPresentAndFutureMeasure.toShapeId = objectForMouseEvent.shapeId
                         eachPresentAndFutureMeasure.toHandlerName = objectForMouseEvent.handlerName
                     }

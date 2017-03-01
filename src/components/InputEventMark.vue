@@ -26,6 +26,8 @@ export default {
     },
     methods: {
         draggedInputEventMark(e) {
+            e.preventDefault();
+
             let mouseMoveHandler;
 
             let startingMousePositionX = e.x;

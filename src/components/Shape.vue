@@ -15,7 +15,8 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import Vue from 'vue'
-import {globalStore,globalBus,logger} from '../store.js'
+import Measure from './Measure.vue'
+import {globalStore,globalBus,logger, MeasureModel} from '../store.js'
 
 // class Handler {
 //     constructor(namePrefix, left, top, right, bottom) {
@@ -177,6 +178,44 @@ export default {
             visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
         },
         mouseDownStartedOnShape(e) {
+            if (e.ctrlKey) {
+                e.preventDefault()
+                e.stopPropagation()
+                //Let's draw a line to the rule, we can create a measure from this point to the mouse
+                let newMeasureModel = new MeasureModel(this.parentVisualState,this.shapeModel.id, undefined, undefined, undefined, undefined)
+                newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
+                newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
+
+                const MeasureVM = Vue.extend(Measure);
+                let newMeasureVM = new MeasureVM({propsData: {measureModel: newMeasureModel }})
+                newMeasureVM.measureColor = 'black';
+                newMeasureVM.$mount()
+                window.document.body.appendChild(newMeasureVM.$el);
+
+                globalStore.toolbarState.linkingObject = this.shapeModel;
+
+                // new Measure(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition)
+                var moveHandler = function(e) {
+                    newMeasureModel.cachedFinalPosition.x = e.pageX
+                    newMeasureModel.cachedFinalPosition.y = e.pageY
+                }.bind(this);
+                window.addEventListener('mousemove', moveHandler, false);
+
+                var upHandler
+                upHandler = function(e) {
+                    // This handler should be trigger AFTER the rule upHandler"
+                    globalStore.toolbarState.linkingObject = undefined;
+                    newMeasureModel.deleteYourself();
+                    window.document.body.removeChild(newMeasureVM.$el);
+                    newMeasureVM.$destroy();
+                    window.removeEventListener('mousemove', moveHandler, false);
+                    window.removeEventListener('mouseup', upHandler, false);
+                }.bind(this);
+                window.addEventListener('mouseup', upHandler, false);
+
+                return
+            }
+
             if (globalStore.toolbarState.drawMode || globalStore.toolbarState.measureMode) {
                 return
             }
