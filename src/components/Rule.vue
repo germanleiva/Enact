@@ -2,12 +2,12 @@
     <div class='rule'>
         <input class="condition" v-model="mainCondition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
-            <input v-model="inputRule" style="width: 100%" v-on:mouseup="mouseUpForInput">
+            <input v-model="inputRule" style="width: 100%" v-on:mouseup="mouseUpFor($event,'inputRule')">
         </div>
         <div class="rightSide" >
-            <input v-model="outputRule" style="width: 100%" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpForOutput">
-            <input class="outputCondition" v-model="outputMinimum" v-on:mouseup="mouseUpForOutputMinimum" placeholder="Min output">
-            <input class="outputCondition" v-model="outputMaximum" v-on:mouseup="mouseUpForOutputMaximum" placeholder="Max output">
+            <input v-model="outputRule" style="width: 100%" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'outputRule')">
+            <input class="outputCondition" v-model="outputMinimum" v-on:mouseup="mouseUpFor($event,'outputMinimum')" placeholder="Min output">
+            <input class="outputCondition" v-model="outputMaximum" v-on:mouseup="mouseUpFor($event,'outputMaximum')" placeholder="Max output">
         </div>
     </div>
 </template>
@@ -25,16 +25,15 @@ let ContextMenu = Vue.extend({
         Select property
       </p>
       <ul class="menu-list">
-        <li><a v-on:click="clickedOn('translation')">Translation</a></li>
-        <li><a v-on:click="clickedOn('scaling')">Scaling</a></li>
-        <li><a v-on:click="clickedOn('color')">Color</a></li>
+        <li v-for="eachProperty in properties"><a v-on:click="clickedOn(eachProperty)">{{eachProperty}}</a><li>
       </ul>
       </div>`,
       data: function() {
         return {
             startingX: 0,
             startingY: 0,
-            onSelectedProperty: undefined
+            onSelectedProperty: undefined,
+            properties: ['translation','scaling','color']
         }
       },
       computed: {
@@ -62,7 +61,7 @@ export default {
             inputRule: "",
             outputRule: "",
             outputMinimum: "",
-            outputMaximum: ""
+            outputMaximum: "",
         }
     },
     components: {
@@ -114,32 +113,19 @@ export default {
                 event.preventDefault()
             }
         },
-        mouseUpForInput(event) {
-            if (globalStore.toolbarState.linkingObject) {
-            }
-        },
-        mouseUpForOutput(event) {
-            if (globalStore.toolbarState.linkingObject) {
-
-            }
-        },
-        mouseUpForOutputMinimum(event) {
-            if (globalStore.toolbarState.linkingObject) {
-
-            }
-        },
-        mouseUpForOutputMaximum(event) {
+        mouseUpFor(event,ruleSection) {
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
+                let ruleSectionToCheck = "outputRule"
+                let ruleSectionToFill = "outputMaximum"
+
                 let value = {}
-                if (this.outputRule) {
-                    console.log("No outputRule")
-                    for (let eachAxis of this.outputRule.axis) {
+                if (this[ruleSectionToCheck]) {
+                    for (let eachAxis of this[ruleSectionToCheck].axis) {
                         value[eachAxis] = linkingObject[outputRule.property].value[eachAxis]
                     }
-                    this.outputMaximum = value
+                    this[ruleSectionToFill] = value
                 } else {
-                    console.log("Si outputRule")
                     let newContextMenu = new ContextMenu()
                     newContextMenu.startingX = event.pageX;
                     newContextMenu.startingY = event.pageY;
@@ -148,8 +134,7 @@ export default {
                         for (let eachAxis of axis) {
                             value[eachAxis] = linkingObject[property].value[eachAxis]
                         }
-                        console.log(JSON.stringify(value))
-                        this.outputMaximum = value
+                        this[ruleSectionToFill] = value
 
                         newContextMenu.$el.remove()
                         newContextMenu.$destroy()

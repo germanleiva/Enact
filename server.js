@@ -10,7 +10,7 @@ var io = require('socket.io')(http);
 
 // serve the static content ====================================================
 
-    console.log("APP SETTING = "+app.settings.env);
+console.log("APP SETTING = "+app.settings.env);
 if (app.settings.env === 'development') {
   var webpackConfig = require('./webpack.config.js')
   var compiler = require('webpack')(webpackConfig)

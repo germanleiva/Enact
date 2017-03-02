@@ -58,7 +58,12 @@ export const globalStore = new Vue({
                 eachVisualState.deselectShapes()
             }
         }
-    }
+    },
+    // watch: {
+    //     visualStates: function(newValue,oldValue) {
+
+    //     }
+    // }
 })
 
 class MeasureModel {
@@ -591,10 +596,11 @@ class ShapeModel {
 }
 
 class RuleModel {
-    constructor(input, output, shouldKeepApplying) {
+    constructor(input, output, outputMin, outputMax) {
         this.input = input;
         this.output = output;
-        this.shouldKeepApplying = shouldKeepApplying;
+        this.outputMin = outputMin;
+        this.outputMax = outputMax;
         this.enforce = true;
         this.currentOutput = undefined;
     }
@@ -617,6 +623,16 @@ class RuleModel {
         this.input.applyNewInput(this,newEvent)
         this.currentEvent = newEvent
 
+    }
+    shouldKeepApplying(oldOutputValue,newOutputValue) {
+        let isBiggerThan = true, isSmallerThan = true
+        if (outputMin) {
+            isBiggerThan = newOutputValue >= globalShapeDictionary[outputMin.shapeId][outputMin.property]
+        }
+        if (outputMax) {
+            isSmallerThan = newOutputValue <= globalShapeDictionary[outputMax.shapeId][outputMax.property]
+        }
+        return isBiggerThan && isSmallerThan
     }
     actuallyApply(delta, newEvent) {
         if (!this.input.condition(newEvent,this.currentOutput)) {

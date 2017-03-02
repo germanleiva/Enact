@@ -10,7 +10,8 @@ import {globalStore, RuleModel, MeasureInput, TouchInput} from './store.js'
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
-let allShapes = {}
+let allVisualStates = []
+let interactiveShapes = {}
 
 let isInside = function(touch, shape) {
     return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
@@ -23,28 +24,21 @@ let r1_initial_height
 let exampleRule1 = new RuleModel(
     new TouchInput(0, 'translation', ['y'], isInside),
     { id: 'shape0', property: 'translation', axis: ['y'] },
-    function(oldValue, newValue) {
-        if (!r1_initial_y_position) {
-            r1_initial_y_position = allShapes['shape0'].top;
-        }
-        return newValue <= r1_initial_y_position
-    }
+    {vsId: '0', shapeId:'shape0',property:'top'}, //outputMin
+    undefined
 )
+
 let exampleRule2 = new RuleModel(
     new TouchInput(1, 'translation', ['y'], isInside),
     { id: 'shape1', property: 'translation', axis: ['y'] },
-    function(oldValue, newValue) {
-        if (!r2_initial_y_position) {
-            r2_initial_y_position = allShapes['shape1'].top;
-        }
-        return newValue >= r2_initial_y_position
-    }
+    {vsId: '0', shapeId:'shape1',property:'top'}, //outputMin
+    undefined
 )
 let exampleRule3 = new RuleModel(
     new MeasureInput(function(newEvent){
-        let r1 = allShapes['shape0'];
-        let r2 = allShapes['shape1'];
-        let r3 = allShapes['shape2']
+        let r1 = interactiveShapes['shape0'];
+        let r2 = interactiveShapes['shape1'];
+        let r3 = interactiveShapes['shape2']
         let previousValue = {x:r3.width,y:r3.height}
         let r1bottom = r1.top + r1.height
         let newValue = {x:r3.width,y:r2.top - r1bottom}
@@ -53,28 +47,21 @@ let exampleRule3 = new RuleModel(
         return {previousValue,newValue}
     },['y']),
     { id: 'shape2', property: 'scaling', axis: ['y'] },
-    function(oldValue, newValue) {
-        if (!r1_initial_height) {
-            r1_initial_height = allShapes['shape0'].height;
-        }
-        return newValue < r1_initial_height
-    }
+    undefined,
+    {vsId: '0', shapeId:'shape0',property:'height'} //outputMax
 )
 let exampleRule4 = new RuleModel(
     new MeasureInput(function(newEvent){
-        let r1 = allShapes['shape0'];
-        let r2 = allShapes['shape1'];
-        let r3 = allShapes['shape2']
+        let r1 = interactiveShapes['shape0'];
+        let r2 = interactiveShapes['shape1'];
+        let r3 = interactiveShapes['shape2']
         let previousValue = {x: r3.centerX, y: r3.centerY};
         let r1bottom = r1.top + r1.height
         let newValue = {x: r3.centerX, y: r1bottom + (r2.top - r1bottom) / 2}
         // console.log("Calculating measure center r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
         return {previousValue,newValue}
     },['y']),
-    { id: 'shape2', property: 'center', axis: ['y'] },
-    function(oldValue, newValue) {
-        return true;
-    }
+    { id: 'shape2', property: 'center', axis: ['y'] }
 )
 
 let rules = [exampleRule1, exampleRule2, exampleRule3, exampleRule4]
@@ -151,14 +138,14 @@ let ShapeVM = Vue.extend({
 })
 
 function deleteShapeVM(id) {
-    let shapeVMToDelete = allShapes[id]
+    let shapeVMToDelete = interactiveShapes[id]
     document.getElementById('mobileCanvas').removeChild(shapeVMToDelete.$el)
     shapeVMToDelete.$destroy()
-    delete allShapes[id]
+    delete interactiveShapes[id]
 }
 
 function createShapeVM(id, message) {
-    let existingShape = allShapes[id];
+    let existingShape = interactiveShapes[id];
     if (existingShape) {
         return existingShape
     }
@@ -176,7 +163,7 @@ function createShapeVM(id, message) {
     newShapeVM.$mount();
     document.getElementById("mobileCanvas").appendChild(newShapeVM.$el);
 
-    allShapes[id] = newShapeVM
+    interactiveShapes[id] = newShapeVM
     return newShapeVM
 }
 
@@ -184,7 +171,7 @@ socket.on('message-from-server', function(data) {
     // console.log("Received something from server: " + JSON.stringify(data));
     if (data.type == "CLEAN") {
         let allKeys = []
-        for (let eachShapeKey in allShapes) {
+        for (let eachShapeKey in interactiveShapes) {
             allKeys.push(eachShapeKey)
         }
         for (let shapeId of allKeys) {
@@ -206,7 +193,7 @@ socket.on('message-from-server', function(data) {
         // console.log(data.message);
         // var parentDOM = document.getElementById("mobileCanvas")
         // parentDOM.innerHTML = data.message;
-        let editedShapeVM = allShapes[data.message.id]
+        let editedShapeVM = interactiveShapes[data.message.id]
         if (editedShapeVM) {
             editedShapeVM.color = data.message.color;
             editedShapeVM.left = data.message.left;
@@ -389,7 +376,7 @@ document.addEventListener("touchstart", function(event) {
         // console.log("We are interacting")
         for (let aRule of rules) {
             //Does the event has a rule that control that touch?
-            if (aRule.activate(event, allShapes)) {
+            if (aRule.activate(event, interactiveShapes)) {
                 activeRules.push(aRule)
             }
         }
@@ -413,10 +400,10 @@ document.addEventListener("touchmove", function(event) {
         // let deltaX = touch.pageX - previousTouchPosition.x
         // let deltaY = touch.pageY - previousTouchPosition.y
         // console.log("new delta " + deltaX + " " + deltaY)
-        // allShapes[0].left = allShapes[0].left + deltaX
-        // allShapes[0].top = allShapes[0].top + deltaY
+        // interactiveShapes[0].left = interactiveShapes[0].left + deltaX
+        // interactiveShapes[0].top = interactiveShapes[0].top + deltaY
 
-        // console.log("New shape position: " + allShapes[0].left + " " + allShapes[0].top)
+        // console.log("New shape position: " + interactiveShapes[0].left + " " + interactiveShapes[0].top)
         // previousTouchPosition.x = touch.pageX
         // previousTouchPosition.y = touch.pageY
     }
