@@ -45,7 +45,7 @@ io.on('connection', function(socket){
   })
   socket.on('message-from-desktop',function(data) {
     // THIS SHOULD SEND THE VisualStateCanvasHTML as the message of the data
-    console.log("Received something from desktop")
+    // console.log("Received something from desktop")
     socket.broadcast.emit('message-from-server',data);
   })
 });
