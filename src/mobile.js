@@ -21,46 +21,47 @@ let r1_initial_y_position
 let r2_initial_y_position
 let r1_initial_height
 
-let exampleRule1 = new RuleModel(
-    new TouchInput(0, 'translation', ['y'], isInside),
+let exampleRule1 = new RuleModel(1,
+    {type:'touch',id:0,property:'translation',axiss:['y']},
+    // new TouchInput(0, 'translation', ['y'], isInside),
+    undefined,
+    {vsId: '0', shapeId:'shape0',property:'bottom'}, //inputMax
     { id: 'shape0', property: 'translation', axis: ['y'] },
-    {vsId: '0', shapeId:'shape0',property:'top'}, //outputMin
-    undefined
+    undefined,
+    {vsId: '0', shapeId:'shape0',property:'top'}//outputMax
 )
 
-let exampleRule2 = new RuleModel(
-    new TouchInput(1, 'translation', ['y'], isInside),
+let exampleRule2 = new RuleModel(2,
+    {type:'touch',id:1,property:'translation',axiss:['y']},
+    // new TouchInput(1, 'translation', ['y'], isInside),,
+    {vsId: '0', shapeId:'shape1',property:'top'}, //inputMin
+    undefined,
     { id: 'shape1', property: 'translation', axis: ['y'] },
     {vsId: '0', shapeId:'shape1',property:'top'}, //outputMin
     undefined
 )
-let exampleRule3 = new RuleModel(
-    new MeasureInput(function(newEvent){
-        let r1 = interactiveShapes['shape0'];
-        let r2 = interactiveShapes['shape1'];
-        let r3 = interactiveShapes['shape2']
-        let previousValue = {x:r3.width,y:r3.height}
-        let r1bottom = r1.top + r1.height
-        let newValue = {x:r3.width,y:r2.top - r1bottom}
-        // console.log("Calculating measure height r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
-
-        return {previousValue,newValue}
-    },['y']),
+let exampleRule3 = new RuleModel(3,
+    {type:'distance',fromType:'shape', fromId:'shape0',fromHandler:'southEast',toType:'shape',toId:'shape1',toHandler:'northEast',axiss:['y']},
+    undefined,
+    undefined,
     { id: 'shape2', property: 'scaling', axis: ['y'] },
     undefined,
     {vsId: '0', shapeId:'shape0',property:'height'} //outputMax
 )
-let exampleRule4 = new RuleModel(
-    new MeasureInput(function(newEvent){
-        let r1 = interactiveShapes['shape0'];
-        let r2 = interactiveShapes['shape1'];
-        let r3 = interactiveShapes['shape2']
-        let previousValue = {x: r3.centerX, y: r3.centerY};
-        let r1bottom = r1.top + r1.height
-        let newValue = {x: r3.centerX, y: r1bottom + (r2.top - r1bottom) / 2}
-        // console.log("Calculating measure center r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
-        return {previousValue,newValue}
-    },['y']),
+let exampleRule4 = new RuleModel(4,
+    {type:'point', fromType: 'distance', fromId:'distance0',fromHandler:'center',toType:'distance', toId:'distance0',toHandler:'center',axiss:['y']},
+    // new MeasureInput(function(newEvent){
+    //     let r1 = interactiveShapes['shape0'];
+    //     let r2 = interactiveShapes['shape1'];
+    //     let r3 = interactiveShapes['shape2']
+    //     let previousValue = {x: r3.centerX, y: r3.centerY};
+    //     let r1bottom = r1.top + r1.height
+    //     let newValue = {x: r3.centerX, y: r1bottom + (r2.top - r1bottom) / 2}
+    //     // console.log("Calculating measure center r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
+    //     return {previousValue,newValue}
+    // },['y']),
+    undefined,
+    undefined,
     { id: 'shape2', property: 'center', axis: ['y'] }
 )
 
@@ -392,7 +393,7 @@ document.addEventListener("touchmove", function(event) {
         saveEvent(event);
     } else {
         for (let anActiveRule of activeRules) {
-            anActiveRule.applyNewInput(event)
+            anActiveRule.applyNewInput(event, interactiveShapes)
         }
 
         // let touch = event.touches[0]

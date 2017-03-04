@@ -182,7 +182,7 @@ export default {
                 e.preventDefault()
                 e.stopPropagation()
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
-                let newMeasureModel = new MeasureModel(this.parentVisualState,this.shapeModel.id, undefined, undefined, undefined, undefined)
+                let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'shape',id:this.shapeModel.id,handler:undefined})
                 newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
                 newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
 
@@ -194,7 +194,6 @@ export default {
 
                 globalStore.toolbarState.linkingObject = this.shapeModel;
 
-                // new Measure(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition)
                 var moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY

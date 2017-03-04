@@ -1,6 +1,6 @@
 <template>
     <div class='rule'>
-        <input class="condition" v-model="mainCondition">
+        <input class="condition" v-model="mainCondition" v-on:mouseup="mouseUpFor($event,'mainCondition')">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
             <input v-model="inputRule" style="width: 100%" v-on:mouseup="mouseUpFor($event,'inputRule')">
         </div>
@@ -60,8 +60,8 @@ export default {
             mainCondition: "",
             inputRule: "",
             outputRule: "",
-            outputMinimum: "",
-            outputMaximum: "",
+            outputMinimum: undefined,
+            outputMaximum: undefined,
         }
     },
     components: {
@@ -116,26 +116,52 @@ export default {
         mouseUpFor(event,ruleSection) {
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
-                let ruleSectionToCheck = "outputRule"
-                let ruleSectionToFill = "outputMaximum"
+                let ruleSectionToCheck = ""
+                let ruleSectionToFill = ruleSection
+                switch(ruleSection) {
+                    case 'mainCondition':
+                        //This should only work if the linkingObject can act as an input
+                        console.log("Ignoring link in mainCondition")
+                        return
+                        break;
+                    case 'inputRule':
+                        //This should only work if the linkingObject can act as an input
+                        console.log("Ignoring link in inputRule")
+                        return
+                        break;
+                    case 'outputRule':
+                        //This should only work if the linkingObject can act as an output
+                        console.log("Ignoring link in outputRule")
+                        return
+                        break;
+                    case 'outputMinimum':
+                        //This should only work if the linkingObject can act as an minimum output
+                        ruleSectionToCheck = "outputRule"
+                        break;
+                    case 'outputMaximum':
+                        //This should only work if the linkingObject can act as an maximum output
+                        ruleSectionToCheck = "outputRule"
+                        break;
+                }
 
                 let value = {}
                 if (this[ruleSectionToCheck]) {
-                    for (let eachAxis of this[ruleSectionToCheck].axis) {
-                        value[eachAxis] = linkingObject[outputRule.property].value[eachAxis]
-                    }
-                    this[ruleSectionToFill] = value
+                    // for (let eachAxis of this[ruleSectionToCheck].axis) {
+                    //     value[eachAxis] = linkingObject[outputRule.property].value[eachAxis]
+                    // }
+                    // this[ruleSectionToFill] = value
+                    this[ruleSectionToFill] = linkingObject[outputRule.property]
                 } else {
                     let newContextMenu = new ContextMenu()
                     newContextMenu.startingX = event.pageX;
                     newContextMenu.startingY = event.pageY;
 
                     newContextMenu.onSelectedProperty = function(property,axis) {
-                        for (let eachAxis of axis) {
-                            value[eachAxis] = linkingObject[property].value[eachAxis]
-                        }
-                        this[ruleSectionToFill] = value
-
+                        // for (let eachAxis of axis) {
+                        //     value[eachAxis] = linkingObject[property].value[eachAxis]
+                        // }
+                        // this[ruleSectionToFill] = value
+                        this[ruleSectionToFill] = linkingObject[property]
                         newContextMenu.$el.remove()
                         newContextMenu.$destroy()
                     }.bind(this)

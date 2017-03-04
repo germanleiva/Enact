@@ -1,8 +1,6 @@
 <template>
     <div class='visualStateContainer'>
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-            <div ref="originRelevantPoint" v-if="shouldShowOrigin" id="origin-canvas" style="left:-6px;top:-6px;width:10px;height:10px;background-color:red;border-radius:5px" @mousedown="measureStartedOnRelevantPoint">
-            </div>
             <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
             <measure v-for="aMeasureModel in measureModels" v-bind:measure-model="aMeasureModel"></measure>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
@@ -89,9 +87,6 @@ export default {
 
     },
     computed: {
-        shouldShowOrigin: function() {
-            return globalStore.toolbarState.measureMode
-        },
         shapeModels: function() {
             let result = []
             for (let shapeKey in this.visualStateModel.shapesDictionary) {
@@ -256,11 +251,6 @@ export default {
             e.preventDefault();
             e.stopPropagation();
 
-            if (shapeModelId == undefined) {
-                //I will assume that we are talking about the origin
-                shapeModelId = 'canvas'
-            }
-
             let handlerType = e.target.id.split('-')[0];
 
             let cachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
@@ -286,8 +276,8 @@ export default {
                 if (objectForMouseEvent) {
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
                         eachPresentAndFutureMeasure.cachedFinalPosition = undefined
-                        eachPresentAndFutureMeasure.toShapeId = objectForMouseEvent.shapeId
-                        eachPresentAndFutureMeasure.toHandlerName = objectForMouseEvent.handlerName
+                        eachPresentAndFutureMeasure.to.id = objectForMouseEvent.shapeId
+                        eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handlerName
                     }
                 } else {
                     //delete measure?
@@ -322,15 +312,15 @@ export default {
             let x = mouseEvent.pageX - this.canvasOffsetLeft()
             let y = mouseEvent.pageY - this.canvasOffsetTop()
             console.log("X: "+x+  " Y: "+y)
-            if (Math.abs(x) < 6 && Math.abs(y) < 6) {
-                //We are in the origin?
-                return {shapeId: 'canvas', handlerName: this.$refs.originRelevantPoint.getAttribute('id').split('-')[0]}
-            }
 
             for (let eachShapeVM of this.$refs.shapes) {
                 let result = eachShapeVM.handlerFor(x,y)
+
                 if (result) {
+                    console.log("Result " + JSON.stringify(result))
                     return result
+                } else {
+                    console.log("No result")
                 }
             }
             return undefined

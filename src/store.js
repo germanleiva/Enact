@@ -67,18 +67,16 @@ export const globalStore = new Vue({
 })
 
 class MeasureModel {
-    constructor(visualState,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition) {
+    constructor(visualState,from, to, cachedFinalPosition) {
         this.visualState = visualState
-        this.fromShapeId = fromShapeId
-        this.fromHandlerName = fromHandlerName
-        this.toShapeId = toShapeId
-        this.toHandlerName = toHandlerName
+        this.from = from // {type, id, handler}
+        this.to = to; //{type, id, handler}
+        this.cachedInitialPosition = undefined
         this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
-        this.cachedInitialPosition = undefined
     }
     get id() {
-        let p3=this.toShapeId, p4=this.toHandlerName
+        let p3=this.to.id, p4=this.to.handler
 
         if (!p3) {
             p3 = ""
@@ -88,23 +86,39 @@ class MeasureModel {
             p4 = ""
         }
 
-        return this.fromShapeId+"-"+this.fromHandlerName+"-"+p3+"-"+p4
+        return this.from.id+"-"+this.from.handler+"-"+p3+"-"+p4
     }
-    get fromShape() {
-        return this.visualState.shapeFor(this.fromShapeId);
+    get fromObject() {
+        let fromId = this.from.id;
+        switch (this.from.type) {
+            case 'shape':
+                return this.visualState.shapeFor(fromId)
+            case 'distance':
+                return this.visualState.distanceFor(fromId)
+            default:
+                console.log("Unrecognized 'from' type in MeasureModel: " + this.from.type)
+        }
     }
-    get toShape() {
-        return this.visualState.shapeFor(this.toShapeId);
+    get toObject() {
+        let toId = this.to.id;
+        switch (this.to.type) {
+            case 'shape':
+                return this.visualState.shapeFor(toId)
+            case 'distance':
+                return this.visualState.distanceFor(toId)
+            default:
+                console.log("Unrecognized 'to' type in MeasureModel: " + this.to.type)
+        }
     }
     get initialPoint() {
         if (this.cachedInitialPosition) {
             return this.cachedInitialPosition
         }
-        return this.fromShape.positionOfHandler(this.fromHandlerName)
+        return this.fromObject.positionOfHandler(this.from.handler)
     }
     get finalPoint() {
-        if (this.toShapeId) {
-            return this.toShape.positionOfHandler(this.toHandlerName)
+        if (this.to.id) {
+            return this.toObject.positionOfHandler(this.to.handler)
         }
         return this.cachedFinalPosition
     }
@@ -186,14 +200,10 @@ class VisualStateModel {
     }
     importMeasureUntilLastVisualState(previousMeasure){
         for (let shapeKey in this.shapesDictionary) {
-            if (previousMeasure.fromShapeId == shapeKey) {
+            if (previousMeasure.from.id == shapeKey) {
                 //This VisualState has the starting Shape so we import the measure
-                return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedFinalPosition)
+                return this.addNewMeasureUntilLastState(previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
             }
-        }
-
-        if (previousMeasure.fromShapeId == 'canvas') {
-            return this.addNewMeasureUntilLastState(previousMeasure.fromShapeId,previousMeasure.fromHandlerName,previousMeasure.toShapeId,previousMeasure.toHandlerName,previousMeasure.cachedFinalPosition)
         }
 
         return []
@@ -201,7 +211,9 @@ class VisualStateModel {
 
     addNewMeasureUntilLastState(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedFinalPosition) {
         let result = []
-        let newMeasure = new MeasureModel(this,fromShapeId, fromHandlerName, toShapeId, toHandlerName, cachedFinalPosition)
+        //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
+        let newMeasure = new MeasureModel(this, {type:'shape',id:fromShapeId,handler:fromHandlerName},{type:'shape',id:toShapeId,handler:toHandlerName},cachedFinalPosition)
+
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
@@ -246,9 +258,6 @@ class VisualStateModel {
         }
     }
     shapeFor(aShapeKey) {
-        if (aShapeKey == 'canvas'){
-            return CanvasShape;
-        }
         return this.shapesDictionary[aShapeKey];
     }
     measureFor(measureToCompare) {
@@ -284,7 +293,7 @@ class VisualStateModel {
     deleteShape(aShapeModel) {
         aShapeModel.unfollowMaster()
 
-        let involvedMeasures = this.measures.filter(aMeasure => aMeasure.fromShapeId == aShapeModel.id || aMeasure.toShapeId == aShapeModel.id)
+        let involvedMeasures = this.measures.filter(aMeasure => aMeasure.from.id == aShapeModel.id || aMeasure.to.id == aShapeModel.id)
 
         for (let anInvolvedMeasure of involvedMeasures) {
             console.log("We deleted the measure "+anInvolvedMeasure.id)
@@ -353,18 +362,6 @@ class RelevantPoint {
     }
     get top() {
         return this.shape.height * this.percentualY + this.topMargin
-    }
-}
-
-let CanvasShape = {
-    id: 'canvas',
-    relevantPoints: [{namePrefix:'origin',isHandler:false,left:0,right:0}],
-    positionOfHandler: function(handlerName) {
-        if (handlerName == 'origin') {
-            return {x:0,y:0}
-        } else {
-            console.log("SUPER WEIRD")
-        }
     }
 }
 
@@ -596,11 +593,18 @@ class ShapeModel {
 }
 
 class RuleModel {
-    constructor(input, output, outputMin, outputMax) {
+    constructor(id,input, inputMin, inputMax, output, outputMin, outputMax) {
+        this.id = id;
         this.input = input;
         this.output = output;
         this.outputMin = outputMin;
         this.outputMax = outputMax;
+        this.outputMinValue = null;
+        this.outputMaxValue = null;
+        this.inputMin = inputMin;
+        this.inputMax = intputMax;
+        this.inputMinValue = null;
+        this.inputMaxValue = null;
         this.enforce = true;
         this.currentOutput = undefined;
     }
@@ -618,24 +622,30 @@ class RuleModel {
         }
         return false
     }
-    applyNewInput(newEvent) {
+    applyNewInput(newEvent, globalShapeDictionary) {
         // let touch = event.touches[0]
-        this.input.applyNewInput(this,newEvent)
+        this.input.applyNewInput(this,newEvent, globalShapeDictionary)
         this.currentEvent = newEvent
 
     }
-    shouldKeepApplying(oldOutputValue,newOutputValue) {
+    shouldKeepApplying(oldOutputValue,newOutputValue, globalShapeDictionary) {
         let isBiggerThan = true, isSmallerThan = true
-        if (outputMin) {
-            isBiggerThan = newOutputValue >= globalShapeDictionary[outputMin.shapeId][outputMin.property]
+        if (this.outputMin) {
+            if (this.outputMinValue == null) {
+                this.outputMinValue = globalShapeDictionary[this.outputMin.shapeId][this.outputMin.property]
+            }
+            isBiggerThan = newOutputValue >= this.outputMinValue
         }
-        if (outputMax) {
-            isSmallerThan = newOutputValue <= globalShapeDictionary[outputMax.shapeId][outputMax.property]
+        if (this.outputMax) {
+            if (this.outputMaxValue == null) {
+                this.outputMaxValue = globalShapeDictionary[this.outputMax.shapeId][this.outputMax.property]
+            }
+            isSmallerThan = newOutputValue <= this.outputMaxValue
         }
         return isBiggerThan && isSmallerThan
     }
-    actuallyApply(delta, newEvent) {
-        if (!this.input.condition(newEvent,this.currentOutput)) {
+    actuallyApply(delta, newEvent,globalShapeDictionary) {
+        if (!this.input.condition(newEvent,this.currentOutput,globalShapeDictionary)) {
             return
         }
         switch (this.output.property) {
@@ -657,7 +667,7 @@ class RuleModel {
                             break;
                     }
                     let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
                         this.currentOutput[outputProperty] = newValue
                     }
                 }
@@ -680,7 +690,7 @@ class RuleModel {
                             break;
                     }
                     let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
                         this.currentOutput[outputProperty] = newValue
                     }
                 }
@@ -709,7 +719,7 @@ class RuleModel {
                     }
 
                     let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue)) {
+                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
                         this.currentOutput[outputProperty] = newValue
                         if (complementaryProperty) {
                             this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
@@ -718,6 +728,10 @@ class RuleModel {
                 }
                 break;
             }
+    }
+    reset() {
+        this.outputMinValue = null
+        this.outputMinValue = null
     }
 }
 
@@ -735,7 +749,7 @@ class TouchInput {
     touchFor(event) {
         return event.touches[this.touchId]
     }
-    applyNewInput(aRule, newEvent) {
+    applyNewInput(aRule, newEvent, globalShapeDictionary) {
         let previousTouch = aRule.currentEvent.touches[this.touchId]
 
         let touch = newEvent.touches[this.touchId]
@@ -755,7 +769,7 @@ class TouchInput {
             }
         }
 
-        aRule.actuallyApply(delta, newEvent)
+        aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
 }
 
@@ -771,7 +785,7 @@ class MeasureInput {
     condition(event,aShape) {
         return true;
     }
-    applyNewInput(aRule,newEvent) {
+    applyNewInput(aRule,newEvent, globalShapeDictionary) {
         let result = this.measureFunction(newEvent)
         let previousValue = result.previousValue
         let newValue = result.newValue
@@ -804,6 +818,6 @@ class MeasureInput {
         //             break;
         //     }
         // }
-        aRule.actuallyApply(delta, newEvent)
+        aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
 }
