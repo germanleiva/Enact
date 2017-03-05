@@ -70,10 +70,23 @@ class MeasureModel {
     constructor(visualState,from, to, cachedFinalPosition) {
         this.visualState = visualState
         this.from = from // {type, id, handler}
-        this.to = to; //{type, id, handler}
+        this.to = to?to:{type:undefined, id:undefined, handler:undefined}
         this.cachedInitialPosition = undefined
         this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
+        this._relevantPoints = [new RelevantPoint(this,'center',0.5,0.5)];
+    }
+    get type() {
+        if (this.from.type == this.to.type && this.from.id == this.to.id && this.from.handler == this.to.handler) {
+            return "point"
+        }
+        return "distance"
+    }
+    get relevantPoints() {
+        if (this.type == "distance") {
+            return this._relevantPoints
+        }
+        return []
     }
     get id() {
         let p3=this.to.id, p4=this.to.handler
@@ -136,29 +149,40 @@ class MeasureModel {
     }
     diffArray(nextMeasureWithTheSameModel) {
         let changes = []
-        // let myStartingPoint = this.initialPoint
-        // let myEndingPoint = this.finalPoint
 
-        // let hisStartingPoint = nextMeasureWithTheSameModel.initialPoint
-        // let hisEndingPoint = nextMeasureWithTheSameModel.finalPoint
+        switch (this.type) {
+            case "point": //I'm interested in translation
+                if (this.initialPoint.x != this.finalPoint.x || this.initialPoint.y != this.finalPoint.y) {
+                    console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure'?")
+                }
+                if (nextMeasureWithTheSameModel.initialPoint.x != nextMeasureWithTheSameModel.finalPoint.x || nextMeasureWithTheSameModel.initialPoint.y != nextMeasureWithTheSameModel.finalPoint.y) {
+                    console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure' for my nextMeasureWithTheSameModel?")
+                }
+                let myOnlyPoint = this.initialPoint
+                let hisOnlyPoint = nextMeasureWithTheSameModel.initialPoint
 
-        // if (myStartingPoint.x == hisStartingPoint.x && myStartingPoint.y == hisStartingPoint.y ) {
-        //     //No diff in starting point
-        // } else {
-        //     changes.push({id:this.id,  translation: { previousValue: myStartingPoint, newValue: hisStartingPoint } })
-        // }
+                if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y ) {
+                    //No diff in starting point
+                } else {
+                    changes.push({id:this.id, type: 'measure', property: { name: "translation" , before: myOnlyPoint, after: hisOnlyPoint } })
+                }
 
-        // if (myEndingPoint.x == hisEndingPoint.x && myEndingPoint.y == hisEndingPoint.y) {
-        //     //No diff in ending point
-        // }  else {
-        //     changes.push({id:this.id,  translation: { previousValue: myEndingPoint, newValue: hisEndingPoint } })
-        // }
-
-        if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-            changes.push({id:this.id, type: 'measure', property: { name: "scaling", before: {w: this.width,h:this.height}, after: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                break;
+            case "distance": //I'm interested in scaling
+                if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
+                    changes.push({id:this.id, type: 'measure', property: { name: "scaling", before: {w: this.width,h:this.height}, after: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                }
+                break;
         }
 
         return changes
+    }
+    positionOfHandler(handlerName) {
+        if (handlerName == 'center'){
+            return {x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2)}
+        }
+        console.log("WERIDDDDDDDDDD")
+        abort()
     }
     deleteYourself() {
         let index = this.visualState.measures.indexOf(this)
@@ -199,20 +223,33 @@ class VisualStateModel {
         }
     }
     importMeasureUntilLastVisualState(previousMeasure){
-        for (let shapeKey in this.shapesDictionary) {
-            if (previousMeasure.from.id == shapeKey) {
-                //This VisualState has the starting Shape so we import the measure
-                return this.addNewMeasureUntilLastState(previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
-            }
+        switch (previousMeasure.from.type) {
+            case "shape":
+                for (let shapeKey in this.shapesDictionary) {
+                    if (previousMeasure.from.id == shapeKey) {
+                        //This VisualState has the starting Shape so we import the measure
+                        return this.addNewMeasureUntilLastState(previousMeasure.from.type,previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.type,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
+                    }
+                }
+                break;
+            case "distance":
+                for (let aMeasure of this.measures) {
+                    if (previousMeasure.from.id == aMeasure.id) {
+                        //This VisualState has the starting Shape so we import the measure
+                        return this.addNewMeasureUntilLastState(previousMeasure.from.type,previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.type,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
+                    }
+                }
+                break;
         }
+
 
         return []
     }
 
-    addNewMeasureUntilLastState(fromShapeId,fromHandlerName,toShapeId,toHandlerName, cachedFinalPosition) {
+    addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,toEntityType,toId,toHandlerName, cachedFinalPosition) {
         let result = []
         //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
-        let newMeasure = new MeasureModel(this, {type:'shape',id:fromShapeId,handler:fromHandlerName},{type:'shape',id:toShapeId,handler:toHandlerName},cachedFinalPosition)
+        let newMeasure = new MeasureModel(this, {type:fromEntityType,id:fromId,handler:fromHandlerName},{type:toEntityType,id:toId,handler:toHandlerName},cachedFinalPosition)
 
         result.push(newMeasure)
         this.measures.push(newMeasure)
@@ -259,6 +296,9 @@ class VisualStateModel {
     }
     shapeFor(aShapeKey) {
         return this.shapesDictionary[aShapeKey];
+    }
+    distanceFor(aMeasureKey) {
+        return this.measures.find(x => x.id == aMeasureKey)
     }
     measureFor(measureToCompare) {
         return this.measures.find(aMeasure => aMeasure.id === measureToCompare.id)
@@ -348,8 +388,8 @@ class VisualStateModel {
 }
 
 class RelevantPoint {
-    constructor(shape,namePrefix, percentualX, percentualY) {
-        this.shape = shape
+    constructor(shapeOrMeasure,namePrefix, percentualX, percentualY) {
+        this.shapeOrMeasure = shapeOrMeasure
         this.namePrefix = namePrefix;
         this.percentualX = percentualX;
         this.percentualY = percentualY;
@@ -358,10 +398,10 @@ class RelevantPoint {
         this.topMargin = -6
     }
     get left() {
-        return this.shape.width * this.percentualX + this.leftMargin
+        return this.shapeOrMeasure.width * this.percentualX + this.leftMargin
     }
     get top() {
-        return this.shape.height * this.percentualY + this.topMargin
+        return this.shapeOrMeasure.height * this.percentualY + this.topMargin
     }
 }
 
@@ -602,7 +642,7 @@ class RuleModel {
         this.outputMinValue = null;
         this.outputMaxValue = null;
         this.inputMin = inputMin;
-        this.inputMax = intputMax;
+        this.inputMax = inputMax;
         this.inputMinValue = null;
         this.inputMaxValue = null;
         this.enforce = true;

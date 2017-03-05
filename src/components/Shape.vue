@@ -4,7 +4,7 @@
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
         </div>
-        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint">
+        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
         </div>
 
     </div>
@@ -15,7 +15,7 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import Vue from 'vue'
-import Measure from './Measure.vue'
+import Distance from './Distance.vue'
 import {globalStore,globalBus,logger, MeasureModel} from '../store.js'
 
 // class Handler {
@@ -139,17 +139,20 @@ export default {
             for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
                 let isInside = x > this.shapeModel.left + eachHandlerDOMElement.offsetLeft && x < this.shapeModel.left + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y > this.shapeModel.top + eachHandlerDOMElement.offsetTop && y < this.shapeModel.top + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
                 if (isInside) {
-                    return {shapeId: this.shapeModel.id, handlerName: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
+                    return {type:'shape',id: this.shapeModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
                 }
             }
             return undefined
         },
-        mouseDownStartedOnRelevantPoint(e) {
+        mouseDownStartedOnRelevantPoint(e,aRelevantPoint) {
             if (globalStore.toolbarState.measureMode) {
-                this.$parent.measureStartedOnRelevantPoint(e,this.shapeModel.id)
+                this.measureStartedOnRelevantPoint(e,aRelevantPoint,'shape',this.shapeModel.id)
             } else {
                 console.log("THIS SHOULD NEVER HAPPEN")
             }
+        },
+        measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId) {
+            this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId)
         },
         mouseDownStartedOnHandler(e) {
             e.preventDefault();
@@ -180,17 +183,17 @@ export default {
         mouseDownStartedOnShape(e) {
             if (e.ctrlKey) {
                 e.preventDefault()
-                e.stopPropagation()
+                e.stopPropagation();
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
                 let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'shape',id:this.shapeModel.id,handler:undefined})
                 newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
                 newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
 
-                const MeasureVM = Vue.extend(Measure);
-                let newMeasureVM = new MeasureVM({propsData: {measureModel: newMeasureModel }})
-                newMeasureVM.measureColor = 'black';
-                newMeasureVM.$mount()
-                window.document.body.appendChild(newMeasureVM.$el);
+                const DistanceVM = Vue.extend(Distance);
+                let newDistanceVM = new DistanceVM({propsData: {measureModel: newMeasureModel }})
+                newDistanceVM.measureColor = 'black';
+                newDistanceVM.$mount()
+                window.document.body.appendChild(newDistanceVM.$el);
 
                 globalStore.toolbarState.linkingObject = this.shapeModel;
 
@@ -205,8 +208,8 @@ export default {
                     // This handler should be trigger AFTER the rule upHandler"
                     globalStore.toolbarState.linkingObject = undefined;
                     newMeasureModel.deleteYourself();
-                    window.document.body.removeChild(newMeasureVM.$el);
-                    newMeasureVM.$destroy();
+                    window.document.body.removeChild(newDistanceVM.$el);
+                    newDistanceVM.$destroy();
                     window.removeEventListener('mousemove', moveHandler, false);
                     window.removeEventListener('mouseup', upHandler, false);
                 }.bind(this);

@@ -1,11 +1,6 @@
 <template>
-    <!-- <div v-bind:style="styleObject">
-    </div> -->
-    <svg :style="styleObject">
-        <g fill= "none">
-            <path :stroke="measureColor" :stroke-width="strokeWidth" :d="path"/>
-        </g>
-    </svg>
+    <div v-bind:style="styleObject">
+    </div>
 </template>
 <script>
 
@@ -14,22 +9,26 @@ extendArray(Array);
 import {globalStore,globalBus,logger} from '../store.js'
 
 export default {
-    name: 'measure',
+    name: 'point',
     props: ['measureModel'],
     data: function() {
         return {
-            measureColor: 'red'
+
         }
     },
     computed: {
         styleObject: function() {
+            let size = 10
             return {
                 // 'backgroundColor': 'red',
                 'position': 'absolute',
-                'left': this.startingX + 'px',
-                'top': this.startingY + 'px',
-                'width': Math.max(this.measureModel.width,2) + 'px',
-                'height': Math.max(this.measureModel.height,2) + 'px',
+                'left': (this.startingX - size/2) + 'px',
+                'top': (this.startingY - size/2) +'px',
+                'width': size + 'px',
+                'height': size + 'px',
+                'border': '1px solid #000000',
+                'background-color': this.measureModel.highlight?'gray':'blue',
+                'border-radius': '5px',
                 'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the measure
             }
         },
@@ -77,7 +76,9 @@ export default {
     //     }
     // },
     methods: {
-
+        handlerFor(x,y) {
+            return undefined
+        }
     }
 }
 </script>

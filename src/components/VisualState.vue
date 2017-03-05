@@ -2,7 +2,7 @@
     <div class='visualStateContainer'>
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
             <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
-            <measure v-for="aMeasureModel in measureModels" v-bind:measure-model="aMeasureModel"></measure>
+            <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
             <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
         </div>
@@ -44,7 +44,8 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore, globalBus} from '../store.js'
 import Shape from './Shape.vue'
-import Measure from './Measure.vue'
+import Distance from './Distance.vue'
+import Point from './Point.vue'
 import InputEventMark from './InputEventMark.vue'
 import DiffElement from './DiffElement.vue'
 
@@ -68,7 +69,8 @@ export default {
     },
     components: {
         Shape,
-        Measure,
+        Distance,
+        Point,
         InputEventMark,
         DiffElement,
     },
@@ -247,21 +249,20 @@ export default {
         }
     },
     methods: {
-        measureStartedOnRelevantPoint(e,shapeModelId) {
+        measureStartedOnRelevantPoint(e,aRelevantPoint,fromEntityType,fromId) {
             e.preventDefault();
             e.stopPropagation();
 
-            let handlerType = e.target.id.split('-')[0];
+            let fromHandlerName = aRelevantPoint.namePrefix;
 
-            let cachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
+            let sharedCachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
 
             //TODO this is nasty, sorry future Germán
-            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(shapeModelId,handlerType,undefined,undefined, cachedFinalPosition)
+            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
             let newMeasure = presentAndFutureMeasures[0]
             var mouseMoveHandler
             mouseMoveHandler = function(e) {
                 let initial = newMeasure.initialPoint
-
                 newMeasure.cachedFinalPosition.x =  e.pageX  - this.canvasOffsetLeft()
                 newMeasure.cachedFinalPosition.y = e.pageY  - this.canvasOffsetTop()
             }.bind(this)
@@ -272,12 +273,13 @@ export default {
             var mouseUpHandler
             mouseUpHandler = function(e) {
                 let objectForMouseEvent = visualStateVM.handlerFor(e)
-
+                console.log("mouseUpHandler " + JSON.stringify(objectForMouseEvent))
                 if (objectForMouseEvent) {
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
                         eachPresentAndFutureMeasure.cachedFinalPosition = undefined
-                        eachPresentAndFutureMeasure.to.id = objectForMouseEvent.shapeId
-                        eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handlerName
+                        eachPresentAndFutureMeasure.to.type = objectForMouseEvent.type
+                        eachPresentAndFutureMeasure.to.id = objectForMouseEvent.id
+                        eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handler
                     }
                 } else {
                     //delete measure?
@@ -317,10 +319,15 @@ export default {
                 let result = eachShapeVM.handlerFor(x,y)
 
                 if (result) {
-                    console.log("Result " + JSON.stringify(result))
                     return result
-                } else {
-                    console.log("No result")
+                }
+            }
+
+            for (let eachMeasureVM of this.$refs.measures) {
+                let result = eachMeasureVM.handlerFor(x,y)
+
+                if (result) {
+                    return result
                 }
             }
             return undefined
@@ -473,9 +480,8 @@ export default {
         },
         highlightInvolvedElement(diffElementVM,aBoolean){
             let data = diffElementVM.diffData
-            let shapeOrMeasureId = data.id
 
-            this.visualStateModel.toggleHighlightForInvolvedElement(shapeOrMeasureId,aBoolean)
+            this.visualStateModel.toggleHighlightForInvolvedElement(data.id,aBoolean)
         }
     }
 }
