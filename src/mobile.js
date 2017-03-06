@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RuleModel, MeasureModel, MeasureInput, TouchInput} from './store.js'
+import {globalStore, ShapeModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
 
 var socket = io.connect(window.location.href.split('/')[2]);
 
@@ -220,15 +220,54 @@ socket.on('message-from-server', function(data) {
             break;
         case "NEW_RULE":
             let newRule = new RuleModel(data.message.id)
-            mobileCanvasVM.rules[data.message.id] = newRule
+            // Vue.set(object, key, value)
+            Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
 
             break;
         case "EDIT_RULE":
-            let ruleId = data.message.id;
-            let editedRule = mobileCanvasVM.rules[ruleId]
+        // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
+            let receivedRule = data.message;
+            let editedRule = mobileCanvasVM.rules[receivedRule.id]
             if (editedRule) {
-                // editedRule.input
-                // editedRule.ouput
+                switch (receivedRule.input.type) {
+                    case 'touch':
+                        if (editedRule.input == undefined || !editedRule.input instanceof TouchInput) {
+                            editedRule.input = new TouchInput(receivedRule.input.id,receivedRule.input.property,receivedRule.input.axiss)
+                        }
+                        editedRule.input.touchId = receivedRule.input.id
+                        editedRule.input.property = receivedRule.input.property
+                        editedRule.input.axis = receivedRule.input.axiss
+                        editedRule.input.minPosition = receivedRule.input.min
+                        editedRule.input.maxPosition = receivedRule.input.max
+                        break;
+                    case 'measure':
+                        if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {
+                            editedRule.input = new MeasureInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
+                        }
+                        editedRule.input.measureObject = mobileCanvasVM.measures.find(aMeasure => aMeasure.id == receivedRule.input.id)
+                        editedRule.input.property = receivedRule.input.property
+                        editedRule.input.axis = receivedRule.input.axiss
+
+                        break;
+                    default:
+                        console.log("EDIT_RULE >> unrecognized input type")
+                }
+                if (receivedRule.output.id) {
+                    switch (receivedRule.output.type) {
+                        case 'shape':
+                            if (editedRule.output == undefined || !editedRule.output instanceof ShapeOutputRule) {
+                                editedRule.output = new ShapeOutputRule(receivedRule.output.id,receivedRule.output.property,receivedRule.output.axiss)
+                            }
+                            editedRule.output.id = receivedRule.output.id
+                            editedRule.output.property = receivedRule.output.property
+                            editedRule.output.axis = receivedRule.output.axiss
+                            editedRule.output.minValue = receivedRule.output.min
+                            editedRule.output.maxValue = receivedRule.output.max
+                            break;
+                        default:
+                            console.log("EDIT_RULE >> unrecognized output type")
+                    }
+                }
             } else {
                 console.log("WERID, editing a rule that we don't have")
             }
@@ -381,13 +420,13 @@ function saveEvent(anEvent) {
 //   event.preventDefault();
 // }, false);
 
-document.body.addEventListener('touchstart', function(e) { e.preventDefault(); });
-document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
-document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
+// document.body.addEventListener('touchstart', function(e) { e.preventDefault(); });
+// document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
+// document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
 let previousTouchPosition
 
-document.addEventListener("touchstart", function(event) {
+document.getElementById('mobileCanvas').addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
@@ -406,7 +445,7 @@ document.addEventListener("touchstart", function(event) {
     }
 });
 
-document.addEventListener("touchmove", function(event) {
+document.getElementById('mobileCanvas').addEventListener("touchmove", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
@@ -429,7 +468,7 @@ document.addEventListener("touchmove", function(event) {
     }
 });
 
-document.addEventListener("touchend", function(event) {
+document.getElementById('mobileCanvas').addEventListener("touchend", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
@@ -439,25 +478,25 @@ document.addEventListener("touchend", function(event) {
     }
 });
 
-document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
-document.body.addEventListener('mousemove', function(e) { e.preventDefault(); });
-document.body.addEventListener('mouseup', function(e) { e.preventDefault(); });
+// document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
+// document.body.addEventListener('mousemove', function(e) { e.preventDefault(); });
+// document.body.addEventListener('mouseup', function(e) { e.preventDefault(); });
 
-document.addEventListener("mousedown", function(event) {
+document.getElementById('mobileCanvas').addEventListener("mousedown", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     }
 });
 
-document.addEventListener("mousemove", function(event) {
+document.getElementById('mobileCanvas').addEventListener("mousemove", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);
     }
 });
 
-document.addEventListener("mouseup", function(event) {
+document.getElementById('mobileCanvas').addEventListener("mouseup", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
         saveEvent(event);

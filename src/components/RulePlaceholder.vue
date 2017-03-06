@@ -5,7 +5,11 @@
             <input v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Input Type">
             <input v-model="rulePlaceholderModel.input.id" style="width: 25%" placeholder="Input Id">
             <input v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Input Property">
-            <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis">
+            <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
+            <select v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis" multiple>
+              <option>x</option>
+              <option>y</option>
+            </select>
             <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%"   v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
             <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%"  v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
@@ -13,7 +17,12 @@
             <input v-model="rulePlaceholderModel.output.type" style="width: 25%" placeholder="Output Type">
             <input v-model="rulePlaceholderModel.output.id" style="width: 25%" placeholder="Output Id">
             <input v-model="rulePlaceholderModel.output.property" style="width: 25%" placeholder="Output Property">
-            <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
+<!--             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
+ -->
+            <select v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis" multiple>
+              <option>x</option>
+              <option>y</option>
+            </select>
             <input class="outputCondition" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min output">
             <input class="outputCondition" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max output">
         </div>
@@ -65,22 +74,58 @@ export default {
     props:['rulePlaceholderModel'],
     data: function() {
         return {
-
+        }
+    },
+    watch: {
+        rulePlaceholderModel: {
+            handler: function(newValue,oldValue) {
+                console.log('rulePlaceholderModel changed to '+newValue+" ("+oldValue+")");
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_RULE", message: newValue })
+            },
+            deep: true
         }
     },
     methods: {
         dropForInput(event) {
             event.preventDefault();
             var data = event.dataTransfer.getData("text/input");
+
+            let dataObject = undefined
             if (data) {
-                //It's an input
+                //It's an touch input
+                dataObject = JSON.parse(data)
+
+                this.rulePlaceholderModel.input.type = "touch";
+                this.rulePlaceholderModel.input.property = "translation"
             } else {
                 data = event.dataTransfer.getData("text/measure");
                 if (data) {
                     //It's a measure
+                    dataObject = JSON.parse(data)
+                    // {type:'point', fromType: 'distance', fromId:'distance0',fromHandler:'center',toType:'distance', toId:'distance0',toHandler:'center',axiss:['y']},
+                    this.rulePlaceholderModel.input.type = "measure"
+                    this.rulePlaceholderModel.input.property = dataObject.property.name
+
                 }
             }
-            this.inputRule = data
+
+            this.rulePlaceholderModel.input.id = dataObject.id
+
+            this.rulePlaceholderModel.input.axiss = []
+            if (dataObject.property.before.x != dataObject.property.after.x) {
+                this.rulePlaceholderModel.input.axiss.push('x')
+            }
+            if (dataObject.property.before.y != dataObject.property.after.y) {
+                this.rulePlaceholderModel.input.axiss.push('y')
+            }
+
+            //To account for the ≠ naming of the scaling axis (w & h)
+            if (dataObject.property.before.w != dataObject.property.after.w) {
+                this.rulePlaceholderModel.output.axiss.push('x')
+            }
+            if (dataObject.property.before.h != dataObject.property.after.h) {
+                this.rulePlaceholderModel.output.axiss.push('y')
+            }
         },
         dropForOutput(event) {
             event.preventDefault();
@@ -106,6 +151,13 @@ export default {
                 this.rulePlaceholderModel.output.axiss.push('y')
             }
 
+            //To account for the ≠ naming of the scaling axis (w & h)
+            if (dataObject.property.before.w != dataObject.property.after.w) {
+                this.rulePlaceholderModel.output.axiss.push('x')
+            }
+            if (dataObject.property.before.h != dataObject.property.after.h) {
+                this.rulePlaceholderModel.output.axiss.push('y')
+            }
         },
         dragOverForInput(event) {
             var dataType = event.dataTransfer.types;
@@ -151,11 +203,11 @@ export default {
                 if (ruleSection == 'min' || ruleSection == 'max') {
                     let aRuleSide = this.rulePlaceholderModel[ruleSide]
                     if (aRuleSide.type && aRuleSide.id && aRuleSide.property && aRuleSide.axiss.length > 0) {
-                        //If we have data in the input/output (type,id,property,axiss) we infer the min/max
-                        for (let eachAxis of aRuleSide.axiss) {
+                        //If we have data in the input/output (type,id,property,axiss) later we infer the min/max axis
+                        // for (let eachAxis of aRuleSide.axiss) {
                             //TODO binding is not working here
-                            aRuleSide[ruleSection][eachAxis] = linkingObject[aRuleSide.property].value[eachAxis]
-                        }
+                            aRuleSide[ruleSection] = linkingObject[aRuleSide.property].value
+                        // }
                         debugger;
                     } else {
                         let newContextMenu = new ContextMenu()

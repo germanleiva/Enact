@@ -10,7 +10,7 @@
 //     }
 // });
 
-import {extendArray} from './collections.js'
+import { extendArray } from './collections.js'
 extendArray(Array);
 import Vue from 'vue';
 import io from 'socket.io-client';
@@ -22,7 +22,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, ShapeModel, MeasureModel, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, logger }
+export { VisualStateModel, ShapeModel, MeasureModel, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, logger }
 
 export const globalBus = new Vue();
 
@@ -68,14 +68,14 @@ export const globalStore = new Vue({
 })
 
 class MeasureModel {
-    constructor(visualState,from, to, cachedFinalPosition) {
+    constructor(visualState, from, to, cachedFinalPosition) {
         this.visualState = visualState
         this.from = from // {type, id, handler}
-        this.to = to?to:{type:undefined, id:undefined, handler:undefined}
+        this.to = to ? to : { type: undefined, id: undefined, handler: undefined }
         this.cachedInitialPosition = undefined
         this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
-        this._relevantPoints = [new RelevantPoint(this,'center',0.5,0.5)];
+        this._relevantPoints = [new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
     get type() {
         if (this.from.type == this.to.type && this.from.id == this.to.id && this.from.handler == this.to.handler) {
@@ -90,7 +90,8 @@ class MeasureModel {
         return []
     }
     get id() {
-        let p3=this.to.id, p4=this.to.handler
+        let p3 = this.to.id,
+            p4 = this.to.handler
 
         if (!p3) {
             p3 = ""
@@ -100,7 +101,7 @@ class MeasureModel {
             p4 = ""
         }
 
-        return this.from.id+"-"+this.from.handler+"-"+p3+"-"+p4
+        return this.from.id + "-" + this.from.handler + "-" + p3 + "-" + p4
     }
     get fromObject() {
         let fromId = this.from.id;
@@ -162,16 +163,16 @@ class MeasureModel {
                 let myOnlyPoint = this.initialPoint
                 let hisOnlyPoint = nextMeasureWithTheSameModel.initialPoint
 
-                if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y ) {
+                if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
                     //No diff in starting point
                 } else {
-                    changes.push({id:this.id, type: 'measure', property: { name: "translation" , before: myOnlyPoint, after: hisOnlyPoint } })
+                    changes.push({ id: this.id, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
                 }
 
                 break;
             case "distance": //I'm interested in scaling
                 if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-                    changes.push({id:this.id, type: 'measure', property: { name: "scaling", before: {w: this.width,h:this.height}, after: {w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                    changes.push({ id: this.id, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
                 }
                 break;
         }
@@ -179,8 +180,8 @@ class MeasureModel {
         return changes
     }
     positionOfHandler(handlerName) {
-        if (handlerName == 'center'){
-            return {x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2)}
+        if (handlerName == 'center') {
+            return { x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2) }
         }
         console.log("WERIDDDDDDDDDD")
         abort()
@@ -188,7 +189,7 @@ class MeasureModel {
     deleteYourself() {
         let index = this.visualState.measures.indexOf(this)
         if (index >= 0) {
-            this.visualState.measures.splice(index,1)
+            this.visualState.measures.splice(index, 1)
         }
         this.visualState = undefined
     }
@@ -223,13 +224,13 @@ class VisualStateModel {
             this.importMeasureUntilLastVisualState(previousMeasure)
         }
     }
-    importMeasureUntilLastVisualState(previousMeasure){
+    importMeasureUntilLastVisualState(previousMeasure) {
         switch (previousMeasure.from.type) {
             case "shape":
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type,previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.type,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -237,7 +238,7 @@ class VisualStateModel {
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type,previousMeasure.from.id,previousMeasure.from.handler,previousMeasure.to.type,previousMeasure.to.id,previousMeasure.to.handler,previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -247,10 +248,10 @@ class VisualStateModel {
         return []
     }
 
-    addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,toEntityType,toId,toHandlerName, cachedFinalPosition) {
+    addNewMeasureUntilLastState(fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
         let result = []
-        //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
-        let newMeasure = new MeasureModel(this, {type:fromEntityType,id:fromId,handler:fromHandlerName},{type:toEntityType,id:toId,handler:toHandlerName},cachedFinalPosition)
+            //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
+        let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
 
         result.push(newMeasure)
         this.measures.push(newMeasure)
@@ -270,7 +271,7 @@ class VisualStateModel {
             correspondingVersion = new ShapeModel(protoShape.id, protoShape);
         } else {
             let newShapeCount = globalStore.shapeCounter++;
-            correspondingVersion = new ShapeModel('shape'+newShapeCount, undefined, 'white', 0, 0, 0, 0);
+            correspondingVersion = new ShapeModel('shape' + newShapeCount, undefined, 'white', 0, 0, 0, 0);
         }
 
         // if (oldShapeVM) {
@@ -337,7 +338,7 @@ class VisualStateModel {
         let involvedMeasures = this.measures.filter(aMeasure => aMeasure.from.id == aShapeModel.id || aMeasure.to.id == aShapeModel.id)
 
         for (let anInvolvedMeasure of involvedMeasures) {
-            console.log("We deleted the measure "+anInvolvedMeasure.id)
+            console.log("We deleted the measure " + anInvolvedMeasure.id)
             anInvolvedMeasure.deleteYourself()
         }
 
@@ -354,15 +355,15 @@ class VisualStateModel {
 
         aShapeModel.prepareForDeletion()
 
-        Vue.delete(this.shapesDictionary,aShapeModel.id)
-        // this.shapesDictionary[aShapeModel.id] = undefined
+        Vue.delete(this.shapesDictionary, aShapeModel.id)
+            // this.shapesDictionary[aShapeModel.id] = undefined
 
 
         if (globalStore.visualStates[0] === this) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
         }
     }
-    toggleHighlightForInvolvedElement(shapeOrMeasureId,aBoolean) {
+    toggleHighlightForInvolvedElement(shapeOrMeasureId, aBoolean) {
         function togglingHelper(aVisualState) {
             let involvedShape = aVisualState.shapesDictionary[shapeOrMeasureId]
             if (involvedShape) {
@@ -380,7 +381,7 @@ class VisualStateModel {
         togglingHelper(this)
         togglingHelper(this.nextState)
     }
-    deselectShapes(){
+    deselectShapes() {
         for (let eachShapeKey in this.shapesDictionary) {
             let eachShape = this.shapesDictionary[eachShapeKey]
             eachShape.deselect()
@@ -389,12 +390,12 @@ class VisualStateModel {
 }
 
 class RelevantPoint {
-    constructor(shapeOrMeasure,namePrefix, percentualX, percentualY) {
+    constructor(shapeOrMeasure, namePrefix, percentualX, percentualY) {
         this.shapeOrMeasure = shapeOrMeasure
         this.namePrefix = namePrefix;
         this.percentualX = percentualX;
         this.percentualY = percentualY;
-        this.isHandler = [0,1].includes(percentualX) && [0,1].includes(percentualY)
+        this.isHandler = [0, 1].includes(percentualX) && [0, 1].includes(percentualY)
         this.leftMargin = -6
         this.topMargin = -6
     }
@@ -431,7 +432,7 @@ class ShapeModel {
         this.highlight = false
         this.isSelected = false
 
-        this.relevantPoints = [new RelevantPoint(this,'northWest',0,0), new RelevantPoint(this,'northEast',1,0), new RelevantPoint(this,'southEast',1,1), new RelevantPoint(this,'southWest',0,1), new RelevantPoint(this,'middleRight',1,0.5), new RelevantPoint(this,'middleLeft',0,0.5), new RelevantPoint(this,'middleTop',0.5,0), new RelevantPoint(this,'middleBottom',0.5,1), new RelevantPoint(this,'center',0.5,0.5)];
+        this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
 
     prepareForDeletion() {
@@ -445,10 +446,10 @@ class ShapeModel {
     }
     cssText(opacityValue = 1) {
         return 'background-color:' + this.color + ";" +
-            'position:' + 'absolute'  + ";" +
-            'left:' + this.left + 'px'  + ";" +
-            'top:' + this.top + 'px'  + ";" +
-            'width:' + this.width + 'px'  + ";" +
+            'position:' + 'absolute' + ";" +
+            'left:' + this.left + 'px' + ";" +
+            'top:' + this.top + 'px' + ";" +
+            'width:' + this.width + 'px' + ";" +
             'height:' + this.height + 'px' + ";" +
             'border:' + ('1px') + ' solid gray' + ";" +
             'overflow:' + 'visible' + ";" +
@@ -591,40 +592,40 @@ class ShapeModel {
     }
     diffArray(nextShapeWithTheSameModel) {
         let changes = []
-        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor',this.backgroundColor.value,nextShapeWithTheSameModel.backgroundColor.value)) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor', this.backgroundColor.value, nextShapeWithTheSameModel.backgroundColor.value)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({id:this.id, type: 'output', property: {name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
+            changes.push({ id: this.id, type: 'output', property: { name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation',this.translation.value,nextShapeWithTheSameModel.translation.value)) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation', this.translation.value, nextShapeWithTheSameModel.translation.value)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({id:this.id, type: 'output', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
+            changes.push({ id: this.id, type: 'output', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling',this.scaling.value,nextShapeWithTheSameModel.scaling.value)) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling', this.scaling.value, nextShapeWithTheSameModel.scaling.value)) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({id:this.id, type: 'output', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
+            changes.push({ id: this.id, type: 'output', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
         }
         return changes
     }
     positionOfHandler(handlerName) {
         switch (handlerName) {
             case 'northEast':
-                return {x: this.left + this.width, y: this.top }
+                return { x: this.left + this.width, y: this.top }
             case 'northWest':
-                return {x: this.left, y: this.top }
+                return { x: this.left, y: this.top }
             case 'southWest':
-                return {x: this.left, y: this.top + this.height}
+                return { x: this.left, y: this.top + this.height }
             case 'southEast':
-                return {x: this.left + this.width, y: this.top + this.height}
+                return { x: this.left + this.width, y: this.top + this.height }
             case 'middleRight':
-                return {x: this.left + this.width, y: this.top + this.height / 2}
+                return { x: this.left + this.width, y: this.top + this.height / 2 }
             case 'middleLeft':
-                return {x: this.left, y: this.top + this.height / 2}
+                return { x: this.left, y: this.top + this.height / 2 }
             case 'middleTop':
-                return {x: this.left + this.width / 2, y: this.top}
+                return { x: this.left + this.width / 2, y: this.top }
             case 'middleBottom':
-                return {x: this.left + this.width / 2, y: this.top + this.height}
+                return { x: this.left + this.width / 2, y: this.top + this.height }
             case 'center':
-                return {x: this.left + this.width / 2, y: this.top + this.height / 2}
+                return { x: this.left + this.width / 2, y: this.top + this.height / 2 }
         }
         console.log("WERIDDDDDDDDDD")
     }
@@ -636,13 +637,13 @@ class ShapeModel {
 class RulePlaceholderModel {
     constructor(id) {
         this.id = id;
-        this.input = {type:undefined,id:undefined,property:undefined,axiss:[],min:{x:Number.MIN_VALUE,y:Number.MIN_VALUE},max:{x:Number.MAX_VALUE,y:Number.MAX_VALUE}};
-        this.output = {type:'shape',id:undefined,property:undefined,axiss:[],min:{x:Number.MIN_VALUE,y:Number.MIN_VALUE},max:{x:Number.MAX_VALUE,y:Number.MAX_VALUE}};
+        this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }, max: { x: Number.MAX_VALUE, y: Number.MAX_VALUE } };
+        this.output = { type: 'shape', id: undefined, property: undefined, axiss: [], min: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }, max: { x: Number.MAX_VALUE, y: Number.MAX_VALUE } };
     }
 }
 
 class ShapeOutputRule {
-    constructor(shapeId,property,axis) {
+    constructor(shapeId, property, axis) {
         this.id = shapeId;
         this.property = property;
         this.axis = axis;
@@ -652,7 +653,7 @@ class ShapeOutputRule {
 }
 
 class RuleModel {
-    constructor(id,input, output) {
+    constructor(id, input, output) {
         this.id = id;
         this.input = input;
         this.output = output;
@@ -662,110 +663,96 @@ class RuleModel {
     activate(anEvent, globalShapeDictionary) {
         if (this.input.shouldActivate(this, anEvent)) {
             //Does it affect one of the current shapes?
-            let controlledShape = globalShapeDictionary[this.output.id]
-            if (controlledShape) {
+            let controlledShapeVM = globalShapeDictionary[this.output.id]
+            if (controlledShapeVM) {
                 // if (this.input.condition(event, controlledShape)) {
-                    this.currentEvent = anEvent
-                    this.currentOutput = controlledShape
-                    return true
-                // }
+                this.currentEvent = anEvent
+                this.currentOutput = controlledShapeVM.shapeModel
+                this.input.activate()
+                return true
+                    // }
             }
         }
         return false
     }
     applyNewInput(newEvent, globalShapeDictionary) {
         // let touch = event.touches[0]
-        this.input.applyNewInput(this,newEvent, globalShapeDictionary)
+        this.input.applyNewInput(this, newEvent, globalShapeDictionary)
         this.currentEvent = newEvent
 
     }
-    shouldKeepApplying(oldOutputValue,newOutputValue, globalShapeDictionary) {
-        return newOutputValue >= this.outputMinValue && newOutputValue <= this.outputMaxValue
+    shouldKeepApplying(oldOutputValue, newOutputValue, anAxis, globalShapeDictionary) {
+        return newOutputValue >= this.output.minValue[anAxis] && newOutputValue <= this.output.maxValue[anAxis]
     }
-    actuallyApply(delta, newEvent,globalShapeDictionary) {
-        if (!this.input.condition(newEvent,this.currentOutput,globalShapeDictionary)) {
+    actuallyApply(delta, newEvent, globalShapeDictionary) {
+        if (!this.input.condition(newEvent, this.currentOutput, globalShapeDictionary)) {
             return
         }
-        switch (this.output.property) {
-            case 'center':
-                for (let i = 0; i < this.output.axis.length; i++) {
-                    let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.input.axis[i];
-                    if (!correspondingInputAxis) {
-                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.input.axis[0];
-                    }
-                    let outputProperty = ''
-                    switch (eachOutputAxis) {
-                        case 'x':
-                            outputProperty = 'centerX';
-                            break
-                        case 'y':
-                            outputProperty = 'centerY';
-                            break;
-                    }
-                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
-                        this.currentOutput[outputProperty] = newValue
-                    }
-                }
-                break;
-            case 'translation':
-                for (let i = 0; i < this.output.axis.length; i++) {
-                    let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.input.axis[i];
-                    if (!correspondingInputAxis) {
-                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.input.axis[0];
-                    }
-                    let outputProperty = ''
-                    switch (eachOutputAxis) {
-                        case 'x':
-                            outputProperty = 'left';
-                            break
-                        case 'y':
-                            outputProperty = 'top';
-                            break;
-                    }
-                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
-                        this.currentOutput[outputProperty] = newValue
-                    }
-                }
-                break;
-            case 'scaling':
-                for (let i = 0; i < this.output.axis.length; i++) {
-                    let eachOutputAxis = this.output.axis[i];
-                    let correspondingInputAxis = this.input.axis[i];
-                    if (!correspondingInputAxis) {
-                        console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
-                        correspondingInputAxis = this.input.axis[0];
-                    }
-                    let outputProperty = ''
-                    let complementaryProperty = undefined
-                    switch (eachOutputAxis) {
-                        case 'x':
-                            outputProperty = 'width';
-                            complementaryProperty = 'left'
-                            break
-                        case 'y':
-                            outputProperty = 'height';
-                            complementaryProperty = 'top'
-                                    //             target.height = newValue
-        //             target.top -= (newValue - previousValue) / 2
-                            break;
-                    }
+        for (let i=0;i<this.output.axis.length;i++) {
+            let eachOutputAxis = this.output.axis[i];
+            let correspondingInputAxis = this.input.axis[i];
+            if (!correspondingInputAxis) {
+                console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
+                correspondingInputAxis = this.input.axis[0];
+            }
+            let outputProperty = ''
+            let complementaryProperty = undefined
 
-                    let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
-                    if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, globalShapeDictionary)) {
-                        this.currentOutput[outputProperty] = newValue
-                        if (complementaryProperty) {
-                            this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
+            switch (eachOutputAxis) {
+                case 'x': {
+                    switch (this.output.property) {
+                        case 'center': {
+                            outputProperty = 'centerX';
+                            break;
+                        }
+                        case 'translation': {
+                            outputProperty = 'left';
+                            break;
+                        }
+                        case 'scaling': {
+                            outputProperty = 'width';
+                            // complementaryProperty = 'left';
+                            break;
+                        }
+                        default: {
+                            console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property)
                         }
                     }
+                    break;
                 }
-                break;
+                case 'y': {
+                    switch (this.output.property) {
+                        case 'center': {
+                            outputProperty = 'centerY';
+                            break;
+                        }
+                        case 'translation': {
+                            outputProperty = 'top';
+                            break;
+                        }
+                        case 'scaling': {
+                            outputProperty = 'height';
+                            // complementaryProperty = 'top'
+                            break;
+                        }
+                        default: {
+                            console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property)
+                        }
+                    }
+                    break;
+                }
+                default: {
+                    console.log("RuleModel >> actuallyApply: Unrecognized axis " + eachOutputAxis)
+                }
             }
+            let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
+            if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, eachOutputAxis, globalShapeDictionary)) {
+                this.currentOutput[outputProperty] = newValue
+                if (complementaryProperty) {
+                    this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
+                }
+            }
+        }
     }
 }
 
@@ -774,12 +761,12 @@ class TouchInput {
         this.touchId = touchId
         this.property = property
         this.axis = listOfAxis
-        this.minPosition = {x:Number.MIN_VALUE,y:Number.MIN_VALUE}
-        this.maxPosition = {x:Number.MAX_VALUE,y:Number.MAX_VALUE}
+        this.minPosition = { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+        this.maxPosition = { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
     }
-    condition(event,aShape) {
+    condition(event, aShape) {
         let touch = this.touchFor(event)
-        return this.axis.every(eachAxis => touch[eachAxis] >= this.minPosition[eachAxis] && touch[eachAxis] <= this.maxPosition[eachAxis])
+        return this.axis.every(eachAxis => touch['page' + eachAxis.toUpperCase()] >= this.minPosition[eachAxis] && touch['page' + eachAxis.toUpperCase()] <= this.maxPosition[eachAxis])
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
@@ -794,10 +781,10 @@ class TouchInput {
         let touch = newEvent.touches[this.touchId]
 
         if (!touch) {
-            console.log("TouchInput >> applyNewInput: there isn't a touch = "+touch)
+            console.log("TouchInput >> applyNewInput: there isn't a touch = " + touch)
         }
         if (this.axis.length > aRule.output.axis.length) {
-            console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
+            console.log("Fatal error TouchInput: there are more input axis than output axis on this rule: " + aRule)
             abort()
         }
 
@@ -810,27 +797,31 @@ class TouchInput {
 
         aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
+    activate() {
+
+    }
 }
 
 class MeasureInput {
-    constructor(measureFunction,listOfAxis,previousValue) {
-        this.axis = listOfAxis
-        this.measureFunction = measureFunction
-        // this.previousValue = {x:undefined,y:undefined}
+    constructor(measureObject, property, listOfAxis, previousValue) {
+        this.measureObject = measureObject
+        this.property = property
+            // this.previousValue = {x:undefined,y:undefined}
         this.previousValue = previousValue
     }
     shouldActivate(aRule, anEvent) {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
         return true;
     }
-    condition(event,aShape) {
+    condition(event, aShape) {
         return true;
     }
-    applyNewInput(aRule,newEvent, globalShapeDictionary) {
-        let newValue = this.measureFunction(newEvent)
+    applyNewInput(aRule, newEvent, globalShapeDictionary) {
+
+        let newValue = this.currentMeasuredValue()
 
         if (this.axis.length > aRule.output.axis.length) {
-            console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
+            console.log("Fatal error MeasureInput: there are more input axis than output axis on this rule: " + aRule)
             abort()
         }
 
@@ -859,5 +850,18 @@ class MeasureInput {
         //     }
         // }
         aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
+    }
+    currentMeasuredValue() {
+        switch(this.property) {
+            case 'scaling': {
+                return {x:this.measureObject.width,y:this.measureObject.height}
+            }
+            default: {
+                console.log("MeasureInput >> currentMeasuredValue, unrecognized property: "+this.property)
+            }
+        }
+    }
+    activate() {
+        this.previousValue = this.currentMeasuredValue()
     }
 }
