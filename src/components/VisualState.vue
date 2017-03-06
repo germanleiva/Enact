@@ -281,6 +281,7 @@ export default {
                         eachPresentAndFutureMeasure.to.id = objectForMouseEvent.id
                         eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handler
                     }
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: newMeasure.from ,to: newMeasure.to} })
                 } else {
                     //delete measure?
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {

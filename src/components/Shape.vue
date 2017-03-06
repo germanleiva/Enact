@@ -98,16 +98,25 @@ export default {
         console.log("WE DESTROYED SHAPE (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
-        styleObject: function(val) {
+        styleObject: function(newVal,oldVal) {
             if (this.shapeModel) {
                 // console.log("IN COMPUTED styleObject the shapeModel.color is "+ this.shapeModel.color)
-
+                let changes = {}
+                for (let eachKey in newVal) {
+                    if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
+                        if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
+                            changes['color'] = newVal[eachKey]
+                        } else {
+                            changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
+                        }
+                    }
+                }
                 if (globalStore.visualStates[0] === this.visualState) {
-                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.shapeModel.id, color: this.shapeModel.color, width: this.shapeModel.width, height: this.shapeModel.height, top: this.shapeModel.top, left: this.shapeModel.left, opacity: this.shapeModel.opacity } })
+                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
                }
             } else {
                 //I WAS DELETED
-                console.log("Should i worry? " + this.shapeModel.id)
+                console.log("Should i worry? " + this.shapeModel)
             }
         }
     },

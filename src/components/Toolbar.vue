@@ -18,7 +18,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,VisualStateModel,RuleModel} from '../store.js'
+import {globalStore,VisualStateModel,RulePlaceholderModel} from '../store.js'
 
 export default {
   name: 'toolbar',
@@ -75,9 +75,12 @@ export default {
             globalStore.visualStates.push(newVisualState);
         },
         addNewRule() {
-            var newRuleModel = new RuleModel()
+            globalStore.ruleCounter++;
+            var newRulePlaceholder = new RulePlaceholderModel(globalStore.ruleCounter)
 
-            globalStore.rules.push(newRuleModel);
+            globalStore.rulesPlaceholders.push(newRulePlaceholder);
+
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder })
         }
     },
     created: function() {

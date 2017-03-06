@@ -1,6 +1,6 @@
 <template>
     <div id="ruleArea" class="ruleArea">
-        <rule ref="rulesVM" v-for="aRuleModel in rulesModel" :rule-model="aRuleModel"></rule>
+        <rule-placeholder ref="rulesVM" v-for="aRulePlaceholder in rulesPlaceholders" :rule-placeholder-model="aRulePlaceholder"></rule-placeholder>
     </div>
 </template>
 <script>
@@ -8,7 +8,7 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
-import Rule from './Rule.vue'
+import RulePlaceholder from './RulePlaceholder.vue'
 
 export default {
     name: 'rule-area',
@@ -18,14 +18,14 @@ export default {
         }
     },
     components: {
-        Rule
+        RulePlaceholder
     },
     methods: {
 
     },
     computed: {
-        rulesModel: function() {
-            return globalStore.rules
+        rulesPlaceholders: function() {
+            return globalStore.rulesPlaceholders
         }
     }
 }

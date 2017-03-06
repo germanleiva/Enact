@@ -22,7 +22,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, MeasureModel, RuleModel, MeasureInput, TouchInput, logger }
+export { VisualStateModel, ShapeModel, MeasureModel, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, logger }
 
 export const globalBus = new Vue();
 
@@ -32,6 +32,7 @@ export const globalStore = new Vue({
         inputEvents: [],
         isRecording: false,
         shapeCounter: 0,
+        ruleCounter: 0,
         toolbarState: {
             drawMode: false,
             selectionMode: true,
@@ -42,7 +43,7 @@ export const globalStore = new Vue({
         },
         cursorType: 'auto',
         context: undefined,
-        rules: [],
+        rulesPlaceholders: [],
         mobileWidth: 410, //iPhone 375 Nexus 5X 410
         mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
@@ -632,19 +633,29 @@ class ShapeModel {
     }
 }
 
+class RulePlaceholderModel {
+    constructor(id) {
+        this.id = id;
+        this.input = {type:undefined,id:undefined,property:undefined,axiss:[],min:{x:Number.MIN_VALUE,y:Number.MIN_VALUE},max:{x:Number.MAX_VALUE,y:Number.MAX_VALUE}};
+        this.output = {type:'shape',id:undefined,property:undefined,axiss:[],min:{x:Number.MIN_VALUE,y:Number.MIN_VALUE},max:{x:Number.MAX_VALUE,y:Number.MAX_VALUE}};
+    }
+}
+
+class ShapeOutputRule {
+    constructor(shapeId,property,axis) {
+        this.id = shapeId;
+        this.property = property;
+        this.axis = axis;
+        this.minValue = Number.MIN_VALUE
+        this.maxValue = Number.MAX_VALUE
+    }
+}
+
 class RuleModel {
-    constructor(id,input, inputMin, inputMax, output, outputMin, outputMax) {
+    constructor(id,input, output) {
         this.id = id;
         this.input = input;
         this.output = output;
-        this.outputMin = outputMin;
-        this.outputMax = outputMax;
-        this.outputMinValue = null;
-        this.outputMaxValue = null;
-        this.inputMin = inputMin;
-        this.inputMax = inputMax;
-        this.inputMinValue = null;
-        this.inputMaxValue = null;
         this.enforce = true;
         this.currentOutput = undefined;
     }
@@ -669,20 +680,7 @@ class RuleModel {
 
     }
     shouldKeepApplying(oldOutputValue,newOutputValue, globalShapeDictionary) {
-        let isBiggerThan = true, isSmallerThan = true
-        if (this.outputMin) {
-            if (this.outputMinValue == null) {
-                this.outputMinValue = globalShapeDictionary[this.outputMin.shapeId][this.outputMin.property]
-            }
-            isBiggerThan = newOutputValue >= this.outputMinValue
-        }
-        if (this.outputMax) {
-            if (this.outputMaxValue == null) {
-                this.outputMaxValue = globalShapeDictionary[this.outputMax.shapeId][this.outputMax.property]
-            }
-            isSmallerThan = newOutputValue <= this.outputMaxValue
-        }
-        return isBiggerThan && isSmallerThan
+        return newOutputValue >= this.outputMinValue && newOutputValue <= this.outputMaxValue
     }
     actuallyApply(delta, newEvent,globalShapeDictionary) {
         if (!this.input.condition(newEvent,this.currentOutput,globalShapeDictionary)) {
@@ -769,18 +767,19 @@ class RuleModel {
                 break;
             }
     }
-    reset() {
-        this.outputMinValue = null
-        this.outputMinValue = null
-    }
 }
 
 class TouchInput {
-    constructor(touchId, property, listOfAxis, aShouldApplyFn) {
+    constructor(touchId, property, listOfAxis) {
         this.touchId = touchId
         this.property = property
         this.axis = listOfAxis
-        this.condition = function(event, aShape) { return aShouldApplyFn(this.touchFor(event),aShape); }
+        this.minPosition = {x:Number.MIN_VALUE,y:Number.MIN_VALUE}
+        this.maxPosition = {x:Number.MAX_VALUE,y:Number.MAX_VALUE}
+    }
+    condition(event,aShape) {
+        let touch = this.touchFor(event)
+        return this.axis.every(eachAxis => touch[eachAxis] >= this.minPosition[eachAxis] && touch[eachAxis] <= this.maxPosition[eachAxis])
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
@@ -814,9 +813,11 @@ class TouchInput {
 }
 
 class MeasureInput {
-    constructor(measureFunction,listOfAxis) {
+    constructor(measureFunction,listOfAxis,previousValue) {
         this.axis = listOfAxis
         this.measureFunction = measureFunction
+        // this.previousValue = {x:undefined,y:undefined}
+        this.previousValue = previousValue
     }
     shouldActivate(aRule, anEvent) {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
@@ -826,9 +827,7 @@ class MeasureInput {
         return true;
     }
     applyNewInput(aRule,newEvent, globalShapeDictionary) {
-        let result = this.measureFunction(newEvent)
-        let previousValue = result.previousValue
-        let newValue = result.newValue
+        let newValue = this.measureFunction(newEvent)
 
         if (this.axis.length > aRule.output.axis.length) {
             console.log("Fatal error: there are more input axis than output axis on this rule: " + aRule)
@@ -837,7 +836,8 @@ class MeasureInput {
 
         let delta = { x: 0, y: 0 }
         for (let eachInputAxis of this.axis) {
-            delta[eachInputAxis] = newValue[eachInputAxis] - previousValue[eachInputAxis]
+            delta[eachInputAxis] = newValue[eachInputAxis] - this.previousValue[eachInputAxis]
+            this.previousValue[eachInputAxis] = newValue[eachInputAxis]
         }
 
         // if (aRule.shouldKeepApplying(previousValue, newValue)) {

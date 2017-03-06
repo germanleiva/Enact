@@ -1,0 +1,225 @@
+<template>
+    <div class='rule-placeholder'>
+        <input class="condition" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
+        <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')">
+            <input v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Input Type">
+            <input v-model="rulePlaceholderModel.input.id" style="width: 25%" placeholder="Input Id">
+            <input v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Input Property">
+            <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis">
+            <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%"   v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
+            <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%"  v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
+        </div>
+        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')">
+            <input v-model="rulePlaceholderModel.output.type" style="width: 25%" placeholder="Output Type">
+            <input v-model="rulePlaceholderModel.output.id" style="width: 25%" placeholder="Output Id">
+            <input v-model="rulePlaceholderModel.output.property" style="width: 25%" placeholder="Output Property">
+            <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
+            <input class="outputCondition" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min output">
+            <input class="outputCondition" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max output">
+        </div>
+    </div>
+</template>
+<script>
+
+import Vue from 'vue'
+import {extendArray} from '../collections.js'
+extendArray(Array);
+import {globalStore} from '../store.js'
+
+let ContextMenu = Vue.extend({
+    template: `<div :style="styleObject">
+    <p class="menu-label">
+        Select property
+      </p>
+      <ul class="menu-list">
+        <li v-for="eachProperty in properties"><a v-on:click="clickedOn(eachProperty)">{{eachProperty}}</a><li>
+      </ul>
+      </div>`,
+      data: function() {
+        return {
+            startingX: 0,
+            startingY: 0,
+            onSelectedProperty: undefined,
+            properties: ['translation','scaling','color']
+        }
+      },
+      computed: {
+        styleObject: function() {
+            return {
+                left: this.startingX + 'px',
+                top: this.startingY + 'px',
+                position: 'absolute',
+                'background-color': 'white'
+            }
+        }
+      },
+      methods: {
+        clickedOn: function(propertyName) {
+            this.onSelectedProperty(propertyName,['y'])
+        }
+      }
+});
+
+export default {
+    name: 'rule-placeholder',
+    props:['rulePlaceholderModel'],
+    data: function() {
+        return {
+
+        }
+    },
+    methods: {
+        dropForInput(event) {
+            event.preventDefault();
+            var data = event.dataTransfer.getData("text/input");
+            if (data) {
+                //It's an input
+            } else {
+                data = event.dataTransfer.getData("text/measure");
+                if (data) {
+                    //It's a measure
+                }
+            }
+            this.inputRule = data
+        },
+        dropForOutput(event) {
+            event.preventDefault();
+            var data = event.dataTransfer.getData("text/output");
+
+            //data = {"id":"shape0","type":"output","property":{"name":"translation","before":{"x":141,"y":126},"after":{"x":141,"y":195}}}
+
+            // let outputRuleObject = {}
+            // outputRuleObject.id = data.id
+            // outputRuleObject.property = "translation"
+            // outputRuleObject.
+            console.log("dropForOutput >> " + data)
+            let dataObject = JSON.parse(data)
+            this.rulePlaceholderModel.output.type = "shape"
+            this.rulePlaceholderModel.output.id = dataObject.id
+            this.rulePlaceholderModel.output.property = dataObject.property.name
+
+            this.rulePlaceholderModel.output.axiss = []
+            if (dataObject.property.before.x != dataObject.property.after.x) {
+                this.rulePlaceholderModel.output.axiss.push('x')
+            }
+            if (dataObject.property.before.y != dataObject.property.after.y) {
+                this.rulePlaceholderModel.output.axiss.push('y')
+            }
+
+        },
+        dragOverForInput(event) {
+            var dataType = event.dataTransfer.types;
+            console.log("dragOverForInput >> " + dataType)
+            if (dataType == "text/input") {
+                event.preventDefault()
+            }
+            if (dataType == "text/measure") {
+                event.preventDefault()
+            }
+        },
+        dragOverForOutput(event) {
+            var dataType = event.dataTransfer.types;
+            console.log("dragOverForOutput >> " + dataType)
+
+            if (dataType == "text/output") {
+                event.preventDefault()
+            }
+        },
+        mouseUpFor(event,ruleSide,ruleSection) {
+            // event.preventDefault()
+            // event.stopPropagation()
+            let linkingObject = globalStore.toolbarState.linkingObject
+            if (linkingObject) {
+                switch(ruleSide) {
+                    case 'mainCondition':
+                        //This should only work if the linkingObject can act as an input
+                        console.log("Ignoring link in mainCondition")
+                        return
+                        break;
+                    case 'input':
+                        //This should only work if the linkingObject can act as an input
+                        console.log("Ignoring link in inputRule")
+                        return
+                        break;
+                    case 'output':
+                        //This should only work if the linkingObject can act as an output
+                        break;
+                    default:
+                        console.log("Unrecognized rule side: " + ruleSide)
+                }
+
+                if (ruleSection == 'min' || ruleSection == 'max') {
+                    let aRuleSide = this.rulePlaceholderModel[ruleSide]
+                    if (aRuleSide.type && aRuleSide.id && aRuleSide.property && aRuleSide.axiss.length > 0) {
+                        //If we have data in the input/output (type,id,property,axiss) we infer the min/max
+                        for (let eachAxis of aRuleSide.axiss) {
+                            //TODO binding is not working here
+                            aRuleSide[ruleSection][eachAxis] = linkingObject[aRuleSide.property].value[eachAxis]
+                        }
+                        debugger;
+                    } else {
+                        let newContextMenu = new ContextMenu()
+                        newContextMenu.startingX = event.pageX;
+                        newContextMenu.startingY = event.pageY;
+
+                        newContextMenu.onSelectedProperty = function(property,axis) {
+                            // for (let eachAxis of axis) {
+                            //     value[eachAxis] = linkingObject[property].value[eachAxis]
+                            // }
+                            // this[ruleSectionToFill] = value
+                            aRuleSide[ruleSection] = linkingObject[property].value
+                            newContextMenu.$el.remove()
+                            newContextMenu.$destroy()
+                        }.bind(this)
+
+                        newContextMenu.$mount()
+                        window.document.body.appendChild(newContextMenu.$el)
+                    }
+                }
+            }
+        },
+    },
+    computed: {
+
+    }
+}
+</script>
+<style scoped>
+input {
+    font-size:24px;
+}
+
+.rule-placeholder {
+    display: flex;
+    margin: 10px;
+    overflow: hidden; /* Or flex might break */
+    flex-wrap: wrap;
+    font-size: 2em;
+}
+.leftSide {
+    width: 50%;
+    /*height: 50px;*/
+    background-color: green;
+    display:flex;
+    flex-wrap: wrap;
+}
+.rightSide {
+    width: 50%;
+    /*height: 50px;*/
+    background-color: red;
+    display: flex;
+    flex-wrap: wrap;
+}
+.condition {
+    width: 100%;
+    /*height: 50px;*/
+}
+.outputCondition {
+    width: 50%;
+    /*height: 50px;*/
+}
+.inputCondition {
+    width: 50%;
+    /*height: 50px;*/
+}
+</style>
