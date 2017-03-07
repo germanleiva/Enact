@@ -637,8 +637,9 @@ class ShapeModel {
 class RulePlaceholderModel {
     constructor(id) {
         this.id = id;
-        this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }, max: { x: Number.MAX_VALUE, y: Number.MAX_VALUE } };
-        this.output = { type: 'shape', id: undefined, property: undefined, axiss: [], min: { x: Number.MIN_VALUE, y: Number.MIN_VALUE }, max: { x: Number.MAX_VALUE, y: Number.MAX_VALUE } };
+        this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        this.output = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        this.isActive = false;
     }
 }
 
@@ -647,8 +648,29 @@ class ShapeOutputRule {
         this.id = shapeId;
         this.property = property;
         this.axis = axis;
-        this.minValue = Number.MIN_VALUE
-        this.maxValue = Number.MAX_VALUE
+        this.minValue = undefined;
+        this.maxValue = undefined;
+    }
+    get minValue() {
+        if (this._minValue) {
+            return this._minValue
+        }
+        return { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+    }
+    set minValue(aValue) {
+        this._minValue = aValue
+    }
+    get maxValue() {
+        if (this._maxValue) {
+            return this._maxValue
+        }
+        return { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
+    }
+    set maxValue(aValue) {
+        this._maxValue = aValue
+    }
+    shouldActivate() {
+        return this.id != undefined && this.property != undefined && this.axis.length > 0
     }
 }
 
@@ -656,12 +678,17 @@ class RuleModel {
     constructor(id, input, output) {
         this.id = id;
         this.input = input;
-        this.output = output;
+        if (output) {
+            this.output = output;
+        } else {
+            this.output = new ShapeOutputRule(undefined,undefined,[])
+        }
+
         this.enforce = true;
         this.currentOutput = undefined;
     }
     activate(anEvent, globalShapeDictionary) {
-        if (this.input.shouldActivate(this, anEvent)) {
+        if (this.input && this.input.shouldActivate(this, anEvent) && this.output.shouldActivate()) {
             //Does it affect one of the current shapes?
             let controlledShapeVM = globalShapeDictionary[this.output.id]
             if (controlledShapeVM) {
@@ -756,13 +783,37 @@ class RuleModel {
     }
 }
 
-class TouchInput {
+class InputRule {
+    constructor() {
+        this.minPosition = undefined;
+        this.maxPosition = undefined;
+    }
+    get minPosition(){
+        if (this._minPosition) {
+            return this._minPosition
+        }
+        return { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+    }
+    set minPosition(newMinPosition){
+        this._minPosition = newMinPosition
+    }
+    get maxPosition() {
+        if (this._maxPosition) {
+            return this._maxPosition
+        }
+        return { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
+    }
+    set maxPosition(newMaxPosition){
+        this._maxPosition = newMaxPosition
+    }
+}
+
+class TouchInput extends InputRule {
     constructor(touchId, property, listOfAxis) {
+        super()
         this.touchId = touchId
         this.property = property
         this.axis = listOfAxis
-        this.minPosition = { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
-        this.maxPosition = { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
     }
     condition(event, aShape) {
         let touch = this.touchFor(event)
@@ -770,7 +821,7 @@ class TouchInput {
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
-        return anEvent.touches[this.touchId] != undefined
+        return this.touchId != undefined && anEvent.touches[this.touchId] != undefined && this.property != undefined && this.axis.length > 0
     }
     touchFor(event) {
         return event.touches[this.touchId]
@@ -802,16 +853,18 @@ class TouchInput {
     }
 }
 
-class MeasureInput {
+class MeasureInput extends InputRule {
     constructor(measureObject, property, listOfAxis, previousValue) {
+        super()
         this.measureObject = measureObject
         this.property = property
             // this.previousValue = {x:undefined,y:undefined}
         this.previousValue = previousValue
+        this.axis = listOfAxis;
     }
     shouldActivate(aRule, anEvent) {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
-        return true;
+        return this.measureObject != undefined && this.property != undefined && this.axis.length > 0;
     }
     condition(event, aShape) {
         return true;
@@ -853,6 +906,9 @@ class MeasureInput {
     }
     currentMeasuredValue() {
         switch(this.property) {
+            case 'translation': {
+                return this.measureObject.initialPoint
+            }
             case 'scaling': {
                 return {x:this.measureObject.width,y:this.measureObject.height}
             }

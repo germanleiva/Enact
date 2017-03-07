@@ -237,8 +237,18 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.touchId = receivedRule.input.id
                         editedRule.input.property = receivedRule.input.property
                         editedRule.input.axis = receivedRule.input.axiss
-                        editedRule.input.minPosition = receivedRule.input.min
-                        editedRule.input.maxPosition = receivedRule.input.max
+
+                        let minObtained = receivedRule.input.min
+                        if (typeof minObtained === 'string' || minObtained instanceof String) {
+                            minObtained = JSON.parse(minObtained)
+                        }
+                        editedRule.input.minPosition = minObtained
+
+                        let maxObtained = receivedRule.input.max
+                        if (typeof maxObtained === 'string' || maxObtained instanceof String) {
+                            maxObtained = JSON.parse(maxObtained)
+                        }
+                        editedRule.input.maxPosition = maxObtained
                         break;
                     case 'measure':
                         if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {
@@ -250,7 +260,7 @@ socket.on('message-from-server', function(data) {
 
                         break;
                     default:
-                        console.log("EDIT_RULE >> unrecognized input type")
+                        console.log("EDIT_RULE >> unrecognized input type: " + receivedRule.input.type)
                 }
                 if (receivedRule.output.id) {
                     switch (receivedRule.output.type) {
@@ -261,11 +271,21 @@ socket.on('message-from-server', function(data) {
                             editedRule.output.id = receivedRule.output.id
                             editedRule.output.property = receivedRule.output.property
                             editedRule.output.axis = receivedRule.output.axiss
-                            editedRule.output.minValue = receivedRule.output.min
-                            editedRule.output.maxValue = receivedRule.output.max
+
+                            let minObtained = receivedRule.output.min
+                            if (typeof minObtained === 'string' || minObtained instanceof String) {
+                                minObtained = JSON.parse(minObtained)
+                            }
+                            editedRule.output.minValue = minObtained
+
+                            let maxObtained = receivedRule.output.max
+                            if (typeof maxObtained === 'string' || maxObtained instanceof String) {
+                                maxObtained = JSON.parse(maxObtained)
+                            }
+                            editedRule.output.maxValue = maxObtained
                             break;
                         default:
-                            console.log("EDIT_RULE >> unrecognized output type")
+                            console.log("EDIT_RULE >> unrecognized output type: "+receivedRule.output.type)
                     }
                 }
             } else {
@@ -404,9 +424,16 @@ var eventsCache = [];
 
 function saveEvent(anEvent) {
     let touches = []
-    for (let eachTouch of anEvent.touches) {
-        touches.push({ x: eachTouch.pageX, y: eachTouch.pageY })
+    //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
+    for (let i=0; i < anEvent.touches.length;i++) {
+        let eachTouch = anEvent.touches[i];
+        let myTouchObject = { x: eachTouch.pageX, y: eachTouch.pageY }
+        touches.push(myTouchObject)
+        if (touches.indexOf(myTouchObject) != i) {
+            console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
+        }
     }
+
     var anEvent = { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }
     socket.emit('message-from-device', { message: anEvent });
 
@@ -451,7 +478,8 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
         saveEvent(event);
     } else {
         for (let anActiveRule of mobileCanvasVM.activeRules) {
-            anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes)
+            anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
+            socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id });
         }
 
         // let touch = event.touches[0]
@@ -474,6 +502,9 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
         saveEvent(event);
     } else {
         //We are interacting
+        for (let eachActiveRule of mobileCanvasVM.activeRules) {
+            socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
+        }
         mobileCanvasVM.activeRules = []
     }
 });

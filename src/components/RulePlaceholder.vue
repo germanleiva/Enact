@@ -1,7 +1,7 @@
 <template>
     <div class='rule-placeholder'>
         <input class="condition" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
-        <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')">
+        <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
             <input v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Input Type">
             <input v-model="rulePlaceholderModel.input.id" style="width: 25%" placeholder="Input Id">
             <input v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Input Property">
@@ -10,10 +10,10 @@
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%"   v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
-            <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%"  v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
+            <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
+            <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
-        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')">
+        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')" :style="{ backgroundColor: activeColor }">
             <input v-model="rulePlaceholderModel.output.type" style="width: 25%" placeholder="Output Type">
             <input v-model="rulePlaceholderModel.output.id" style="width: 25%" placeholder="Output Id">
             <input v-model="rulePlaceholderModel.output.property" style="width: 25%" placeholder="Output Property">
@@ -232,7 +232,9 @@ export default {
         },
     },
     computed: {
-
+        activeColor: function() {
+            return this.rulePlaceholderModel.isActive ? 'gray' : 'white'
+        }
     }
 }
 </script>
@@ -251,14 +253,14 @@ input {
 .leftSide {
     width: 50%;
     /*height: 50px;*/
-    background-color: green;
+    background-color: white;
     display:flex;
     flex-wrap: wrap;
 }
 .rightSide {
     width: 50%;
     /*height: 50px;*/
-    background-color: red;
+    background-color: white;
     display: flex;
     flex-wrap: wrap;
 }
@@ -273,5 +275,8 @@ input {
 .inputCondition {
     width: 50%;
     /*height: 50px;*/
+}
+.leftSide input, .leftSide select, .rightSide select, .rightSide input {
+    background-color: rgba(255,255,255,0);
 }
 </style>

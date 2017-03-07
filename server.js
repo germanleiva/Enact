@@ -41,7 +41,12 @@ io.on('connection', function(socket){
     // console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
 
     // sending to all clients except sender
-    socket.broadcast.emit('message-from-server',data);
+    if (data["message"]) { //Silly hack to check if this is an input event or other message
+      //an input event
+      socket.broadcast.emit('message-from-server-input-event',data);
+    } else {
+      socket.broadcast.emit('message-from-server',data);
+    }
   })
   socket.on('message-from-desktop',function(data) {
     // THIS SHOULD SEND THE VisualStateCanvasHTML as the message of the data

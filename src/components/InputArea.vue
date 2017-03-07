@@ -29,7 +29,7 @@ export default {
     //TODO this implementation of amountOfTouchesLeft does not consider touchcancel or touchfailed
     let amountOfTouchesLeft = 0
 
-    globalStore.socket.on('message-from-server', function(data) {
+    globalStore.socket.on('message-from-server-input-event', function(data) {
         // console.log(data)
         function drawTouches() {
             let points = globalStore.inputEvents;
