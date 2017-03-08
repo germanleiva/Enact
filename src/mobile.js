@@ -87,7 +87,7 @@ let mobileCanvasVM = new Vue({
             return this.interactiveShapes[shapeId].shapeModel
         },
         distanceFor(distanceId) {
-            return this.measures[distanceId]
+            return this.measures.find(aMeasure => aMeasure.id == distanceId)
         }
     }
 })
