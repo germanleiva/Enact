@@ -32,18 +32,18 @@ export default {
         globalStore.socket.on('message-from-server', function(data) {
             switch (data.type) {
                 case "ACTIVE_RULE": {
-                    let ruleFound = this.rulesPlaceholders.find(aRulePlaceholder => aRulePlaceholder.id == data.id)
-                    if (ruleFound) {
-                        ruleFound.isActive = true
+                    let ruleVMFound = this.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
+                    if (ruleVMFound) {
+                        ruleVMFound.isActive = true
                     } else {
                         console.log("WEIRD!! ACTIVE_RULE We modified in the mobile a rule that's not present in the desktop")
                     }
                     break;
                 }
                 case "DEACTIVE_RULE": {
-                    let ruleFound = this.rulesPlaceholders.find(aRulePlaceholder => aRulePlaceholder.id == data.id)
-                    if (ruleFound) {
-                        ruleFound.isActive = false
+                    let ruleVMFound = this.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
+                    if (ruleVMFound) {
+                        ruleVMFound.isActive = false
                     } else {
                         console.log("WEIRD!! DEACTIVE_RULE We modified in the mobile a rule that's not present in the desktop")
                     }

@@ -639,7 +639,6 @@ class RulePlaceholderModel {
         this.id = id;
         this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
         this.output = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
-        this.isActive = false;
     }
 }
 

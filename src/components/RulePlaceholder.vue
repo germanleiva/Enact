@@ -74,6 +74,7 @@ export default {
     props:['rulePlaceholderModel'],
     data: function() {
         return {
+            isActive: false
         }
     },
     watch: {
@@ -208,7 +209,6 @@ export default {
                             //TODO binding is not working here
                             aRuleSide[ruleSection] = linkingObject[aRuleSide.property].value
                         // }
-                        debugger;
                     } else {
                         let newContextMenu = new ContextMenu()
                         newContextMenu.startingX = event.pageX;
@@ -233,7 +233,7 @@ export default {
     },
     computed: {
         activeColor: function() {
-            return this.rulePlaceholderModel.isActive ? 'gray' : 'white'
+            return this.isActive ? 'gray' : 'white'
         }
     }
 }
