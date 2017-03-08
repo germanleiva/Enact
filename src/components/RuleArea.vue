@@ -32,7 +32,7 @@ export default {
         globalStore.socket.on('message-from-server', function(data) {
             switch (data.type) {
                 case "ACTIVE_RULE": {
-                    let ruleVMFound = this.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
+                    let ruleVMFound = this.$refs.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
                     if (ruleVMFound) {
                         ruleVMFound.isActive = true
                     } else {
@@ -41,7 +41,7 @@ export default {
                     break;
                 }
                 case "DEACTIVE_RULE": {
-                    let ruleVMFound = this.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
+                    let ruleVMFound = this.$refs.rulesVM.find(aRuleVM => aRuleVM.rulePlaceholderModel.id == data.id)
                     if (ruleVMFound) {
                         ruleVMFound.isActive = false
                     } else {
