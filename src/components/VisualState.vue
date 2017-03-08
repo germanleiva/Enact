@@ -297,7 +297,7 @@ export default {
             if (this.$refs.hasOwnProperty('shapes')) {
                 return this.$refs.shapes
             } else {
-                console.log("why does this happen?")
+                console.log("When there are no shapes VueJS does not create the $ref :(")
                 return []
             }
         },

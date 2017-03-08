@@ -50,7 +50,11 @@ export const globalStore = new Vue({
     computed: {
         socket() {
             //TODO check if putting this as a computed property is legit
-            return io.connect('http://localhost:3000')
+            let newSocket = io.connect('http://localhost:3000')
+            newSocket.on('message-from-device', function(data) {
+                globalBus.$emit('message-from-device-'+data.type,data)
+            });
+            return newSocket
         }
     },
     methods: {
@@ -59,7 +63,7 @@ export const globalStore = new Vue({
                 eachVisualState.deselectShapes()
             }
         }
-    },
+    }
     // watch: {
     //     visualStates: function(newValue,oldValue) {
 
@@ -263,15 +267,19 @@ class VisualStateModel {
         }
         return result
     }
-    addNewShape(protoShape) {
+    addNewShape(shapeId,protoShape) {
         let correspondingVersion
 
         if (protoShape) {
             //Cheap way of cloning the version
-            correspondingVersion = new ShapeModel(protoShape.id, protoShape);
+            correspondingVersion = new ShapeModel(shapeId, protoShape);
         } else {
-            let newShapeCount = globalStore.shapeCounter++;
-            correspondingVersion = new ShapeModel('shape' + newShapeCount, undefined, 'white', 0, 0, 0, 0);
+            if (shapeId) {
+                correspondingVersion = new ShapeModel(shapeId, undefined, 'white', 0, 0, 0, 0);
+            } else {
+                let newShapeCount = globalStore.shapeCounter++;
+                correspondingVersion = new ShapeModel('shape' + newShapeCount, undefined, 'white', 0, 0, 0, 0);
+            }
         }
 
         // if (oldShapeVM) {
@@ -291,7 +299,7 @@ class VisualStateModel {
             console.log("WARNING: THIS SHOULDN'T HAPPEN");
         }
 
-        let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape);
+        let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape.id,newlyCreatedShape);
         if (this.nextState) {
             this.nextState.didCreateShape(ourNewlyCreatedShape, this);
         }

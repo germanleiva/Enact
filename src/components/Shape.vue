@@ -112,6 +112,7 @@ export default {
                     }
                 }
                 if (globalStore.visualStates[0] === this.visualState) {
+                    console.log("message-from-desktop EDIT_SHAPE")
                     globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
                }
             } else {

@@ -4,7 +4,11 @@
     <output-area ref="outputArea"></output-area>
     <input-area></input-area>
     <div id="lowerArea" style="display:flex">
-        <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+        <div style="position:relative">
+            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight">
+            </canvas>
+            <shape v-for="(aShapeModel,index) in deviceVisualState.shapesDictionary" v-bind:shape-model="aShapeModel" :parent-visual-state="deviceVisualState"></shape>
+        </div>
         <rule-area></rule-area>
     </div>
   </div>
@@ -14,28 +18,51 @@
 import {extendArray} from './collections.js'
 extendArray(Array);
 
-import {globalStore} from './store.js'
+import {globalStore, globalBus, VisualStateModel} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
 import RuleArea from './components/RuleArea.vue'
+
+import Shape from './components/Shape.vue'
 
 export default {
   name: 'app',
   data () {
     return {
         canvasWidth: globalStore.mobileWidth,
-        canvasHeight: globalStore.mobileHeight
+        canvasHeight: globalStore.mobileHeight,
+        deviceVisualState: new VisualStateModel()
     }
   },
   components: {
     Toolbar,
     OutputArea,
     InputArea,
-    RuleArea
+    RuleArea,
+    Shape
   },
   mounted: function() {
+
     globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
+
+    globalBus.$on('message-from-device-SHAPE_CHANGED',function(data) {
+        console.log("SHAPE_CHANGED")
+        //If the deviceVisualState has the shape then we edit else we create
+        let deviceEditedShapeId = data.id
+        if (!this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
+            this.deviceVisualState.addNewShape(deviceEditedShapeId)
+        }
+
+        let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]
+
+        myEditedShape.top = parseInt(data.style.top);
+        myEditedShape.left = parseInt(data.style.left);
+        myEditedShape.width = parseInt(data.style.width);
+        myEditedShape.height = parseInt(data.style.height);
+        myEditedShape.color = data.style.backgroundColor;
+        myEditedShape.opacity = parseInt(data.style.opacity);
+    }.bind(this))
 
     this.prepareCanvas()
     var that = this;

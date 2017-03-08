@@ -8,7 +8,7 @@ require('./mobile.css')
 
 import {globalStore, ShapeModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
 
-var socket = io.connect(window.location.href.split('/')[2]);
+let socket = io.connect(window.location.href.split('/')[2]);
 
 let isInside = function(touch, shape) {
     return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
@@ -93,11 +93,11 @@ let mobileCanvasVM = new Vue({
 })
 
 let ShapeVM = Vue.extend({
-    template: `<div :id="this.shapeModel.id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
+    template: `<div :id="id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
     props: ['shapeModel'],
     data: function() {
         return {
-            // id: null,
+            id: this.shapeModel.id
             // color: 'white',
             // left: 0,
             // top: 0,
@@ -143,7 +143,14 @@ let ShapeVM = Vue.extend({
                 }
             }
         }
-
+    },
+    watch: {
+        "styleObject": {
+            deep: false,
+            handler: function(newValue) {
+                socket.emit('message-from-device', { type:"SHAPE_CHANGED", id: this.id, style: newValue });
+            }
+        }
     }
 })
 
@@ -173,9 +180,9 @@ function createShapeVM(id, message) {
 }
 
 socket.on('message-from-server', function(data) {
-    console.log("Received something from server: " + JSON.stringify(data));
+    // console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
-        case "CLEAN":
+        case "CLEAN":{
             let allKeys = []
             for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
                 allKeys.push(eachShapeKey)
@@ -184,22 +191,27 @@ socket.on('message-from-server', function(data) {
                 deleteShapeVM(shapeId)
             }
             break;
-        case "START_RECORDING":
+        }
+        case "START_RECORDING":{
             mobileCanvasVM.isRecording = true;
             break;
-        case "STOP_RECORDING":
+        }
+        case "STOP_RECORDING":{
             mobileCanvasVM.isRecording = false;
             break;
-        case "NEW_MEASURE":
+        }
+        case "NEW_MEASURE":{
             let newMeasure = new MeasureModel(mobileCanvasVM,data.message.from, data.message.to, undefined);
             mobileCanvasVM.measures.push(newMeasure);
             break;
-        case "NEW_SHAPE":
+        }
+        case "NEW_SHAPE":{
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             createShapeVM(data.message.id, data.message)
             break;
-        case "EDIT_SHAPE":
+        }
+        case "EDIT_SHAPE":{
             // console.log(data.message);
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
@@ -212,19 +224,22 @@ socket.on('message-from-server', function(data) {
                 console.log("Are we editing a shape that was not created????? WERID!" + data.message.id)
             }
             break;
-        case "DELETE_SHAPE":
+        }
+        case "DELETE_SHAPE":{
             // console.log(data.message);
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             deleteShapeVM(data.message.id)
             break;
-        case "NEW_RULE":
+        }
+        case "NEW_RULE":{
             let newRule = new RuleModel(data.message.id)
             // Vue.set(object, key, value)
             Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
 
             break;
-        case "EDIT_RULE":
+        }
+        case "EDIT_RULE":{
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
@@ -293,7 +308,76 @@ socket.on('message-from-server', function(data) {
             }
 
             break;
-        case "NEW_ANIMATION":
+        }
+        case "TEST_EVENTS": {
+            function testEvents(eventsCache) {
+                if (eventsCache.length == 0) {
+                    alert("No gesture recorded");
+                    return;
+                }
+
+                var isLast = false;
+
+                var initialTimeStamp = eventsCache[0].timeStamp;
+
+                for (var i = 0; i < eventsCache.length; i++) {
+                    var cachedEventObject = eventsCache[i];
+
+                    if (i === eventsCache.length - 1) {
+                        isLast = true
+                    }
+
+                    var waitingTime = cachedEventObject.timeStamp - initialTimeStamp;
+
+                    // console.log("Event type: " + cachedEventObject.type + " Waiting time: " + waitingTime);
+                    // console.log("Location: " + cachedEventObject.pageX + " " + event.pageY);
+
+                    dispathWaiting(cachedEventObject, waitingTime);
+                }
+            }
+
+            function dispathWaiting(aCachedEventObject, waitingTime) {
+                setTimeout(function() {
+                    // var newEvent = new TouchEvent(aCachedEventObject.type, { pageX: aCachedEventObject.pageX, pageY: aCachedEventObject.pageY });
+                    let touchObjects = [];
+
+                    for (let i=0;i< aCachedEventObject.touches.length;i++) {
+                        let aTouchObject = aCachedEventObject.touches[i];
+                        touchObjects.push(new Touch({
+                            identifier: aTouchObject.identifier,
+                            target: document.getElementById('shape0'),
+                            clientX: aTouchObject.x,
+                            clientY: aTouchObject.y,
+                            pageX: aTouchObject.x,
+                            pageY: aTouchObject.y,
+                            radiusX: 2.5,
+                            radiusY: 2.5,
+                            rotationAngle: 0,
+                            force: 0.5,
+                          }));
+                    }
+                    const touchEvent = new TouchEvent(aCachedEventObject.type, {
+                        cancelable: true,
+                        bubbles: true,
+                        touches: touchObjects,
+                        targetTouches: [],
+                        changedTouches: touchObjects,
+                        // currentTarget: document.getElementById('mobileCanvas'),
+                        shiftKey: false,
+                      });
+
+                    // cachedEventObject.timeStamp = new Date().getTime();
+                    // var result = document.dispatchEvent(aCachedEventObject);
+                    var result = document.getElementById('mobileCanvas').dispatchEvent(touchEvent);
+                    // console.log("Event result: " + result);
+
+                }, waitingTime);
+            }
+
+            testEvents(data.message)
+            break;
+        }
+        case "NEW_ANIMATION": {
             var newAnimation = data.message;
 
             // {
@@ -414,20 +498,20 @@ socket.on('message-from-server', function(data) {
                 eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
             }
             break;
-            default:
-                console.log("Unrecognized message type from the server " + data.type)
+        }
+        default: {
+            console.log("Unrecognized message type from the server " + data.type)
+        }
     }
 });
 
 
-var eventsCache = [];
-
-function saveEvent(anEvent) {
+function sendEvent(anEvent) {
     let touches = []
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
     for (let i=0; i < anEvent.touches.length;i++) {
         let eachTouch = anEvent.touches[i];
-        let myTouchObject = { x: eachTouch.pageX, y: eachTouch.pageY }
+        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY }
         touches.push(myTouchObject)
         if (touches.indexOf(myTouchObject) != i) {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
@@ -435,11 +519,8 @@ function saveEvent(anEvent) {
     }
 
     var anEvent = { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }
-    socket.emit('message-from-device', { message: anEvent });
+    socket.emit('message-from-device', { type:"INPUT_EVENT", message: anEvent });
 
-    eventsCache.push(anEvent);
-
-    // console.log("Sent: "+JSON.stringify(anEvent))
 }
 
 //To prevent scrolling - not working
@@ -451,14 +532,13 @@ function saveEvent(anEvent) {
 // document.body.addEventListener('touchmove', function(e) { e.preventDefault(); });
 // document.body.addEventListener('touchend', function(e) { e.preventDefault(); });
 
-let previousTouchPosition
 
 document.getElementById('mobileCanvas').addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     } else {
-        // console.log("We are interacting")
+        // console.log("We are starting interacting")
         for (let aRuleKey in mobileCanvasVM.rules) {
             //Does the event has a rule that control that touch?
             let aRule = mobileCanvasVM.rules[aRuleKey];
@@ -466,48 +546,35 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
                 mobileCanvasVM.activeRules.push(aRule)
             }
         }
-
-        // let touch = event.touches[0]
-        // previousTouchPosition = { x: touch.pageX, y: touch.pageY }
     }
-});
+},false,true);
 
 document.getElementById('mobileCanvas').addEventListener("touchmove", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     } else {
+        // console.log("We are interacting")
         for (let anActiveRule of mobileCanvasVM.activeRules) {
             anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
             socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id });
         }
-
-        // let touch = event.touches[0]
-
-        // let deltaX = touch.pageX - previousTouchPosition.x
-        // let deltaY = touch.pageY - previousTouchPosition.y
-        // console.log("new delta " + deltaX + " " + deltaY)
-        // interactiveShapes[0].left = interactiveShapes[0].left + deltaX
-        // interactiveShapes[0].top = interactiveShapes[0].top + deltaY
-
-        // console.log("New shape position: " + interactiveShapes[0].left + " " + interactiveShapes[0].top)
-        // previousTouchPosition.x = touch.pageX
-        // previousTouchPosition.y = touch.pageY
     }
-});
+},false,true);
 
 document.getElementById('mobileCanvas').addEventListener("touchend", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     } else {
-        //We are interacting
+        // We are interacting
+        // console.log("We are ending interacting")
         for (let eachActiveRule of mobileCanvasVM.activeRules) {
             socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
         }
         mobileCanvasVM.activeRules = []
     }
-});
+},false,true);
 
 // document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
 // document.body.addEventListener('mousemove', function(e) { e.preventDefault(); });
@@ -516,64 +583,20 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
 document.getElementById('mobileCanvas').addEventListener("mousedown", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     }
 });
 
 document.getElementById('mobileCanvas').addEventListener("mousemove", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     }
 });
 
 document.getElementById('mobileCanvas').addEventListener("mouseup", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        saveEvent(event);
+        sendEvent(event);
     }
 });
-
-function playEvents() {
-    if (eventsCache.length == 0) {
-        alert("No gesture recorded");
-        return;
-    }
-
-    moveDraggableToInitialPosition();
-
-    var isLast = false;
-
-    var initialTimeStamp = eventsCache[0].timeStamp;
-
-    for (var i = 0; i < eventsCache.length; i++) {
-        var cachedEventObject = eventsCache[i];
-
-        if (i === eventsCache.length - 1) {
-            isLast = true
-        }
-
-        var waitingTime = cachedEventObject.timeStamp - initialTimeStamp;
-
-        // console.log("Event type: " + cachedEventObject.type + " Waiting time: " + waitingTime);
-        // console.log("Location: " + cachedEventObject.pageX + " " + event.pageY);
-
-        dispathWaiting(cachedEventObject, waitingTime, isLast);
-    }
-}
-
-function dispathWaiting(aCachedEventObject, waitingTime, isLast) {
-    setTimeout(function() {
-        var newEvent = new MouseEvent(aCachedEventObject.type, { clientX: aCachedEventObject.pageX, clientY: aCachedEventObject.pageY });
-
-        // cachedEventObject.timeStamp = new Date().getTime();
-        // var result = document.dispatchEvent(aCachedEventObject);
-        var result = document.dispatchEvent(newEvent);
-        // console.log("Event result: " + result);
-
-        if (isLast) {
-            isPlayback = false;
-        }
-
-    }, waitingTime);
-}

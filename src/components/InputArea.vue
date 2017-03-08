@@ -1,5 +1,6 @@
 <template>
     <div id='inputArea'>
+       <a class="button is-primary is-medium" v-on:click="startTesting"><span class="icon is-small"><i class="fa fa-wrench"></i></span></a><span>&nbsp;</span>
        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :initial-visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
@@ -12,7 +13,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore} from '../store.js'
+import {globalStore, globalBus} from '../store.js'
 import VisualStateMark from './VisualStateMark.vue'
 
 export default {
@@ -29,7 +30,7 @@ export default {
     //TODO this implementation of amountOfTouchesLeft does not consider touchcancel or touchfailed
     let amountOfTouchesLeft = 0
 
-    globalStore.socket.on('message-from-server-input-event', function(data) {
+    globalBus.$on('message-from-device-INPUT_EVENT', function(data) {
         // console.log(data)
         function drawTouches() {
             let points = globalStore.inputEvents;
@@ -158,6 +159,9 @@ export default {
             }
 
             globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
+        },
+        startTesting() {
+            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents })
         }
     }
 }

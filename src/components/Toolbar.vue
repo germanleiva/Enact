@@ -59,7 +59,7 @@ export default {
                 let previousVisualState = globalStore.visualStates.last();
 
                 for (let shapeKey in previousVisualState.shapesDictionary) {
-                    newVisualState.addNewShape(previousVisualState.shapesDictionary[shapeKey]);
+                    newVisualState.addNewShape(shapeKey,previousVisualState.shapesDictionary[shapeKey]);
                 }
 
                 newVisualState.importMeasuresFrom(previousVisualState);
