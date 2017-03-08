@@ -57,8 +57,8 @@ export default {
                 position: 'absolute',
                 left: aTouch.x + 'px',
                 top: aTouch.y + 'px',
-                width: '30px',
-                height: '30px',
+                width: '15px',
+                height: '15px',
                 backgroundColor: this.visualState ? 'red' : 'pink',
                 'z-index': 9999
             };

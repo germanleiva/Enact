@@ -47,29 +47,41 @@ export default {
         }
 
         let anInputEvent = data.message
+        switch (anInputEvent.type) {
+            case 'touchstart': {
+                if (amountOfTouchesLeft == 0) {
+                    globalStore.inputEvents.removeAll();
+                    amountOfTouchesLeft = anInputEvent.touches.length //touches.length it's the current amount of tracked touches
+                }
+                if (anInputEvent.touches.length > amountOfTouchesLeft) {
+                    amountOfTouchesLeft = anInputEvent.touches.length
+                }
 
-        if (anInputEvent.type == 'touchend') {
-            amountOfTouchesLeft -= 1;
-            if (amountOfTouchesLeft == 0) {
-                globalStore.isRecording = false
-                globalStore.socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
-                for (var i = 0; i < globalStore.visualStates.length; i++) {
-                    let eachVS = globalStore.visualStates[i];
-                    if (!eachVS.currentInputEvent) {
-                        let correspondingIndex = Math.floor(eachVS.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
-                        eachVS.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+                break;
+            }
+            case 'touchmove': {
+                drawTouches()
+                break;
+            }
+            case 'touchend': {
+                //touches.length it's the current amount of tracked touches, not the ones ended
+                amountOfTouchesLeft = amountOfTouchesLeft - 1
+
+                if (amountOfTouchesLeft == 0) {
+                    globalStore.isRecording = false
+                    globalStore.socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
+                    for (var i = 0; i < globalStore.visualStates.length; i++) {
+                        let eachVS = globalStore.visualStates[i];
+                        if (!eachVS.currentInputEvent) {
+                            let correspondingIndex = Math.floor(eachVS.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
+                            eachVS.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+                        }
                     }
                 }
+                break;
             }
-        } else {
-            amountOfTouchesLeft = Math.max(amountOfTouchesLeft, anInputEvent.touches.length)
-
-            if (anInputEvent.type == "touchstart") {
-                globalStore.inputEvents.removeAll();
-            } else if (anInputEvent.type == 'touchmove') {
-                drawTouches()
-            } else {
-                console.log("UNKNOWN INPUT TYPE");
+            default: {
+                 console.log("UNKNOWN INPUT TYPE: "+anInputEvent.type);
             }
         }
 
