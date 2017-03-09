@@ -144,11 +144,20 @@ let ShapeVM = Vue.extend({
             }
         }
     },
+    created: function() {
+        socket.emit('message-from-device', { type:"SHAPE_CREATED", id: this.id, style: this.styleObject });
+    },
     watch: {
         "styleObject": {
             deep: false,
-            handler: function(newValue) {
-                socket.emit('message-from-device', { type:"SHAPE_CHANGED", id: this.id, style: newValue });
+            handler: function(newValue,oldValue) {
+                let changes = {}
+                for (let eachKey in newValue) {
+                    if (newValue[eachKey] != oldValue[eachKey]) {
+                        changes[eachKey] = newValue[eachKey]
+                    }
+                }
+                socket.emit('message-from-device', { type:"SHAPE_CHANGED", id: this.id, style: changes });
             }
         }
     }
@@ -356,10 +365,10 @@ socket.on('message-from-server', function(data) {
                                 clientY: aTouchObject.y,
                                 pageX: aTouchObject.x,
                                 pageY: aTouchObject.y,
-                                radiusX: 2.5,
-                                radiusY: 2.5,
-                                // rotationAngle: 0,
-                                // force: 0.5,
+                                radiusX: aTouchObject.radiusX,
+                                radiusY: aTouchObject.radiusX,
+                                rotationAngle: aTouchObject.rotationAngle,
+                                force: aTouchObject.force,
                             });
                         }
                         touchList.push(createdTouch);
@@ -539,7 +548,7 @@ function sendEvent(anEvent) {
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
     for (let i=0; i < anEvent.touches.length;i++) {
         let eachTouch = anEvent.touches[i];
-        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY }
+        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: anEvent.radiusX, radiusY: anEvent.radiusY, rotationAngle: anEvent.rotationAngle, force: anEvent.force }
         touches.push(myTouchObject)
         if (touches.indexOf(myTouchObject) != i) {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")

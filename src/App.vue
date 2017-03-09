@@ -44,24 +44,52 @@ export default {
   },
   mounted: function() {
 
+    function loadShapeFromStyleObject(aShape,aStyleObject) {
+        if (aStyleObject.hasOwnProperty('top')) {
+            aShape.top = parseInt(aStyleObject.top);
+        }
+        if (aStyleObject.hasOwnProperty('left')) {
+            aShape.left = parseInt(aStyleObject.left);
+        }
+        if (aStyleObject.hasOwnProperty('width')) {
+            aShape.width = parseInt(aStyleObject.width);
+        }
+        if (aStyleObject.hasOwnProperty('height')) {
+            aShape.height = parseInt(aStyleObject.height);
+        }
+        if (aStyleObject.hasOwnProperty('backgroundColor')) {
+            aShape.color = aStyleObject.backgroundColor;
+        }
+        if (aStyleObject.hasOwnProperty('opacity')) {
+            aShape.opacity = parseInt(aStyleObject.opacity);
+        }
+    }
+
     globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
 
-    globalBus.$on('message-from-device-SHAPE_CHANGED',function(data) {
-        console.log("SHAPE_CHANGED")
+    globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
+        console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
         let deviceEditedShapeId = data.id
         if (!this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
-            this.deviceVisualState.addNewShape(deviceEditedShapeId)
+            let myEditedShape = this.deviceVisualState.addNewShape(deviceEditedShapeId)
+            loadShapeFromStyleObject(myEditedShape,data.style)
+        } else {
+            console.log("We already have that SHAPE? WEIRD")
         }
+    }.bind(this));
 
-        let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]
+    globalBus.$on('message-from-device-SHAPE_CHANGED',function(data) {
+        //If the deviceVisualState has the shape then we edit else we create
+        console.log("SHAPE_CHANGED style: " + JSON.stringify(data.style))
+        let deviceEditedShapeId = data.id
+        if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
+            let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]
 
-        myEditedShape.top = parseInt(data.style.top);
-        myEditedShape.left = parseInt(data.style.left);
-        myEditedShape.width = parseInt(data.style.width);
-        myEditedShape.height = parseInt(data.style.height);
-        myEditedShape.color = data.style.backgroundColor;
-        myEditedShape.opacity = parseInt(data.style.opacity);
+            loadShapeFromStyleObject(myEditedShape,data.style)
+        } else {
+            console.log("We are editing a shape that we don't have. WEIRD")
+        }
     }.bind(this))
 
     this.prepareCanvas()
