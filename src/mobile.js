@@ -339,37 +339,64 @@ socket.on('message-from-server', function(data) {
             function dispathWaiting(aCachedEventObject, waitingTime) {
                 setTimeout(function() {
                     // var newEvent = new TouchEvent(aCachedEventObject.type, { pageX: aCachedEventObject.pageX, pageY: aCachedEventObject.pageY });
-                    let touchObjects = [];
 
                     for (let i=0;i< aCachedEventObject.touches.length;i++) {
                         let aTouchObject = aCachedEventObject.touches[i];
-                        touchObjects.push(new Touch({
-                            identifier: aTouchObject.identifier,
-                            target: document.getElementById('shape0'),
-                            clientX: aTouchObject.x,
-                            clientY: aTouchObject.y,
-                            pageX: aTouchObject.x,
-                            pageY: aTouchObject.y,
-                            radiusX: 2.5,
-                            radiusY: 2.5,
-                            rotationAngle: 0,
-                            force: 0.5,
-                          }));
+                        let createdTouch
+
+                        if (document.createTouch) {
+                            //Safari hack
+                            // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY) {
+                            createdTouch = document.createTouch(window, document.getElementById('shape0'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y);
+                        } else {
+                            createdTouch = new Touch({
+                                identifier: aTouchObject.identifier,
+                                target: document.getElementById('shape0'),
+                                clientX: aTouchObject.x,
+                                clientY: aTouchObject.y,
+                                pageX: aTouchObject.x,
+                                pageY: aTouchObject.y,
+                                radiusX: 2.5,
+                                radiusY: 2.5,
+                                // rotationAngle: 0,
+                                // force: 0.5,
+                            });
+                        }
+                        touchList.push(createdTouch);
                     }
-                    const touchEvent = new TouchEvent(aCachedEventObject.type, {
-                        cancelable: true,
-                        bubbles: true,
-                        touches: touchObjects,
-                        targetTouches: [],
-                        changedTouches: touchObjects,
-                        // currentTarget: document.getElementById('mobileCanvas'),
-                        shiftKey: false,
-                      });
+
+                    let touchEvent
+                    if (document.createEvent) {
+                        //Safari hack
+
+                        touchEvent = document.createEvent('Event');
+
+                        touchEvent.initEvent(aCachedEventObject.type, true, true);
+
+                        // touchEvent.altKey = mouseEv.altKey;
+                        // touchEvent.ctrlKey = mouseEv.ctrlKey;
+                        // touchEvent.metaKey = mouseEv.metaKey;
+                        // touchEvent.shiftKey = mouseEv.shiftKey;
+
+                        touchEvent.touches = touchList;
+                        touchEvent.targetTouches = touchList;
+                        touchEvent.changedTouches = touchList;
+                    } else {
+                        touchEvent = new TouchEvent(aCachedEventObject.type, {
+                            cancelable: true,
+                            bubbles: true,
+                            touches: touchList,
+                            targetTouches: [],
+                            changedTouches: touchList,
+                            // currentTarget: document.getElementById('mobileCanvas'),
+                            shiftKey: false,
+                        });
+                    }
 
                     // cachedEventObject.timeStamp = new Date().getTime();
                     // var result = document.dispatchEvent(aCachedEventObject);
                     var result = document.getElementById('mobileCanvas').dispatchEvent(touchEvent);
-                    // console.log("Event result: " + result);
+                    console.log("Event result: " + result);
 
                 }, waitingTime);
             }
@@ -538,7 +565,7 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
     if (mobileCanvasVM.isRecording) {
         sendEvent(event);
     } else {
-        // console.log("We are starting interacting")
+        console.log("We are starting interacting")
         for (let aRuleKey in mobileCanvasVM.rules) {
             //Does the event has a rule that control that touch?
             let aRule = mobileCanvasVM.rules[aRuleKey];
@@ -554,7 +581,8 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
     if (mobileCanvasVM.isRecording) {
         sendEvent(event);
     } else {
-        // console.log("We are interacting")
+        console.log("We are interacting")
+
         for (let anActiveRule of mobileCanvasVM.activeRules) {
             anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
             socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id });
@@ -568,7 +596,7 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
         sendEvent(event);
     } else {
         // We are interacting
-        // console.log("We are ending interacting")
+        console.log("We are ending interacting")
         for (let eachActiveRule of mobileCanvasVM.activeRules) {
             socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
         }
