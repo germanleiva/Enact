@@ -339,7 +339,7 @@ socket.on('message-from-server', function(data) {
             function dispathWaiting(aCachedEventObject, waitingTime) {
                 setTimeout(function() {
                     // var newEvent = new TouchEvent(aCachedEventObject.type, { pageX: aCachedEventObject.pageX, pageY: aCachedEventObject.pageY });
-
+                    let touchList = []
                     for (let i=0;i< aCachedEventObject.touches.length;i++) {
                         let aTouchObject = aCachedEventObject.touches[i];
                         let createdTouch
@@ -347,11 +347,11 @@ socket.on('message-from-server', function(data) {
                         if (document.createTouch) {
                             //Safari hack
                             // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY) {
-                            createdTouch = document.createTouch(window, document.getElementById('shape0'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y);
+                            createdTouch = document.createTouch(window, document.getElementById('mobileCanvas'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y);
                         } else {
                             createdTouch = new Touch({
                                 identifier: aTouchObject.identifier,
-                                target: document.getElementById('shape0'),
+                                target: document.getElementById('mobileCanvas'),
                                 clientX: aTouchObject.x,
                                 clientY: aTouchObject.y,
                                 pageX: aTouchObject.x,
@@ -389,9 +389,10 @@ socket.on('message-from-server', function(data) {
                             targetTouches: [],
                             changedTouches: touchList,
                             // currentTarget: document.getElementById('mobileCanvas'),
-                            shiftKey: false,
+                            // shiftKey: false,
                         });
                     }
+
 
                     // cachedEventObject.timeStamp = new Date().getTime();
                     // var result = document.dispatchEvent(aCachedEventObject);
