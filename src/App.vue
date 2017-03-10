@@ -4,9 +4,10 @@
     <output-area ref="outputArea"></output-area>
     <input-area></input-area>
     <div id="lowerArea" style="display:flex">
-        <div style="position:relative">
-            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight">
-            </canvas>
+        <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
+            <div class="dragdemo" draggable="true">drag me</div>
+
+            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
             <shape v-for="(aShapeModel,index) in deviceVisualState.shapesDictionary" v-bind:shape-model="aShapeModel" :parent-visual-state="deviceVisualState"></shape>
         </div>
         <rule-area></rule-area>
@@ -166,6 +167,9 @@ export default {
 
   },
   methods: {
+    mirrorDragged(event) {
+        console.log("Started dragging mirror mobile");
+    },
     changeColorOfSelectedShapes(cssStyle) {
         this.$refs.outputArea.changeColorOfSelectedShapes(cssStyle)
     },

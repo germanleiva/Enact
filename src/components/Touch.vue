@@ -12,7 +12,7 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'touch',
-    props: ['initialInputEvent','initialTouch'],
+    props: ['inputEvent','touch'],
     template: ``,
     data: function() {
         return { isActive: false }
@@ -25,10 +25,10 @@ export default {
             return {
                 borderRadius: "50%",
                 position: 'absolute',
-                left: (this.initialTouch.x - this.initialTouch.radiusX) + 'px',
-                top: (this.initialTouch.y - this.initialTouch.radiusY) + 'px',
-                width: (this.initialTouch.radiusX * 2) + 'px',
-                height: (this.initialTouch.radiusY * 2) + 'px',
+                left: (this.touch.x - this.touch.radiusX) + 'px',
+                top: (this.touch.y - this.touch.radiusY) + 'px',
+                width: (this.touch.radiusX * 2) + 'px',
+                height: (this.touch.radiusY * 2) + 'px',
                 // backgroundColor: this.visualState ? 'red' : 'pink',
                 backgroundColor: 'red',
                 opacity: this.isActive ? 1 : 0.3,
@@ -38,7 +38,7 @@ export default {
             };
         },
         startPoint() {
-            return {x: this.initialTouch.radiusX, y: this.initialTouch.radiusY}
+            return {x: this.touch.radiusX, y: this.touch.radiusY}
             // return {x: 0, y: 0}
         },
         endPoint() {
@@ -46,12 +46,12 @@ export default {
                 let nextTouchCenterX = this.nextTouch.x
                 let nextTouchCenterY = this.nextTouch.y
 
-                return {x:nextTouchCenterX + this.nextTouch.radiusX - this.initialTouch.x , y: nextTouchCenterY  + this.nextTouch.radiusY - this.initialTouch.y}
+                return {x:nextTouchCenterX + this.nextTouch.radiusX - this.touch.x , y: nextTouchCenterY  + this.nextTouch.radiusY - this.touch.y}
             }
             return undefined
         },
         nextTouch() {
-            let currentInputEventIndex = globalStore.inputEvents.indexOf(this.initialInputEvent)
+            let currentInputEventIndex = globalStore.inputEvents.indexOf(this.inputEvent)
 
             let nextInputEvent = globalStore.inputEvents[currentInputEventIndex + 1]
 
@@ -60,7 +60,7 @@ export default {
             }
 
             //I have a next inputEvent
-            let myTouch = this.initialTouch;
+            let myTouch = this.touch;
 
             //find should return undefined if the element isn't found in the array
             return nextInputEvent.touches.find(aTouch => aTouch.identifier == myTouch.identifier)

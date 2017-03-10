@@ -20,6 +20,11 @@ function extendArray(arrayConstructor)
             return this.indexOf(element) >= 0
         }
     }
+    if (!arrayConstructor.prototype.insert) {
+        arrayConstructor.prototype.insert = function(index, element) {
+            this.splice( index, 0, element );
+        }
+    }
 }
 
 export { extendArray }

@@ -10,9 +10,11 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'visual-state-mark',
-    props: ['initialVisualState'],
+    props: ['visualState'],
     data: function() {
-        return { visualState: this.initialVisualState }
+        return {
+
+        }
     },
     computed: {
         styleObject() {

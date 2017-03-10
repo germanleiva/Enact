@@ -62,6 +62,65 @@ export const globalStore = new Vue({
             for (let eachVisualState of this.visualStates) {
                 eachVisualState.deselectShapes()
             }
+        },
+        insertVisualStateAfter(aShapeDictionary,previousVisualState) {
+            var newVisualState = new VisualStateModel()
+console.log("before for")
+            for (let eachShapeKey in aShapeDictionary) {
+                console.log("Iterating aShapeDicionary: " + eachShapeKey)
+                let clonedShapeModel = newVisualState.addNewShape(eachShapeKey)
+
+                let referenceShape = aShapeDictionary[eachShapeKey]
+                clonedShapeModel.color = referenceShape.color
+                clonedShapeModel.left = referenceShape.left
+                clonedShapeModel.top = referenceShape.top
+                clonedShapeModel.width = referenceShape.width
+                clonedShapeModel.height = referenceShape.height
+            }
+console.log("after for")
+            let previousVisualStateIndex = this.visualStates.indexOf(previousVisualState)
+            let nextVisualState = previousVisualState.nextState
+
+            // newVisualState.importMeasuresFrom(previousVisualState);
+
+            //TODO DRY LOOK DOWN
+            for (let previousShapeId in previousVisualState.shapesDictionary) {
+                let aPreviousShape = previousVisualState.shapesDictionary[previousShapeId]
+                let aNewShape = newVisualState.shapesDictionary[previousShapeId]
+                if (aNewShape) {
+                    for (let eachProperty of ['backgroundColor','translation','scaling']) {
+                        if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[eachProperty].value,aNewShape[eachProperty].value)) {
+                            aNewShape.followMaster(eachProperty)
+                        }
+                    }
+                    aNewShape.masterVersion = aPreviousShape
+                }
+            }
+
+            previousVisualState.nextState = newVisualState
+            newVisualState.previousState = previousVisualState
+
+            if (nextVisualState) {
+                //TODO DRY LOOK UP
+                for (let nextShapeId in nextVisualState.shapesDictionary) {
+                    let aNextShape = nextVisualState.shapesDictionary[nextShapeId]
+                    let aNewShape = newVisualState.shapesDictionary[nextShapeId]
+
+                    if (aNewShape) {
+                        for (let eachProperty of ['backgroundColor','translation','scaling']) {
+                            if (aNextShape.areEqualValues(eachProperty,aNextShape[eachProperty].value,aNewShape[eachProperty].value)) {
+                                aNextShape.followMaster(eachProperty)
+                            }
+                        }
+                        aNextShape.masterVersion = aNewShape
+                    }
+                }
+
+                newVisualState.nextState = nextVisualState
+                nextVisualState.previousVisualState = newVisualState
+            }
+
+            this.visualStates.insert(previousVisualStateIndex+1,newVisualState)
         }
     }
     // watch: {
@@ -271,7 +330,7 @@ class VisualStateModel {
         let correspondingVersion
 
         if (protoShape) {
-            //Cheap way of cloning the version
+            //Cheap way of cloning the version, and setting the masterVersion!
             correspondingVersion = new ShapeModel(shapeId, protoShape);
         } else {
             if (shapeId) {

@@ -3,11 +3,11 @@
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
             <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
             <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
-            <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
+            <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :input-event="anInputEvent"></input-event-mark>
             <!-- <input-event-mark v-for="anInputEvent in allInputEvents" v-if="true" :initial-input-event="anInputEvent"></input-event-mark> -->
-            <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
+            <input-event-mark :visual-state="visualStateModel"></input-event-mark>
         </div>
-        <div class="diffContainer">
+        <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
             <a class='button visualStateDiff' :class="{ 'is-disabled' : nextState === undefined}" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
             <div v-show='isDisplayingDiff' class='diffBox'>
                 <div>
@@ -43,7 +43,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus} from '../store.js'
+import {globalStore, globalBus, VisualStateModel} from '../store.js'
 import Shape from './Shape.vue'
 import Distance from './Distance.vue'
 import Point from './Point.vue'
@@ -52,7 +52,7 @@ import DiffElement from './DiffElement.vue'
 
 export default {
     name: 'visual-state',
-    props: ['initialVisualStateModel'],
+    props: ['visualStateModel'],
     data: function() {
         // return {
         //     currentInputEvent: undefined,
@@ -63,7 +63,6 @@ export default {
         //     showAllInputEvents: false,
         // }
         return {
-            visualStateModel: this.initialVisualStateModel,
             isDisplayingDiff: false,
             // showAllInputEvents: false
         }
@@ -250,6 +249,19 @@ export default {
         }
     },
     methods: {
+        dropMirrorMobile(event) {
+            event.preventDefault();
+            console.log("dropMirrorMobile")
+
+            //TODO AWFUL!!!
+            let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
+
+            globalStore.insertVisualStateAfter(currentDeviceVisualState.shapesDictionary,this.visualStateModel)
+        },
+        allowDropMirrorMobile(event) {
+            event.preventDefault();
+            // console.log("allowDropMirrorMobile")
+        },
         measureStartedOnRelevantPoint(e,aRelevantPoint,fromEntityType,fromId) {
             e.preventDefault();
             e.stopPropagation();

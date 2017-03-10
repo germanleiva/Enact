@@ -1,6 +1,6 @@
 <template>
     <div v-if="inputEvent !== undefined" v-on:mousedown="draggedInputEventMark">
-        <touch v-for="touch in inputEvent.touches" :initial-input-event="inputEvent" :initial-touch="touch" :isActive="visualState != undefined"><touch>
+        <touch v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :isActive="visualState != undefined"><touch>
     </div>
 </template>
 <script>
@@ -12,10 +12,11 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'input-event-mark',
-    props: ['initialVisualState', 'initialInputEvent'],
+    props: ['visualState', 'initialInputEvent'],
     template: ``,
     data: function() {
-        return { visualState: this.initialVisualState }
+        return {
+        }
     },
     components: {
         Touch

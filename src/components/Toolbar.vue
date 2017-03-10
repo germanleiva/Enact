@@ -70,8 +70,6 @@ export default {
                 newVisualState.previousState = previousVisualState;
             }
 
-            // outputAreaVM.$el.appendChild(newVisualState.$el)
-
             globalStore.visualStates.push(newVisualState);
         },
         addNewRule() {

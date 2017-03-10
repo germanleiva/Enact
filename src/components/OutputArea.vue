@@ -1,6 +1,6 @@
 <template>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'>
-        <visual-state ref="visualStatesVM" v-for="vs in visualStates" :initial-visual-state-model="vs"></visual-state>
+        <visual-state ref="visualStatesVM" v-for="vs in visualStates" :visual-state-model="vs"></visual-state>
     </div>
 </template>
 <script>
