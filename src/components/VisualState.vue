@@ -211,6 +211,8 @@ export default {
             return result
         },
         outputDifferencesWithNextState() {
+            console.log("VisualState >> outputDifferencesWithNextState")
+
             let result = {}
 
             let atIfNone = function(key,ifNoneValue) {

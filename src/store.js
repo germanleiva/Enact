@@ -89,7 +89,9 @@ console.log("after for")
                 let aNewShape = newVisualState.shapesDictionary[previousShapeId]
                 if (aNewShape) {
                     for (let eachProperty of ['backgroundColor','translation','scaling']) {
-                        if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[eachProperty].value,aNewShape[eachProperty].value)) {
+                        let mapper = {'backgroundColor':'color','translation':'position','scaling':'scale'};
+
+                        if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[mapper[eachProperty]],aNewShape[mapper[eachProperty]])) {
                             aNewShape.followMaster(eachProperty)
                         }
                     }
@@ -108,7 +110,9 @@ console.log("after for")
 
                     if (aNewShape) {
                         for (let eachProperty of ['backgroundColor','translation','scaling']) {
-                            if (aNextShape.areEqualValues(eachProperty,aNextShape[eachProperty].value,aNewShape[eachProperty].value)) {
+                        let mapper = {'backgroundColor':'color','translation':'position','scaling':'scale'};
+
+                            if (aNextShape.areEqualValues(eachProperty,aNextShape[mapper[eachProperty]],aNewShape[mapper[eachProperty]])) {
                                 aNextShape.followMaster(eachProperty)
                             }
                         }
