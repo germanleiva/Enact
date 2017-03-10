@@ -69,7 +69,7 @@ export default {
 
     globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
-        console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
+        // console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
         let deviceEditedShapeId = data.id
         if (!this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
             let myEditedShape = this.deviceVisualState.addNewShape(deviceEditedShapeId)
@@ -81,7 +81,7 @@ export default {
 
     globalBus.$on('message-from-device-SHAPE_CHANGED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
-        console.log("SHAPE_CHANGED style: " + JSON.stringify(data.style))
+        // console.log("SHAPE_CHANGED style: " + JSON.stringify(data.style))
         let deviceEditedShapeId = data.id
         if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
             let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]

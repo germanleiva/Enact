@@ -4,6 +4,7 @@
             <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
             <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
             <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
+            <!-- <input-event-mark v-for="anInputEvent in allInputEvents" v-if="true" :initial-input-event="anInputEvent"></input-event-mark> -->
             <input-event-mark v-bind:initial-visual-state="visualStateModel"></input-event-mark>
         </div>
         <div class="diffContainer">

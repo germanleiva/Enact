@@ -1,12 +1,13 @@
 <template>
-    <div v-if="inputEvent !== undefined">
-        <div v-for="touch in inputEvent.touches" :style="styleObject(touch)" v-on:mousedown="draggedInputEventMark"></div>
+    <div v-if="inputEvent !== undefined" v-on:mousedown="draggedInputEventMark">
+        <touch v-for="touch in inputEvent.touches" :initial-input-event="inputEvent" :initial-touch="touch" :isActive="visualState != undefined"><touch>
     </div>
 </template>
 <script>
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
+import Touch from "./Touch.vue"
 import {globalStore} from '../store.js'
 
 export default {
@@ -15,6 +16,9 @@ export default {
     template: ``,
     data: function() {
         return { visualState: this.initialVisualState }
+    },
+    components: {
+        Touch
     },
     computed: {
         inputEvent() {
@@ -51,18 +55,6 @@ export default {
             window.addEventListener('mousemove', mouseMoveHandler, false);
             window.addEventListener('mouseup', mouseUpHandler, false);
         },
-        styleObject(aTouch) {
-            return {
-                borderRadius: '15px',
-                position: 'absolute',
-                left: aTouch.x + 'px',
-                top: aTouch.y + 'px',
-                width: aTouch.radiusX * 2 + 'px',
-                height: aTouch.radiusY * 2 + 'px',
-                backgroundColor: this.visualState ? 'red' : 'pink',
-                'z-index': 9999
-            };
-        }
     }
 }
 </script>

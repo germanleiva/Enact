@@ -544,19 +544,19 @@ socket.on('message-from-server', function(data) {
 
 
 function sendEvent(anEvent) {
+    // return;
     let touches = []
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
     for (let i=0; i < anEvent.touches.length;i++) {
         let eachTouch = anEvent.touches[i];
-        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: anEvent.radiusX, radiusY: anEvent.radiusY, rotationAngle: anEvent.rotationAngle, force: anEvent.force }
+        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: eachTouch.radiusX, radiusY: eachTouch.radiusY, rotationAngle: eachTouch.rotationAngle, force: eachTouch.force }
         touches.push(myTouchObject)
         if (touches.indexOf(myTouchObject) != i) {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
         }
     }
 
-    var anEvent = { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }
-    socket.emit('message-from-device', { type:"INPUT_EVENT", message: anEvent });
+    socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
 
 }
 
@@ -573,6 +573,13 @@ function sendEvent(anEvent) {
 document.getElementById('mobileCanvas').addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
+        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchstart", touches: [{identifier: 0, x: 300, y: 100, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 250, y: 200, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 200, y: 300, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 150, y: 400, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchend", touches: [{identifier: 0, x: 100, y: 500, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // return;
+
         sendEvent(event);
     } else {
         console.log("We are starting interacting")
