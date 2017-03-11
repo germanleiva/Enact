@@ -32,6 +32,7 @@ export const globalStore = new Vue({
         inputEvents: [],
         isRecording: false,
         shapeCounter: 0,
+        measureCounter: 0,
         ruleCounter: 0,
         toolbarState: {
             drawMode: false,
@@ -147,6 +148,17 @@ class MeasureModel {
         this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
         this._relevantPoints = [new RelevantPoint(this, 'center', 0.5, 0.5)];
+        this.nameCount = -1
+    }
+    get name() {
+        switch (this.type) {
+            case "point":
+                return "P"+this.nameCount
+            case "distance":
+                return "D"+this.nameCount
+            default:
+                console.log("Unrecognized nameCount for measure: "+ this.id);
+        }
     }
     get type() {
         if (this.from.type == this.to.type && this.from.id == this.to.id && this.from.handler == this.to.handler) {
@@ -237,13 +249,13 @@ class MeasureModel {
                 if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
                     //No diff in starting point
                 } else {
-                    changes.push({ id: this.id, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
+                    changes.push({ id: this.name, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
                 }
 
                 break;
             case "distance": //I'm interested in scaling
                 if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-                    changes.push({ id: this.id, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                    changes.push({ id: this.name, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
                 }
                 break;
         }
@@ -338,7 +350,7 @@ class VisualStateModel {
         let result = []
             //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
         let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
-
+        newMeasure.nameCount = globalStore.measureCounter++;
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
