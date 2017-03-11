@@ -1,6 +1,6 @@
 <template>
     <div id="outputArea" class="outputArea" v-bind:style='{cursor: cursorType}'>
-        <visual-state ref="visualStatesVM" v-for="vs in visualStates" :visual-state-model="vs"></visual-state>
+        <visual-state-container ref="visualStatesVM" v-for="vs in visualStates" :visual-state-model="vs"></visual-state-container>
     </div>
 </template>
 <script>
@@ -8,7 +8,7 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
-import VisualState from './VisualState.vue'
+import VisualStateContainer from './VisualStateContainer.vue'
 
 export default {
     name: 'output-area',
@@ -19,7 +19,7 @@ export default {
         }
     },
     components: {
-        VisualState
+        VisualStateContainer
     },
     methods: {
         changeColorOfSelectedShapes: function(cssStyle) {

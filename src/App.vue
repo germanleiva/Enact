@@ -4,12 +4,14 @@
     <output-area ref="outputArea"></output-area>
     <input-area></input-area>
     <div id="lowerArea" style="display:flex">
-        <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
-            <div class="dragdemo" draggable="true">drag me</div>
+        <visual-state-canvas :visual-state-model="deviceVisualState" style="position:relative" draggable="true" :is-mirror="true">
+        </visual-state-canvas>
+            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
 
+<!--         <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
             <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
             <shape v-for="(aShapeModel,index) in deviceVisualState.shapesDictionary" v-bind:shape-model="aShapeModel" :parent-visual-state="deviceVisualState"></shape>
-        </div>
+        </div> -->
         <rule-area></rule-area>
     </div>
   </div>
@@ -23,9 +25,8 @@ import {globalStore, globalBus, VisualStateModel} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
+import VisualStateCanvas from './components/VisualStateCanvas.vue'
 import RuleArea from './components/RuleArea.vue'
-
-import Shape from './components/Shape.vue'
 
 export default {
   name: 'app',
@@ -41,7 +42,7 @@ export default {
     OutputArea,
     InputArea,
     RuleArea,
-    Shape
+    VisualStateCanvas
   },
   mounted: function() {
 

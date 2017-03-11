@@ -281,7 +281,6 @@ class VisualStateModel {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
     get percentageInTimeline() {
-        debugger;
         if (this.currentInputEventIndex >= 0) {
             let totalEventCount = globalStore.inputEvents.length
             return this.currentInputEventIndex * 100 / totalEventCount;
