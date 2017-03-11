@@ -65,7 +65,7 @@ export const globalStore = new Vue({
         },
         insertVisualStateAfter(aShapeDictionary,previousVisualState) {
             var newVisualState = new VisualStateModel()
-console.log("before for")
+
             for (let eachShapeKey in aShapeDictionary) {
                 console.log("Iterating aShapeDicionary: " + eachShapeKey)
                 let clonedShapeModel = newVisualState.addNewShape(eachShapeKey)
@@ -77,7 +77,7 @@ console.log("before for")
                 clonedShapeModel.width = referenceShape.width
                 clonedShapeModel.height = referenceShape.height
             }
-console.log("after for")
+
             let previousVisualStateIndex = this.visualStates.indexOf(previousVisualState)
             let nextVisualState = previousVisualState.nextState
 
@@ -125,6 +125,10 @@ console.log("after for")
             }
 
             this.visualStates.insert(previousVisualStateIndex+1,newVisualState)
+
+            //TODO DRY
+            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
+            newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
         }
     }
     // watch: {
