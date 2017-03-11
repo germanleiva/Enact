@@ -168,6 +168,7 @@ export default {
   },
   methods: {
     mirrorDragged(event) {
+        event.dataTransfer.setData("text/visual-state", "");
         console.log("Started dragging mirror mobile");
     },
     changeColorOfSelectedShapes(cssStyle) {

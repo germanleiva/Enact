@@ -277,13 +277,13 @@ class VisualStateModel {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
     get percentageInTimeline() {
+        debugger;
         if (this.currentInputEventIndex >= 0) {
             let totalEventCount = globalStore.inputEvents.length
             return this.currentInputEventIndex * 100 / totalEventCount;
         } else {
             // return globalStore.visualStates.indexOf(this) * 100 / (globalStore.visualStates.length - 1);
             return globalStore.visualStates.indexOf(this) * 100 / globalStore.visualStates.length;
-
         }
     }
     importMeasuresFrom(previousState) {

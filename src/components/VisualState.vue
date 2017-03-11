@@ -3,7 +3,7 @@
         <div v-on:mousedown='actionStarted' class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
             <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
             <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
-            <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :input-event="anInputEvent"></input-event-mark>
+            <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
             <!-- <input-event-mark v-for="anInputEvent in allInputEvents" v-if="true" :initial-input-event="anInputEvent"></input-event-mark> -->
             <input-event-mark :visual-state="visualStateModel"></input-event-mark>
         </div>
@@ -261,8 +261,11 @@ export default {
             globalStore.insertVisualStateAfter(currentDeviceVisualState.shapesDictionary,this.visualStateModel)
         },
         allowDropMirrorMobile(event) {
-            event.preventDefault();
-            // console.log("allowDropMirrorMobile")
+            var dataType = event.dataTransfer.types;
+            console.log("allowDropMirrorMobile >> " + dataType)
+            if (dataType == "text/visual-state") {
+                event.preventDefault()
+            }
         },
         measureStartedOnRelevantPoint(e,aRelevantPoint,fromEntityType,fromId) {
             e.preventDefault();

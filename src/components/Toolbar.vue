@@ -69,8 +69,12 @@ export default {
                 previousVisualState.nextState = newVisualState;
                 newVisualState.previousState = previousVisualState;
             }
-
             globalStore.visualStates.push(newVisualState);
+
+            //TODO DRY
+            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
+            newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+
         },
         addNewRule() {
             globalStore.ruleCounter++;
