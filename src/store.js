@@ -344,7 +344,7 @@ class VisualStateModel {
                 correspondingVersion = new ShapeModel(shapeId, undefined, 'white', 0, 0, 0, 0);
             } else {
                 let newShapeCount = globalStore.shapeCounter++;
-                correspondingVersion = new ShapeModel('shape' + newShapeCount, undefined, 'white', 0, 0, 0, 0);
+                correspondingVersion = new ShapeModel('R' + newShapeCount, undefined, 'white', 0, 0, 0, 0);
             }
         }
 
@@ -484,6 +484,7 @@ class RelevantPoint {
 class ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         this.id = id;
+        this.name = id;
 
         this.opacity = 1
 

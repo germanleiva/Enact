@@ -2,8 +2,7 @@
     <div class='visualStateContainer'>
         <visual-state-canvas :visual-state-model="visualStateModel" :is-mirror="false"></visual-state-canvas>
         <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
-            <a class='button visualStateDiff' :class="{ 'is-disabled' : nextState === undefined}" @click='displayDiff'><span class="icon is-small"><i class="fa fa-exchange"></i></span></a>
-            <div v-show='isDisplayingDiff' class='diffBox'>
+            <div v-if="nextState != undefined" class='diffBox'>
                 <div>
                     <div class='box' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0">
@@ -213,8 +212,16 @@ export default {
                 event.preventDefault()
             }
         },
-        displayDiff() {
-            this.isDisplayingDiff = !this.isDisplayingDiff;
+        didMouseOver(diffElementVM) {
+            this.highlightInvolvedElement(diffElementVM,true)
+        },
+        didMouseOut(diffElementVM) {
+            this.highlightInvolvedElement(diffElementVM,false)
+        },
+        highlightInvolvedElement(diffElementVM,aBoolean){
+            let data = diffElementVM.diffData
+
+            this.visualStateModel.toggleHighlightForInvolvedElement(data.id,aBoolean)
         }
     }
 }

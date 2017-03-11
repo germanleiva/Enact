@@ -115,7 +115,7 @@ export default {
             let hiddedShapesKeys = []
             for (let i = 0; i < globalStore.shapeCounter; i++) {
                 let shapeKeyframes = {}
-                let eachShapeKey = 'shape'+i
+                let eachShapeKey = 'R'+i
                 animation[eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
