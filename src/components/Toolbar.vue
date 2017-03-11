@@ -7,7 +7,7 @@
                 <a class="button" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
             </p>
             <a class="button" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
-            <input type="color" v-on:change="changeColor()" id="color-picker" class="button" v-model="toolbarState.currentColor">
+            <input type="color" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
             <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
             <a class="button is-alone" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
         </div>
@@ -18,13 +18,14 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,VisualStateModel,RulePlaceholderModel} from '../store.js'
+import {globalStore,globalBus,VisualStateModel,RulePlaceholderModel} from '../store.js'
 
 export default {
   name: 'toolbar',
   data () {
     return {
-        toolbarState: globalStore.toolbarState
+        toolbarState: globalStore.toolbarState,
+        currentColor: '#1a60f3'
     }
   },
     methods: {
@@ -47,10 +48,8 @@ export default {
             globalStore.deselectAllShapes()
             this.toolbarState.cursorType = "default";
         },
-        changeColor() {
-            this.$parent.changeColorOfSelectedShapes({
-                'background-color': this.toolbarState.currentColor
-            });
+        changeColor(e) {
+            globalBus.$emit('changeColorOfSelectedShapes',this.currentColor)
         },
         addVisualState() {
             var newVisualState = new VisualStateModel()

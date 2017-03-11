@@ -37,14 +37,32 @@ export default {
             //A shape was selected in other VisualState, I need to deselect my shapes
             //or, I'm not in multiSelectionMode and I need to deselect my shapes (except for theSelectedShapeVM)
             if (!globalStore.toolbarState.multiSelectionMode || theSelectedShapeVM.visualState !== this.visualStateModel) {
-                for (let otherSelectedShapeVM of this.selectedShapes()) {
-                        if (otherSelectedShapeVM !== theSelectedShapeVM) {
-                            otherSelectedShapeVM.deselect()
-                        }
+                for (let otherSelectedShape of this.selectedShapes()) {
+                    if (otherSelectedShape !== theSelectedShapeVM.shapeModel) {
+                        otherSelectedShape.deselect()
                     }
+                }
             }
         });
+        globalBus.$on('changeColorOfSelectedShapes', selectedColor => {
+            for (let aShapeModel of this.selectedShapes()) {
+                //The first previousValue needs to be an actualValue
+                let previousValue = aShapeModel.color;
+                let newValue = selectedColor;
 
+                //First we need to check if we are followingMaster in that property
+                if (aShapeModel.isFollowingMaster('backgroundColor') && previousValue == newValue) {
+                    //Don't do anything, keep following master and do not propagate
+                } else {
+
+                    aShapeModel.color = newValue;
+
+                    if (this.nextState) {
+                        this.nextState.somethingChangedPreviousState(aShapeModel.id, previousValue, newValue, 'backgroundColor');
+                    }
+                }
+            };
+        });
     },
     computed: {
         shapeModels: function() {
@@ -133,7 +151,7 @@ export default {
             return this.$el
         },
         selectedShapes: function() {
-            return this.shapesVM().filter(each => each.shapeModel.isSelected);
+            return this.visualStateModel.selectedShapes();
         },
 
         handlerFor: function(mouseEvent) {
@@ -267,37 +285,6 @@ export default {
             newShapeModel.left = leftValue - this.canvasOffsetLeft();
             newShapeModel.width = widthValue;
             newShapeModel.height = heightValue;
-        },
-
-        changeColorOnSelection: function(cssStyle) {
-            for (let selectedShapeVM of this.selectedShapes()) {
-                //The first previousValue needs to be an actualValue
-                let previousValue = selectedShapeVM.shapeModel.color;
-                let newValue = cssStyle['background-color'];
-
-                //First we need to check if we are followingMaster in that property
-                if (selectedShapeVM.shapeModel.isFollowingMaster('backgroundColor') && previousValue == newValue) {
-                    //Don't do anything, keep following master and do not propagate
-                } else {
-
-                    selectedShapeVM.shapeModel.color = newValue;
-
-                    if (this.nextState) {
-                        this.nextState.somethingChangedPreviousState(selectedShapeVM.shapeModel.id, previousValue, newValue, 'backgroundColor');
-                    }
-                }
-            };
-        },
-        moveSelectedShapes(deltaX,deltaY) {
-            for (let eachSelectedShape of this.selectedShapes()) {
-                eachSelectedShape.shapeModel.left += deltaX
-                eachSelectedShape.shapeModel.top += deltaY
-            }
-        },
-        deleteSelectedShapes() {
-            for (let shapeVMToDelete of this.selectedShapes()) {
-                this.visualStateModel.deleteShape(shapeVMToDelete.shapeModel)
-            }
         },
         canvasOffsetLeft() {
             return this.canvasElement().offsetLeft;

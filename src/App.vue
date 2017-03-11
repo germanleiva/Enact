@@ -172,9 +172,6 @@ export default {
         event.dataTransfer.setData("text/visual-state", "");
         console.log("Started dragging mirror mobile");
     },
-    changeColorOfSelectedShapes(cssStyle) {
-        this.$refs.outputArea.changeColorOfSelectedShapes(cssStyle)
-    },
     prepareCanvas() {
         globalStore.context = document.getElementById('myCanvas').getContext("2d");
 

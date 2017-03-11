@@ -277,6 +277,22 @@ class VisualStateModel {
         this.maxHeight = globalStore.mobileHeight
         this.showAllInputEvents = false
     }
+    changeProperty(shapeModel,propertyName,previousValue,newValue) {
+        if (shapeModel.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
+            //Don't do anything, keep following master and do not propagate
+        } else {
+            switch (propertyName) {
+                case 'translation': {
+                    shapeModel.left = newValue.x
+                    shapeModel.top = newValue.y
+                    break;
+                }
+            }
+            if (this.nextState) {
+                this.nextState.somethingChangedPreviousState(shapeModel.id, previousValue, newValue, propertyName);
+            }
+        }
+    }
     get currentInputEventIndex() {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
@@ -459,6 +475,26 @@ class VisualStateModel {
         for (let eachShapeKey in this.shapesDictionary) {
             let eachShape = this.shapesDictionary[eachShapeKey]
             eachShape.deselect()
+        }
+    }
+    selectedShapes() {
+        let selected = []
+        for (let eachShapeId in this.shapesDictionary) {
+            let shape = this.shapesDictionary[eachShapeId]
+            if (shape.isSelected) {
+                selected.push(shape)
+            }
+        }
+        return selected
+    }
+    moveSelectedShapes(deltaX,deltaY) {
+        for (let eachSelectedShape of this.selectedShapes()) {
+            this.changeProperty(eachSelectedShape,'translation',eachSelectedShape.position,{x:eachSelectedShape.left+deltaX,y:eachSelectedShape.top+deltaY})
+        }
+    }
+    deleteSelectedShapes() {
+        for (let shapeToDelete of this.selectedShapes()) {
+            this.deleteShape(shapeToDelete)
         }
     }
 }

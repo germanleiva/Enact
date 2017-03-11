@@ -22,19 +22,14 @@ export default {
         VisualStateContainer
     },
     methods: {
-        changeColorOfSelectedShapes: function(cssStyle) {
-            for (let each of this.$refs.visualStatesVM) {
-                each.changeColorOnSelection(cssStyle);
-            }
-        },
         moveSelectedShapes(deltaX,deltaY) {
-            for (let eachVisualStateVM of this.$refs.visualStatesVM) {
-                eachVisualStateVM.moveSelectedShapes(deltaX,deltaY)
+            for (let eachVisualState of this.visualStates) {
+                eachVisualState.moveSelectedShapes(deltaX,deltaY)
             }
         },
         deleteSelectedShapes(){
-            for (let eachVisualStateVM of this.$refs.visualStatesVM) {
-                eachVisualStateVM.deleteSelectedShapes()
+            for (let eachVisualState of this.visualStates) {
+                eachVisualState.deleteSelectedShapes()
             }
         }
     },

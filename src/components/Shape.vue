@@ -275,15 +275,7 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            if (this.shapeModel.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
-                //Don't do anything, keep following master and do not propagate
-            } else {
-                this.shapeModel.left = newValue.x
-                this.shapeModel.top = newValue.y
-                if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'translation');
-                }
-            }
+            this.visualState.changeProperty(this.shapeModel,'translation',previousValue,newValue);
         },
         toggleSelection(notify = true) {
             this.shapeModel.isSelected = !this.shapeModel.isSelected;
