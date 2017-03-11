@@ -104,7 +104,7 @@ export default {
             let sharedCachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
 
             //TODO this is nasty, sorry future Germán
-            let presentAndFutureMeasures = this.initialVisualStateModel.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
+            let presentAndFutureMeasures = this.visualStateModel.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
             let newMeasure = presentAndFutureMeasures[0]
             var mouseMoveHandler
             mouseMoveHandler = function(e) {
