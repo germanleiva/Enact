@@ -51,7 +51,7 @@ import {globalStore,globalBus,logger, MeasureModel} from '../store.js'
 
 export default {
     name: 'shape',
-    props: ['shapeModel', 'parentVisualState'],
+    props: ['shapeModel', 'parentVisualState','isTestShape'],
     data: function() {
         return {
             visualState: this.parentVisualState,
@@ -62,33 +62,24 @@ export default {
     },
     computed: {
         shouldShowHandlers: function() {
-            return this.shapeModel.isSelected
+            return !this.isTestShape && this.shapeModel.isSelected
         },
         shouldShowPoints: function() {
-            return globalStore.toolbarState.measureMode
+            return !this.isTestShape && globalStore.toolbarState.measureMode
         },
         styleObject: function() {
-                let border = 1
-                if (this.shapeModel.isSelected) {
-                    border = 4
-                }
-            // if (this.shapeModel) {
                 return {
-                    'backgroundColor': this.shapeModel.color,
+                    'backgroundColor': this.isTestShape? 'rgba(0,0,0,0)': this.shapeModel.color,
                     'position': 'absolute',
                     'left': this.shapeModel.left + 'px',
                     'top': this.shapeModel.top + 'px',
                     'width': this.shapeModel.width /*+ border*/ + 'px',
                     'height': this.shapeModel.height /*+ border*/ + 'px',
-                    'border': border + 'px solid gray',
+                    'border': this.isTestShape? '2px dashed #ffa500':'1px solid gray',
                     'overflow': 'visible',
                     'opacity': '1',
                     // 'box-sizing': 'border-box' //To ignore the border size?
                 }
-            // } else {
-                // console.log("shapeModel was undefined in " + this + " with shapeModelId " + this.shapeModelId)
-            // return {}
-            // }
         },
         positionStyleObject: function() {
             return {
@@ -226,6 +217,10 @@ export default {
             visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
         },
         mouseDownStartedOnShape(e) {
+            if (this.isTestShape) {
+                return
+            }
+
             if (e.ctrlKey) {
                 e.preventDefault()
                 e.stopPropagation();

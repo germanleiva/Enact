@@ -250,7 +250,6 @@ socket.on('message-from-server', function(data) {
         }
         case "EDIT_RULE":{
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
-        debugger;
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
             editedRule.factor.x = data.message.factor.x
@@ -323,7 +322,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "TEST_EVENTS": {
-            function testEvents(eventsCache) {
+            function testEvents(eventsCache,relevantEventIndexes) {
                 if (eventsCache.length == 0) {
                     alert("No gesture recorded");
                     return;
@@ -332,6 +331,8 @@ socket.on('message-from-server', function(data) {
                 var isLast = false;
 
                 var initialTimeStamp = eventsCache[0].timeStamp;
+
+                let savedShapesStatesPerEvent = {}
 
                 for (var i = 0; i < eventsCache.length; i++) {
                     var cachedEventObject = eventsCache[i];
@@ -345,11 +346,29 @@ socket.on('message-from-server', function(data) {
                     // console.log("Event type: " + cachedEventObject.type + " Waiting time: " + waitingTime);
                     // console.log("Location: " + cachedEventObject.pageX + " " + event.pageY);
 
-                    dispathWaiting(cachedEventObject, waitingTime);
+                    let currentEventIndex = i
+
+                    dispathWaiting(cachedEventObject, waitingTime, function() {
+                        debugger;
+                        if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
+                            let shapeStates = {}
+                            for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
+                                let eachShapeVM = mobileCanvasVM.interactiveShapes[eachShapeKey]
+                                shapeStates[eachShapeKey] = {id: eachShapeKey, left: eachShapeVM.shapeModel.left, top: eachShapeVM.shapeModel.top, width: eachShapeVM.shapeModel.width, height: eachShapeVM.shapeModel.height, color: eachShapeVM.shapeModel.color }
+                            }
+                            savedShapesStatesPerEvent[currentEventIndex] = shapeStates
+                        }
+                        if (isLast) {
+                            // send result to the desktop
+                            console.log("Sending result to the desktop")
+                            socket.emit('message-from-device', { type:"TEST_RESULT", message: savedShapesStatesPerEvent });
+                        }
+                    });
+
                 }
             }
 
-            function dispathWaiting(aCachedEventObject, waitingTime) {
+            function dispathWaiting(aCachedEventObject, waitingTime, completionCallback = undefined) {
                 setTimeout(function() {
                     // var newEvent = new TouchEvent(aCachedEventObject.type, { pageX: aCachedEventObject.pageX, pageY: aCachedEventObject.pageY });
                     let touchList = []
@@ -410,12 +429,14 @@ socket.on('message-from-server', function(data) {
                     // cachedEventObject.timeStamp = new Date().getTime();
                     // var result = document.dispatchEvent(aCachedEventObject);
                     var result = document.getElementById('mobileCanvas').dispatchEvent(touchEvent);
-                    console.log("Event result: " + result);
-
+                    // console.log("Event result: " + result);
+                    if (completionCallback) {
+                        completionCallback()
+                    }
                 }, waitingTime);
             }
 
-            testEvents(data.message)
+            testEvents(data.message, data.eventIndexes)
             break;
         }
         case "NEW_ANIMATION": {

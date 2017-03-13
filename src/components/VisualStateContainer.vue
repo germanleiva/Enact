@@ -35,7 +35,7 @@ import DiffElement from './DiffElement.vue'
 import VisualStateCanvas from './VisualStateCanvas.vue'
 
 export default {
-    name: 'visual-state',
+    name: 'visual-state-container',
     props: ['visualStateModel'],
     data: function() {
         return {

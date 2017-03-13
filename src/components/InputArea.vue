@@ -3,7 +3,7 @@
        <a class="button is-primary is-medium" v-on:click="startTesting"><span class="icon is-small"><i class="fa fa-wrench"></i></span></a><span>&nbsp;</span>
        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">
-            <visual-state-mark v-for="vs in visualStates" :visual-state="vs">{{"VS"+visualStates.indexOf(vs)}}</visual-state-mark>
+            <visual-state-mark v-for="vs in visualStates" :visual-state="vs"></visual-state-mark>
         </div>
         <a class="button is-medium" :class="{'is-inverted' : !isRecording , ' is-danger' : isRecording}" v-on:click="toggleRecording"><span class="icon is-small"><i :class="{'fa' : true , 'fa-circle' : !isRecording, 'fa-square' : isRecording}"></i></span></a>
     </div>
@@ -161,7 +161,8 @@ export default {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
         },
         startTesting() {
-            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents })
+            let relevantEventsIndex = globalStore.visualStates.map(vs => globalStore.inputEvents.indexOf(vs.currentInputEvent))
+            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents, eventIndexes: relevantEventsIndex })
         }
     }
 }

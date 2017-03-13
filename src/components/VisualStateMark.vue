@@ -1,12 +1,12 @@
 <template>
-    <div class="button is-dark mark" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark"><slot></slot></div>
+    <div class="button mark" :class="{'is-dark' : visualState.hasTestShapes, 'is-warning' : !testPassed , 'is-primary' : testPassed}" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark">{{visualStateName}}</div>
 </template>
 
 <script>
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore} from '../store.js'
+import {globalStore, globalBus, ShapeModel} from '../store.js'
 
 export default {
     name: 'visual-state-mark',
@@ -19,8 +19,16 @@ export default {
     computed: {
         styleObject() {
             return {
-                left: this.visualState.percentageInTimeline + '%'
+                position: 'absolute',
+                left: this.visualState.percentageInTimeline + '%',
+                backgroundColor: this.testPassed?'black':'#ffa500'
             }
+        },
+        visualStateName() {
+            return globalStore.visualStates.indexOf(this.visualState) + 1
+        },
+        testPassed() {
+            return this.visualState.test()
         }
     },
     methods: {
@@ -66,6 +74,27 @@ export default {
             window.addEventListener('mouseup', upHandler, false);
 
         }
+    },
+    mounted: function() {
+        globalBus.$on('message-from-device-TEST_RESULT',function(data) {
+            //If the deviceVisualState has the shape then we edit else we create
+            // console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
+            let savedShapeStatesPerEvent = data.message
+
+            for (let eventIndexString in savedShapeStatesPerEvent) {
+                let eventIndex = parseInt(eventIndexString)
+                let correspondingInputEvent = globalStore.inputEvents[eventIndex]
+                let correspondingVS = globalStore.visualStates.find(vs => vs.currentInputEvent == correspondingInputEvent)
+
+                let createdShapeModels = []
+                for (let eachShapeObjectId in savedShapeStatesPerEvent[eventIndex]) {
+                    let shapeObjectData = savedShapeStatesPerEvent[eventIndex][eachShapeObjectId]
+                    createdShapeModels.push(new ShapeModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
+                }
+
+                correspondingVS.testedShapes = createdShapeModels
+            }
+        }.bind(this));
     }
 }
 </script>

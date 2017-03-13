@@ -282,6 +282,7 @@ class MeasureModel {
 class VisualStateModel {
     constructor() {
         this.shapesDictionary = {}
+        this.testedShapes = {}
         this.measures = []
         this.currentInputEvent = undefined
         this.nextState = undefined
@@ -290,6 +291,23 @@ class VisualStateModel {
         this.maxHeight = globalStore.mobileHeight
         this.showAllInputEvents = false
         this.timeoutForStopMovingSelectedShapes = undefined
+    }
+    get hasTestShapes() {
+        return Object.keys(this.testedShapes).length > 0
+    }
+    test() {
+        if (this.hasTestShapes) {
+            for (let testShape of this.testedShapes) {
+                let myShape = this.shapesDictionary[testShape.id]
+
+                let result = myShape != undefined && myShape.left == testShape.left && myShape.top == testShape.top && myShape.width == testShape.width && myShape.height == testShape.height && myShape.color == testShape.color
+                if (!result) {
+                debugger;
+                }
+                return result
+            }
+        }
+        return true
     }
     changeProperty(shapeModel,propertyName,previousValue,newValue) {
         if (shapeModel.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
@@ -791,7 +809,7 @@ class ShapeOutputRule {
         if (this._minValue) {
             return this._minValue
         }
-        return { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+        return { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE }
     }
     set minValue(aValue) {
         this._minValue = aValue
@@ -928,7 +946,7 @@ class InputRule {
         if (this._minPosition) {
             return this._minPosition
         }
-        return { x: Number.MIN_VALUE, y: Number.MIN_VALUE }
+        return { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE }
     }
     set minPosition(newMinPosition){
         this._minPosition = newMinPosition

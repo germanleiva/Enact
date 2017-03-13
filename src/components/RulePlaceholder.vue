@@ -257,8 +257,8 @@ export default {
         calculateFactor(inputPositionBefore,inputPositionAfter,outputPositionBefore,outputPositionAfter) {
             // input * factor = output => factor = output/input
 
-            this.rulePlaceholderModel.factor.x = (outputPositionAfter.x - outputPositionBefore.x) / (inputPositionAfter.x - inputPositionBefore.x)
-            this.rulePlaceholderModel.factor.y = (outputPositionAfter.y - outputPositionBefore.y) / (inputPositionAfter.y - inputPositionBefore.y)
+            this.rulePlaceholderModel.factor.x = (outputPositionAfter.x - outputPositionBefore.x) / (inputPositionAfter.x - inputPositionBefore.x); //because Nacho asked
+            this.rulePlaceholderModel.factor.y = (outputPositionAfter.y - outputPositionBefore.y) / (inputPositionAfter.y - inputPositionBefore.y);
         }
     },
     computed: {

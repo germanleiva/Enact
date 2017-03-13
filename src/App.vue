@@ -85,6 +85,7 @@ export default {
         //If the deviceVisualState has the shape then we edit else we create
         // console.log("SHAPE_CHANGED style: " + JSON.stringify(data.style))
         let deviceEditedShapeId = data.id
+
         if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
             let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]
 

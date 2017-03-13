@@ -1,10 +1,11 @@
 <template>
     <div v-on:mousedown='actionStarted' :draggable="isMirror" v-on:dragstart="mirrorDragged" class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-        <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel"></shape>
+        <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="false"></shape>
         <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
         <!-- <input-event-mark v-for="anInputEvent in allInputEvents" v-if="true" :initial-input-event="anInputEvent"></input-event-mark> -->
         <input-event-mark :visual-state="visualStateModel"></input-event-mark>
+        <shape v-show="!visualStateModel.test()" v-for="aShapeModel in visualStateModel.testedShapes" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="true"></shape>
     </div>
 </template>
 
