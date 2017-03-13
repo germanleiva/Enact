@@ -1,15 +1,15 @@
 <template>
     <div id="toolbar">
         <div class="control is-grouped">
-            <a class="button is-primary is-alone is-disabled" id="title">ENACT</a>
+            <a class="button is-primary is-alone is-disabled" title="A Tool to Create Interaction" id="title">ENACT</a>
             <p class="control has-addons">
-                <a class="button" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
-                <a class="button" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
+                <a class="button" title="Selection" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
+                <a class="button" title="Create Rectangle" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
             </p>
-            <a class="button" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
-            <input type="color" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
-            <a class="button is-alone" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
-            <a class="button is-alone" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
+            <a class="button" title="Create Measure" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
+            <input type="color" title="Color Picker" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
+            <a class="button is-alone" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+            <a class="button is-alone" title="Add new Rule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
         </div>
     </div>
 </template>
@@ -91,5 +91,18 @@ export default {
 </script>
 
 <style >
-
+#title{
+    opacity: 1 !important;
+    margin-right: 20px;
+}
+.tooltip {
+  border-bottom: 1px dotted #000000;
+  color: #000000; outline: none;
+  cursor: help; text-decoration: none;
+  position: relative;
+}
+.tooltip span {
+  margin-left: -999em;
+  position: absolute;
+}
 </style>

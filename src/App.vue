@@ -232,7 +232,7 @@ export default {
     background-color:white;
     border: 1px solid #333333;
     float:left;
-    margin: 8px;
+    margin: 6px;
     position: relative;
 }
 
@@ -241,9 +241,10 @@ export default {
 }
 
 .diffContainer{
-    width: 110px;
+    margin-top: 5px;
+    width: 126px;
     display: flex; /*This is to align the diff button and the diff box*/
-    flex-direction: column; /*To have the child vertically align*/
+    flex-direction: row; /*To have the child vertically align*/
 }
 
 .visualStateDiff { /*MAybe we need to rename this as diffButton or shomething*/

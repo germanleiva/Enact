@@ -1,5 +1,5 @@
 <template>
-    <div class='rule-placeholder'>
+    <div class='box rule-placeholder'>
         <input class="condition" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
             <input v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Input Type">
@@ -240,7 +240,8 @@ export default {
 </script>
 <style scoped>
 input {
-    font-size:24px;
+    font-size:1rem;
+    font-family: futura;
 }
 
 .rule-placeholder {
@@ -248,7 +249,7 @@ input {
     margin: 10px;
     overflow: hidden; /* Or flex might break */
     flex-wrap: wrap;
-    font-size: 2em;
+    font-size: 1.2em;
 }
 .leftSide {
     width: 50%;
