@@ -250,8 +250,12 @@ socket.on('message-from-server', function(data) {
         }
         case "EDIT_RULE":{
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
+        debugger;
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
+            editedRule.factor.x = data.message.factor.x
+            editedRule.factor.y = data.message.factor.y
+
             if (editedRule) {
                 switch (receivedRule.input.type) {
                     case 'touch':

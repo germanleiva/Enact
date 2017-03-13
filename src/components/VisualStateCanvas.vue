@@ -234,12 +234,14 @@ export default {
 
             mouseMoveHandler = function(e) {
                 e.preventDefault()
+                newShapeModel.isResizing = true;
                 this.drawingChanged(e, newShapeModel, startingWindowMousePosition)
             }.bind(this)
 
             var mouseUpHandler
             mouseUpHandler = function(e) {
                 e.preventDefault()
+                newShapeModel.isResizing = false;
                 this.drawingEnded(e, newShapeModel)
                 window.removeEventListener('mousemove', mouseMoveHandler, false);
                 window.removeEventListener('mouseup', mouseUpHandler, false);

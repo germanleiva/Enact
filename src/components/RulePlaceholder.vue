@@ -13,6 +13,7 @@
             <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
             <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
+        <div>{{rulePlaceholderModel.factor}}</div>
         <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')" :style="{ backgroundColor: activeColor }">
             <input v-model="rulePlaceholderModel.output.type" style="width: 25%" placeholder="Output Type">
             <input v-model="rulePlaceholderModel.output.id" style="width: 25%" placeholder="Output Id">
@@ -127,6 +128,18 @@ export default {
             if (dataObject.property.before.h != dataObject.property.after.h) {
                 this.rulePlaceholderModel.output.axiss.push('y')
             }
+
+            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
+                let visualState = globalStore.visualStates[dataObject.visualStateIndex]
+                //the dataObject have the input diff values
+
+                this.rulePlaceholderModel.output.property //We assume this is 'translation'
+                let outputPositionBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id].position
+                let outputPositionAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id].position
+
+                this.calculateFactor(dataObject.property.before,dataObject.property.after,outputPositionBefore,outputPositionAfter)
+            }
+
         },
         dropForOutput(event) {
             event.preventDefault();
@@ -158,6 +171,17 @@ export default {
             }
             if (dataObject.property.before.h != dataObject.property.after.h) {
                 this.rulePlaceholderModel.output.axiss.push('y')
+            }
+
+            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
+                let visualState = globalStore.visualStates[dataObject.visualStateIndex]
+                //the dataObject have the input diff values
+
+                this.rulePlaceholderModel.input.property //We assume this is 'translation'
+                let inputPositionBefore = visualState.currentInputEvent.touches[this.rulePlaceholderModel.input.id]
+                let inputPositionAfter = visualState.nextState.currentInputEvent.touches[this.rulePlaceholderModel.input.id]
+
+                this.calculateFactor(inputPositionBefore,inputPositionAfter,dataObject.property.before,dataObject.property.after)
             }
         },
         dragOverForInput(event) {
@@ -230,6 +254,12 @@ export default {
                 }
             }
         },
+        calculateFactor(inputPositionBefore,inputPositionAfter,outputPositionBefore,outputPositionAfter) {
+            // input * factor = output => factor = output/input
+
+            this.rulePlaceholderModel.factor.x = (outputPositionAfter.x - outputPositionBefore.x) / (inputPositionAfter.x - inputPositionBefore.x)
+            this.rulePlaceholderModel.factor.y = (outputPositionAfter.y - outputPositionBefore.y) / (inputPositionAfter.y - inputPositionBefore.y)
+        }
     },
     computed: {
         activeColor: function() {

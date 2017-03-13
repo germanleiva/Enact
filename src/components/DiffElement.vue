@@ -6,10 +6,11 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
+import {globalStore} from '../store.js'
 
 export default {
     name: 'diff-element',
-    props: ['diffData'],
+    props: ['diffData','visualStateModel'],
     template: ``,
     data: function() {
         return {}
@@ -44,7 +45,13 @@ export default {
         drag(e) {
             let dataType = "text/" + this.diffData.type
 
-            e.dataTransfer.setData(dataType, JSON.stringify(this.diffData));
+            let cachedData = this.diffData
+            let diffDataObject = {visualStateIndex: globalStore.visualStates.indexOf(this.visualStateModel)}
+            for (let eachKey in cachedData) {
+                diffDataObject[eachKey] = cachedData[eachKey]
+            }
+
+            e.dataTransfer.setData(dataType, JSON.stringify(diffDataObject));
         },
         mouseOver(e) {
             this.$parent.didMouseOver(this)

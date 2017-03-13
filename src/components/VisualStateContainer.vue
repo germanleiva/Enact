@@ -5,19 +5,19 @@
             <div v-if="nextState != undefined" class='diffBox'>
                 <div class="inputDiffBox">
                     <div class='box' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{'F'+touchIndex}} <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        <div v-if="diffArray.length > 0"> {{'F'+touchIndex}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
                 <div class="outputDiffBox">
                     <div class='box' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{shapeKey}} <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        <div v-if="diffArray.length > 0"> {{shapeKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
                 <div class="measuresDiffBox">
                     <div class='box' v-for="(diffArray,measureKey) in measuresDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{measureKey}} <diff-element v-for="diff in diffArray" :diff-data="diff"></diff-element>
+                        <div v-if="diffArray.length > 0"> {{measureKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
@@ -150,7 +150,7 @@ export default {
             return result
         },
         outputDifferencesWithNextState() {
-            console.log("VisualState >> outputDifferencesWithNextState")
+            // console.log("VisualState >> outputDifferencesWithNextState")
 
             let result = {}
 

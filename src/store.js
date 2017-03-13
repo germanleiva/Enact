@@ -14,6 +14,7 @@ import { extendArray } from './collections.js'
 extendArray(Array);
 import Vue from 'vue';
 import io from 'socket.io-client';
+import _ from 'lodash';
 
 let isLoggerActive = false;
 let logger = function(text) {
@@ -288,6 +289,7 @@ class VisualStateModel {
         this.maxWidth = globalStore.mobileWidth
         this.maxHeight = globalStore.mobileHeight
         this.showAllInputEvents = false
+        this.timeoutForStopMovingSelectedShapes = undefined
     }
     changeProperty(shapeModel,propertyName,previousValue,newValue) {
         if (shapeModel.isFollowingMaster('translation') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
@@ -501,8 +503,17 @@ class VisualStateModel {
     }
     moveSelectedShapes(deltaX,deltaY) {
         for (let eachSelectedShape of this.selectedShapes()) {
+            eachSelectedShape.isMoving = true
             this.changeProperty(eachSelectedShape,'translation',eachSelectedShape.position,{x:eachSelectedShape.left+deltaX,y:eachSelectedShape.top+deltaY})
         }
+
+        if (this.timeoutForStopMovingSelectedShapes) {
+            clearTimeout(this.timeoutForStopMovingSelectedShapes)
+        }
+        this.timeoutForStopMovingSelectedShapes = setTimeout(this.stopMovingSelectedShapes.bind(this),300)
+    }
+    stopMovingSelectedShapes() {
+        this.selectedShapes().forEach(x => x.isMoving = false)
     }
     deleteSelectedShapes() {
         for (let shapeToDelete of this.selectedShapes()) {
@@ -554,6 +565,8 @@ class ShapeModel {
         this.masterVersion = aMasterVersion;
         this.highlight = false
         this.isSelected = false
+        this.isResizing = false
+        this.isMoving = false
 
         this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
@@ -761,6 +774,7 @@ class RulePlaceholderModel {
     constructor(id) {
         this.id = id;
         this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        this.factor = {x:1,y:1}
         this.output = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
     }
 }
@@ -805,7 +819,7 @@ class RuleModel {
         } else {
             this.output = new ShapeOutputRule(undefined,undefined,[])
         }
-
+        this.factor = {x:1,y:1}
         this.enforce = true;
         this.currentOutput = undefined;
     }
@@ -894,7 +908,7 @@ class RuleModel {
                     console.log("RuleModel >> actuallyApply: Unrecognized axis " + eachOutputAxis)
                 }
             }
-            let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis]
+            let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis] * this.factor[correspondingInputAxis]
             if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, eachOutputAxis, globalShapeDictionary)) {
                 this.currentOutput[outputProperty] = newValue
                 if (complementaryProperty) {
