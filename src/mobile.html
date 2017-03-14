@@ -19,6 +19,9 @@
 </head>
 
 <body>
-    <div id="mobileCanvas" :style="styleObject"></div>
+    <div id="mobileCanvas" :style="styleObject">
+      <div id="shapeContainer" :style="styleObject"></div>
+      <div v-show="isRecording" :style="styleObject" style="position:absolute;left:0px;top:0px;background-color:rgba(255,0,0,0.3)"></div>
+    </div>
 </body>
 </html>

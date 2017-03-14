@@ -76,7 +76,6 @@ let mobileCanvasVM = new Vue({
     computed: {
         styleObject() {
             return {
-                'backgroundColor': (this.isRecording ? 'red' : 'white'),
                 width: globalStore.mobileWidth +'px',
                 height: globalStore.mobileHeight + 'px'
             }
@@ -93,7 +92,7 @@ let mobileCanvasVM = new Vue({
 })
 
 let ShapeVM = Vue.extend({
-    template: `<div :id="id" v-show="!isCanvasRecording" v-bind:style="styleObject"></div>`,
+    template: `<div :id="id" v-bind:style="styleObject"></div>`,
     props: ['shapeModel'],
     data: function() {
         return {
@@ -122,9 +121,6 @@ let ShapeVM = Vue.extend({
             set: function(newCenterY) {
                 this.top = newCenterY - this.height / 2
             }
-        },
-        isCanvasRecording: function() {
-            return mobileCanvasVM.isRecording
         },
         styleObject: {
             cache: false,
@@ -165,7 +161,7 @@ let ShapeVM = Vue.extend({
 
 function deleteShapeVM(id) {
     let shapeVMToDelete = mobileCanvasVM.interactiveShapes[id]
-    document.getElementById('mobileCanvas').removeChild(shapeVMToDelete.$el)
+    document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
     shapeVMToDelete.$destroy()
     delete mobileCanvasVM.interactiveShapes[id]
 }
@@ -182,7 +178,7 @@ function createShapeVM(id, message) {
     var newShapeVM = new ShapeVM({propsData: {shapeModel: newShapeModel }});
 
     newShapeVM.$mount();
-    document.getElementById("mobileCanvas").appendChild(newShapeVM.$el);
+    document.getElementById("shapeContainer").appendChild(newShapeVM.$el);
 
     mobileCanvasVM.interactiveShapes[id] = newShapeVM
     return newShapeVM
@@ -199,6 +195,8 @@ socket.on('message-from-server', function(data) {
             for (let shapeId of allKeys) {
                 deleteShapeVM(shapeId)
             }
+
+            mobileCanvasVM.rules = {}
             break;
         }
         case "START_RECORDING":{
@@ -349,15 +347,14 @@ socket.on('message-from-server', function(data) {
                     let currentEventIndex = i
 
                     dispathWaiting(cachedEventObject, waitingTime, function() {
-                        debugger;
-                        if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
+                        // if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
                             let shapeStates = {}
                             for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
                                 let eachShapeVM = mobileCanvasVM.interactiveShapes[eachShapeKey]
                                 shapeStates[eachShapeKey] = {id: eachShapeKey, left: eachShapeVM.shapeModel.left, top: eachShapeVM.shapeModel.top, width: eachShapeVM.shapeModel.width, height: eachShapeVM.shapeModel.height, color: eachShapeVM.shapeModel.color }
                             }
                             savedShapesStatesPerEvent[currentEventIndex] = shapeStates
-                        }
+                        // }
                         if (currentEventIndex == eventsCache.length - 1) {
                             // send result to the desktop because this is the last event
                             console.log("Sending result to the desktop")
@@ -509,7 +506,7 @@ socket.on('message-from-server', function(data) {
                 return style.sheet;
             })();
 
-            var shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByTagName("div"));
+            var shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByClassName("shape"));
 
             for (var shapeModelId in newAnimation) {
                 var eachShapeElement = document.getElementById(shapeModelId)

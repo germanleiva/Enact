@@ -88,7 +88,6 @@ export default {
             for (let eventIndexString in savedShapeStatesPerEvent) {
                 let eventIndex = parseInt(eventIndexString)
                 let correspondingInputEvent = globalStore.inputEvents[eventIndex]
-                let correspondingVS = globalStore.visualStates.find(vs => vs.currentInputEvent == correspondingInputEvent)
 
                 let createdShapeModels = []
                 for (let eachShapeObjectId in savedShapeStatesPerEvent[eventIndex]) {
@@ -96,7 +95,7 @@ export default {
                     createdShapeModels.push(new ShapeModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
                 }
 
-                correspondingVS.loadTestShapes(createdShapeModels)
+                correspondingInputEvent.testShapes = createdShapeModels
             }
         }.bind(this));
     }

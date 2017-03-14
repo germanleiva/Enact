@@ -128,18 +128,20 @@ export default {
     watch: {
         styleObject: function(newVal,oldVal) {
             if (this.shapeModel) {
-                // console.log("IN COMPUTED styleObject the shapeModel.color is "+ this.shapeModel.color)
-                let changes = {}
-                for (let eachKey in newVal) {
-                    if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
-                        if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
-                            changes['color'] = newVal[eachKey]
-                        } else {
-                            changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
+
+
+                if (globalStore.visualStates[0] === this.visualState) {
+
+                    let changes = {}
+                    for (let eachKey in newVal) {
+                        if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
+                            if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
+                                changes['color'] = newVal[eachKey]
+                            } else {
+                                changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
+                            }
                         }
                     }
-                }
-                if (globalStore.visualStates[0] === this.visualState) {
                     // console.log("message-from-desktop EDIT_SHAPE")
                     globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
                }

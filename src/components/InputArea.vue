@@ -48,6 +48,7 @@ export default {
         }
 
         let anInputEvent = data.message
+        anInputEvent['testShapes'] = []
         switch (anInputEvent.type) {
             case 'touchstart': {
                 if (amountOfTouchesLeft == 0) {
@@ -161,8 +162,39 @@ export default {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
         },
         startTesting() {
-            let relevantEventsIndex = globalStore.visualStates.map(vs => globalStore.inputEvents.indexOf(vs.currentInputEvent))
-            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents, eventIndexes: relevantEventsIndex })
+
+            let relevantEventsIndex = undefined
+            // let relevantEventsIndex = globalStore.visualStates.map(function(vs) {
+            //     let anInputEvent = globalStore.inputEvents.indexOf(vs.currentInputEvent)
+            //     let sendInputEvent = {}
+            //     for (let eachInputEventKey in anInputEvent) {
+            //         if (eachInputEventKey != 'testShapes') {
+            //             sendInputEvent[eachInputEventKey] = anInputEvent[eachInputEventKey]
+            //         }
+            //     }
+            //     return sendInputEvent
+            // })
+
+            //First we send the shapes as they look on the first visualState
+
+            let firstStateShapes = globalStore.visualStates[0].shapesDictionary
+            for (let eachShapeId in firstStateShapes) {
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].propertyObject })
+            }
+
+            //Removing testShapes from the inputEvent
+            let leanInputEvents = []
+            for (let eachInputEvent of globalStore.inputEvents) {
+                let eachInputEventCopy = {}
+                for (let inputEventKey in eachInputEvent) {
+                    if (inputEventKey != 'testShapes') {
+                        eachInputEventCopy[inputEventKey] = eachInputEvent[inputEventKey]
+                    }
+                }
+                leanInputEvents.push(eachInputEventCopy)
+            }
+
+            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: leanInputEvents, eventIndexes: relevantEventsIndex })
         }
     }
 }
