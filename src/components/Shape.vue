@@ -1,5 +1,5 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover="isHovered = true" v-on:mouseout="isHovered = false">
+    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover="isHovered = true" v-on:mouseout="isHovered = false" v-show="!isTestShape || !testResult">
         <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
@@ -78,6 +78,7 @@ export default {
                     'border': this.isTestShape? '2px dashed #ffa500':'1px solid gray',
                     'overflow': 'visible',
                     'opacity': '1',
+                    'pointer-events': this.isTestShape?'none':'auto'
                     // 'box-sizing': 'border-box' //To ignore the border size?
                 }
         },
@@ -115,6 +116,10 @@ export default {
                 'height': this.shapeModel.height + 'px',
                 'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the shape overlay
             }
+        },
+        testResult() {
+            let myShape = this.parentVisualState.shapesDictionary[this.shapeModel.id]
+            return myShape != undefined && myShape.testAgainst(this.shapeModel)
         }
     },
     destroyed: function() {

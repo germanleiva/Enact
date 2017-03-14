@@ -328,7 +328,7 @@ socket.on('message-from-server', function(data) {
                     return;
                 }
 
-                var isLast = false;
+                // var isLast = false;
 
                 var initialTimeStamp = eventsCache[0].timeStamp;
 
@@ -337,9 +337,9 @@ socket.on('message-from-server', function(data) {
                 for (var i = 0; i < eventsCache.length; i++) {
                     var cachedEventObject = eventsCache[i];
 
-                    if (i === eventsCache.length - 1) {
-                        isLast = true
-                    }
+                    // if (i === eventsCache.length - 1) {
+                    //     isLast = true
+                    // }
 
                     var waitingTime = cachedEventObject.timeStamp - initialTimeStamp;
 
@@ -358,8 +358,8 @@ socket.on('message-from-server', function(data) {
                             }
                             savedShapesStatesPerEvent[currentEventIndex] = shapeStates
                         }
-                        if (isLast) {
-                            // send result to the desktop
+                        if (currentEventIndex == eventsCache.length - 1) {
+                            // send result to the desktop because this is the last event
                             console.log("Sending result to the desktop")
                             socket.emit('message-from-device', { type:"TEST_RESULT", message: savedShapesStatesPerEvent });
                         }

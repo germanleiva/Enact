@@ -1,5 +1,5 @@
 <template>
-    <div class="button mark" :class="{'is-dark' : visualState.hasTestShapes, 'is-warning' : !testPassed , 'is-primary' : testPassed}" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark">{{visualStateName}}</div>
+    <div class="button mark" :class="classObject" :style="styleObject" v-on:mousedown="draggingStartedVisualStateMark">{{visualStateName}}</div>
 </template>
 
 <script>
@@ -17,18 +17,22 @@ export default {
         }
     },
     computed: {
+        classObject() {
+            let testExist = this.visualState.testShapes.length > 0
+            return {
+                'is-dark' : !testExist,
+                'is-warning' : testExist && !this.visualState.testPassed ,
+                'is-primary' : testExist && this.visualState.testPassed
+            }
+        },
         styleObject() {
             return {
                 position: 'absolute',
                 left: this.visualState.percentageInTimeline + '%',
-                backgroundColor: this.testPassed?'black':'#ffa500'
             }
         },
         visualStateName() {
             return globalStore.visualStates.indexOf(this.visualState) + 1
-        },
-        testPassed() {
-            return this.visualState.test()
         }
     },
     methods: {
@@ -92,7 +96,7 @@ export default {
                     createdShapeModels.push(new ShapeModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
                 }
 
-                correspondingVS.testedShapes = createdShapeModels
+                correspondingVS.loadTestShapes(createdShapeModels)
             }
         }.bind(this));
     }

@@ -282,7 +282,7 @@ class MeasureModel {
 class VisualStateModel {
     constructor() {
         this.shapesDictionary = {}
-        this.testedShapes = {}
+        this.testShapes = []
         this.measures = []
         this.currentInputEvent = undefined
         this.nextState = undefined
@@ -292,19 +292,17 @@ class VisualStateModel {
         this.showAllInputEvents = false
         this.timeoutForStopMovingSelectedShapes = undefined
     }
-    get hasTestShapes() {
-        return Object.keys(this.testedShapes).length > 0
+    loadTestShapes(shapesToTest) {
+            this.testShapes = shapesToTest
     }
-    test() {
-        if (this.hasTestShapes) {
-            for (let testShape of this.testedShapes) {
-                let myShape = this.shapesDictionary[testShape.id]
+    get testPassed() {
+        for (let testShape of this.testShapes) {
+            let myShape = this.shapesDictionary[testShape.id]
 
-                let result = myShape != undefined && myShape.left == testShape.left && myShape.top == testShape.top && myShape.width == testShape.width && myShape.height == testShape.height && myShape.color == testShape.color
-                if (!result) {
-                debugger;
-                }
-                return result
+            if (myShape != undefined && myShape.testAgainst(testShape)) {
+
+            } else {
+                return false
             }
         }
         return true
@@ -588,7 +586,9 @@ class ShapeModel {
 
         this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
-
+    testAgainst(testShape) {
+        return this.left == Math.round(testShape.left) && this.top == Math.round(testShape.top) && this.width == Math.round(testShape.width) && this.height == Math.round(testShape.height) && this.color == testShape.color
+    }
     prepareForDeletion() {
         for (let point of this.relevantPoints) {
             point.shape = undefined
