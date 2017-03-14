@@ -129,8 +129,14 @@ export const globalStore = new Vue({
             this.visualStates.insert(previousVisualStateIndex+1,newVisualState)
 
             //TODO DRY
-            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
+            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
             newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+        },
+        removeInputEvents() {
+            for (let eachVS of globalStore.visualStates) {
+                eachVS.currentInputEvent = undefined
+            }
+            this.inputEvents.removeAll()
         }
     }
     // watch: {

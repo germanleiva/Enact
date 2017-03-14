@@ -92,7 +92,7 @@ let mobileCanvasVM = new Vue({
 })
 
 let ShapeVM = Vue.extend({
-    template: `<div :id="id" v-bind:style="styleObject"></div>`,
+    template: `<div :id="id" class="shape" v-bind:style="styleObject"></div>`,
     props: ['shapeModel'],
     data: function() {
         return {

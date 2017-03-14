@@ -127,7 +127,7 @@ export default {
     },
     watch: {
         styleObject: function(newVal,oldVal) {
-            if (this.shapeModel) {
+            if (!this.isTestShape && this.shapeModel) {
 
 
                 if (globalStore.visualStates[0] === this.visualState) {

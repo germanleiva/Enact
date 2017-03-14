@@ -49,35 +49,38 @@ export default {
 
         let anInputEvent = data.message
         anInputEvent['testShapes'] = []
+
         switch (anInputEvent.type) {
             case 'touchstart': {
                 if (amountOfTouchesLeft == 0) {
-                    globalStore.inputEvents.removeAll();
+                    globalStore.removeInputEvents();
                     amountOfTouchesLeft = anInputEvent.touches.length //touches.length it's the current amount of tracked touches
                 }
                 if (anInputEvent.touches.length > amountOfTouchesLeft) {
                     amountOfTouchesLeft = anInputEvent.touches.length
                 }
+                globalStore.inputEvents.push(anInputEvent);
 
                 break;
             }
             case 'touchmove': {
+                globalStore.inputEvents.push(anInputEvent);
+
                 drawTouches()
                 break;
             }
             case 'touchend': {
+                globalStore.inputEvents.push(anInputEvent);
+
                 //touches.length it's the current amount of tracked touches, not the ones ended
                 amountOfTouchesLeft = amountOfTouchesLeft - 1
 
                 if (amountOfTouchesLeft == 0) {
                     globalStore.isRecording = false
                     globalStore.socket.emit('message-from-desktop', { type: "STOP_RECORDING", message: undefined })
-                    for (var i = 0; i < globalStore.visualStates.length; i++) {
-                        let eachVS = globalStore.visualStates[i];
-                        if (!eachVS.currentInputEvent) {
-                            let correspondingIndex = Math.floor(eachVS.percentageInTimeline / 100 * (globalStore.inputEvents.length /*-1*/))
-                            eachVS.currentInputEvent = globalStore.inputEvents[correspondingIndex]
-                        }
+                    for (let eachVS of  globalStore.visualStates) {
+                        let correspondingIndex = Math.floor(eachVS.percentageInTimeline / 100 * (globalStore.inputEvents.length - 1))
+                        eachVS.currentInputEvent = globalStore.inputEvents[correspondingIndex]
                     }
                 }
                 break;
@@ -87,7 +90,6 @@ export default {
             }
         }
 
-        globalStore.inputEvents.push(anInputEvent);
     }.bind(this));
   },
     computed: {
