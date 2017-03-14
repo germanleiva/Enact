@@ -49,6 +49,11 @@ export const globalStore = new Vue({
         mobileWidth: 410, //iPhone 375 Nexus 5X 410
         mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
+    watch: {
+        isRecording: function(newValue) {
+            globalBus.$emit('didRecordingChanged',newValue)
+        }
+    },
     computed: {
         socket() {
             //TODO check if putting this as a computed property is legit

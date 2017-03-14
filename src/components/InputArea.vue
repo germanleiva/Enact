@@ -32,20 +32,20 @@ export default {
 
     globalBus.$on('message-from-device-INPUT_EVENT', function(data) {
         // console.log(data)
-        function drawTouches() {
-            let points = globalStore.inputEvents;
-            globalStore.context.clearRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
-            globalStore.context.lineWidth = 3;
-            for (let i = 1; i < points.length; i++) {
-                for (let j = 0; j < Math.max(Math.min(points[i - 1].touches.length, points[i].touches.length), 1); j++) {
-                    globalStore.context.beginPath();
-                    globalStore.context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
-                    globalStore.context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
-                    globalStore.context.strokeStyle = "black";
-                    globalStore.context.stroke();
-                }
-            }
-        }
+        // function drawTouches() {
+        //     let points = globalStore.inputEvents;
+        //     globalStore.context.clearRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
+        //     globalStore.context.lineWidth = 3;
+        //     for (let i = 1; i < points.length; i++) {
+        //         for (let j = 0; j < Math.max(Math.min(points[i - 1].touches.length, points[i].touches.length), 1); j++) {
+        //             globalStore.context.beginPath();
+        //             globalStore.context.moveTo(points[i - 1].touches[j].x, points[i - 1].touches[j].y);
+        //             globalStore.context.lineTo(points[i].touches[j].x, points[i].touches[j].y);
+        //             globalStore.context.strokeStyle = "black";
+        //             globalStore.context.stroke();
+        //         }
+        //     }
+        // }
 
         let anInputEvent = data.message
         anInputEvent['testShapes'] = []
@@ -66,7 +66,7 @@ export default {
             case 'touchmove': {
                 globalStore.inputEvents.push(anInputEvent);
 
-                drawTouches()
+                // drawTouches()
                 break;
             }
             case 'touchend': {

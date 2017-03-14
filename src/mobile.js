@@ -565,7 +565,7 @@ socket.on('message-from-server', function(data) {
 });
 
 
-function sendEvent(anEvent) {
+function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
     let touches = []
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
@@ -578,7 +578,7 @@ function sendEvent(anEvent) {
         }
     }
 
-    socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
+    socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
 
 }
 
@@ -612,6 +612,7 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
                 mobileCanvasVM.activeRules.push(aRule)
             }
         }
+        sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
 
@@ -624,8 +625,9 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
 
         for (let anActiveRule of mobileCanvasVM.activeRules) {
             anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
-            socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id });
+            socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id});
         }
+        sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
 
@@ -640,6 +642,7 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
             socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
         }
         mobileCanvasVM.activeRules = []
+        sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
 

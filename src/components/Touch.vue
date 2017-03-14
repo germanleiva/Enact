@@ -1,7 +1,7 @@
 <template>
     <div :style="styleObject">
-        <linea :start-point="startPoint" :end-point="endPoint" :line-color="isActive?'blue':'black'" :style="{'z-index': 300}"></linea>
-    </div>
+<!--         <linea :start-point="startPoint" :end-point="endPoint" :line-color="isActive?'blue':'black'" :style="{'z-index': 300}"></linea>
+ -->    </div>
 </template>
 <script>
 

@@ -6,7 +6,7 @@
     <div id="lowerArea" style="display:flex">
         <visual-state-canvas :visual-state-model="deviceVisualState" style="position:relative" draggable="true" :is-mirror="true">
         </visual-state-canvas>
-            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
+            <!-- <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas> -->
 
 <!--         <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
             <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
@@ -66,6 +66,13 @@ export default {
             aShape.opacity = parseInt(aStyleObject.opacity);
         }
     }
+    globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
+        this.deviceVisualState.currentInputEvent = data.message
+    }.bind(this));
+
+    globalBus.$on('didRecordingChanged',function(isRecording) {
+        this.deviceVisualState.showAllInputEvents = isRecording
+    }.bind(this));
 
     globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
 
@@ -95,7 +102,7 @@ export default {
         }
     }.bind(this))
 
-    this.prepareCanvas()
+    // this.prepareCanvas()
     var that = this;
     window.addEventListener('keydown', function(e) {
         // e.preventDefault()
@@ -168,24 +175,27 @@ export default {
     })
 
   },
+  computed: {
+
+  },
   methods: {
     mirrorDragged(event) {
         event.dataTransfer.setData("text/visual-state", "");
         console.log("Started dragging mirror mobile");
     },
-    prepareCanvas() {
-        globalStore.context = document.getElementById('myCanvas').getContext("2d");
+    // prepareCanvas() {
+    //     globalStore.context = document.getElementById('myCanvas').getContext("2d");
 
-        globalStore.context.fillStyle = "#9ea7b8";
-        globalStore.context.fillRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
-        // globalStore.context.strokeStyle = "#df4b26";
-        // globalStore.context.lineJoin = "round";
-        // globalStore.context.lineWidth = 5;
+    //     globalStore.context.fillStyle = "#9ea7b8";
+    //     globalStore.context.fillRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
+    //     // globalStore.context.strokeStyle = "#df4b26";
+    //     // globalStore.context.lineJoin = "round";
+    //     // globalStore.context.lineWidth = 5;
 
-        // globalStore.context.moveTo(0, 0);
-        // globalStore.context.lineTo(200, 100);
-        // globalStore.context.stroke();
-    },
+    //     // globalStore.context.moveTo(0, 0);
+    //     // globalStore.context.lineTo(200, 100);
+    //     // globalStore.context.stroke();
+    // },
     downArrowPressed(e){
         console.log("ARE YOU HERE???")
         this.$refs.outputArea.moveSelectedShapes(0,-arrowDisplacement)
