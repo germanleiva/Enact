@@ -72,7 +72,7 @@ export default {
         },
         strokeWidth() {
             if (this.measureModel.highlight) {
-                return 5
+                return 10
             }
             return 2
         }

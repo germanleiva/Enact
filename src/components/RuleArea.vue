@@ -1,6 +1,7 @@
 <template>
     <div id="ruleArea" class="ruleArea">
         <rule-placeholder ref="rulesVM" v-for="aRulePlaceholder in rulesPlaceholders" :rule-placeholder-model="aRulePlaceholder"></rule-placeholder>
+        <a class="button is-alone newRule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span><span>add new rule</span></a>
     </div>
 </template>
 
@@ -21,7 +22,14 @@ export default {
         RulePlaceholder
     },
     methods: {
+        addNewRule() {
+            globalStore.ruleCounter++;
+            var newRulePlaceholder = new RulePlaceholderModel(globalStore.ruleCounter)
 
+            globalStore.rulesPlaceholders.push(newRulePlaceholder);
+
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder })
+        }
     },
     computed: {
         rulesPlaceholders: function() {
@@ -53,6 +61,10 @@ export default {
 <style>
 .ruleArea {
     width: 100%;
-    background-color: orange;
+    background-color: #eeeeee;
+}
+.newRule{
+    display: flex !important;
+    margin-top: 5px;
 }
 </style>

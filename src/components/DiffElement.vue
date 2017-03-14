@@ -1,5 +1,5 @@
 <template>
-    <a draggable="true" v-on:dragstart="drag" class='button' :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"></i></a>
+    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"></i></a>
 </template>
 
 <script>
@@ -36,9 +36,9 @@ export default {
             }
         },
         styleObject() {
-            return {
+            /*return {
                 backgroundColor: this.diffData.type == 'input' ? 'PeachPuff' : ''
-            }
+            }*/
         }
     },
     methods: {
@@ -64,4 +64,9 @@ export default {
 </script>
 
 <style>
+
+.diff{
+    width: 30px;
+    height: 20px;
+}
 </style>

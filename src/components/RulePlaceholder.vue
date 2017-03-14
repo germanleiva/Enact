@@ -1,17 +1,17 @@
 <template>
-    <div class='rule-placeholder'>
-        <input class="condition" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
+    <div class='box rule-placeholder'>
+        <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
-            <input v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Input Type">
-            <input v-model="rulePlaceholderModel.input.id" style="width: 25%" placeholder="Input Id">
-            <input v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Input Property">
+            <input class="input" v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Type">
+            <input class="input" v-model="rulePlaceholderModel.input.id" placeholder="Id">
+            <input class="input" v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Property">
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
-            <select v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis" multiple>
+            <select v-model="rulePlaceholderModel.input.axiss" style="width: 25%; height:35px" placeholder="Axis" multiple>
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="inputCondition" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
-            <input class="inputCondition" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
+            <input class="inputCondition input" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
+            <input class="inputCondition input" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
         <div>{{rulePlaceholderModel.factor}}</div>
         <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')" :style="{ backgroundColor: activeColor }">
@@ -256,7 +256,6 @@ export default {
         },
         calculateFactor(inputPositionBefore,inputPositionAfter,outputPositionBefore,outputPositionAfter) {
             // input * factor = output => factor = output/input
-
             this.rulePlaceholderModel.factor.x = (outputPositionAfter.x - outputPositionBefore.x) / (inputPositionAfter.x - inputPositionBefore.x); //because Nacho asked
             this.rulePlaceholderModel.factor.y = (outputPositionAfter.y - outputPositionBefore.y) / (inputPositionAfter.y - inputPositionBefore.y);
         }
@@ -270,7 +269,11 @@ export default {
 </script>
 <style scoped>
 input {
-    font-size:24px;
+    font-size:1.1em;
+    font-family: futura;
+    width: 25%;
+    padding: 2px;
+    border-radius: 0px !important;
 }
 
 .rule-placeholder {
@@ -278,19 +281,18 @@ input {
     margin: 10px;
     overflow: hidden; /* Or flex might break */
     flex-wrap: wrap;
-    font-size: 2em;
+    font-size: 1em;
+    padding: 5px !important;
 }
 .leftSide {
     width: 50%;
     /*height: 50px;*/
-    background-color: white;
     display:flex;
     flex-wrap: wrap;
 }
 .rightSide {
     width: 50%;
     /*height: 50px;*/
-    background-color: white;
     display: flex;
     flex-wrap: wrap;
 }
@@ -305,8 +307,5 @@ input {
 .inputCondition {
     width: 50%;
     /*height: 50px;*/
-}
-.leftSide input, .leftSide select, .rightSide select, .rightSide input {
-    background-color: rgba(255,255,255,0);
 }
 </style>

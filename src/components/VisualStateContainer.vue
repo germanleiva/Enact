@@ -4,19 +4,19 @@
         <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
             <div v-if="nextState != undefined" class='diffBox'>
                 <div class="inputDiffBox">
-                    <div class='box' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
+                    <div class='box inputDiffElement' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{'F'+touchIndex}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
                 <div class="outputDiffBox">
-                    <div class='box' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
+                    <div class='box outputDiffElement' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{shapeKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
                 <div class="measuresDiffBox">
-                    <div class='box' v-for="(diffArray,measureKey) in measuresDifferencesWithNextState">
+                    <div class='box measureDiffElement' v-for="(diffArray,measureKey) in measuresDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{measureKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
@@ -222,13 +222,55 @@ export default {
 </script>
 <style>
 .inputDiffBox {
-    width: 110px;
-    height: 200px;
+    display: flex;
+    flex-direction: row;
+    align-content: center;
+    flex-wrap: wrap;
+    line-height: 20px;
+    min-height: 100px;
+    width: 128px;
 }
 .outputDiffBox {
-
+    margin-top: 3px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    line-height: 20px;
 }
 .measuresDiffBox {
-
+    margin-top: 3px;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-content: center;
+    line-height: 20px;
+}
+.inputDiffElement {
+    width: 40px;
+    text-align: center;
+    margin-right: 2px;
+    margin-bottom: 2px !important;
+    padding: 4px !important;
+    background-color: #F5F5F5 !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: 0 4px 3px rgba(100, 200, 100, 0.1), 0 0 0 1px rgba(100, 100, 100, 0.4) !important;
+}
+.outputDiffElement {
+    width: 40px;
+    text-align: center;
+    margin-right: 2px;
+    margin-bottom: 2px !important;
+    padding: 4px !important;
+}
+.measureDiffElement {
+    width: 40px;
+    text-align: center;
+    margin-right: 2px;
+    margin-bottom: 2px !important;
+    padding: 4px !important;
+    background-color: #E1E1E1 !important;
+    border: 1px solid #ffffff !important;
+    box-shadow: 0 4px 3px rgba(100, 200, 100, 0.1), 0 0 0 1px rgba(100, 100, 100, 0.4) !important;
 }
 </style>

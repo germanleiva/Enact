@@ -1,6 +1,6 @@
 <template>
     <div id='inputArea'>
-       <a class="button is-primary is-medium" v-on:click="startTesting"><span class="icon is-small"><i class="fa fa-wrench"></i></span></a><span>&nbsp;</span>
+       <a class="button is-warning is-medium" v-on:click="startTesting"><span class="icon is-small"><i class="fa fa-wrench"></i></span></a><span>&nbsp;</span>
        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :visual-state="vs"></visual-state-mark>
