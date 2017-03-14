@@ -1,7 +1,7 @@
 <template>
     <div id="ruleArea" class="ruleArea">
         <rule-placeholder ref="rulesVM" v-for="aRulePlaceholder in rulesPlaceholders" :rule-placeholder-model="aRulePlaceholder"></rule-placeholder>
-        <a class="button is-alone newRule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i>Add new rule</span></a>
+        <a class="button is-alone newRule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span><span>add new rule</span></a>
     </div>
 </template>
 
@@ -65,5 +65,6 @@ export default {
 }
 .newRule{
     display: flex !important;
+    margin-top: 5px;
 }
 </style>
