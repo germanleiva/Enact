@@ -574,7 +574,7 @@ function sendEvent(anEvent) {
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
     for (let i=0; i < anEvent.touches.length;i++) {
         let eachTouch = anEvent.touches[i];
-        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: eachTouch.radiusX, radiusY: eachTouch.radiusY, rotationAngle: eachTouch.rotationAngle, force: eachTouch.force }
+        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: eachTouch.radiusX<=0?20:eachTouch.radiusX, radiusY: eachTouch.radiusY<=0?20:eachTouch.radiusY, rotationAngle: eachTouch.rotationAngle, force: eachTouch.force }
         touches.push(myTouchObject)
         if (touches.indexOf(myTouchObject) != i) {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
