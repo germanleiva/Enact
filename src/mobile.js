@@ -567,17 +567,38 @@ socket.on('message-from-server', function(data) {
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
+
     let touches = []
     //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
     for (let i=0; i < anEvent.touches.length;i++) {
         let eachTouch = anEvent.touches[i];
-        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: eachTouch.radiusX<=1?20:eachTouch.radiusX, radiusY: eachTouch.radiusY<=1?20:eachTouch.radiusY, rotationAngle: eachTouch.rotationAngle, force: eachTouch.force }
+
+        let radiusX = 20
+        if (eachTouch.hasOwnProperty('radiusX')) {
+            if (eachTouch.radiusX > 1) {
+                radiusX = eachTouch.radiusX
+            }
+        }
+
+        let radiusY = 20
+        if (eachTouch.hasOwnProperty('radiusY')) {
+            if (eachTouch.radiusY > 1) {
+                radiusY = eachTouch.radiusY
+            }
+        }
+
+        let rotationAngle = 0
+        if (eachTouch.hasOwnProperty('rotationAngle')) {
+            rotationAngle = eachTouch.rotationAngle
+        }
+
+        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: radiusX, radiusY: radiusY, rotationAngle: rotationAngle, force: eachTouch.force }
         touches.push(myTouchObject)
         if (touches.indexOf(myTouchObject) != i) {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
         }
     }
-
+    console.log("Sending event: " + JSON.stringify({ type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }))
     socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
 
 }
