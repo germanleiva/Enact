@@ -8,7 +8,7 @@
 <script>
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus} from '../store.js'
+import {globalStore, globalBus, RulePlaceholderModel} from '../store.js'
 import RulePlaceholder from './RulePlaceholder.vue'
 
 export default {
