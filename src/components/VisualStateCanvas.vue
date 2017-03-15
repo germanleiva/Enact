@@ -120,7 +120,7 @@ export default {
             var mouseUpHandler
             mouseUpHandler = function(e) {
                 let objectForMouseEvent = visualStateVM.handlerFor(e)
-                console.log("mouseUpHandler " + JSON.stringify(objectForMouseEvent))
+                // console.log("mouseUpHandler " + JSON.stringify(objectForMouseEvent))
                 if (objectForMouseEvent) {
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
                         eachPresentAndFutureMeasure.cachedFinalPosition = undefined
@@ -160,7 +160,8 @@ export default {
             let y = mouseEvent.pageY - this.canvasOffsetTop()
             console.log("X: "+x+  " Y: "+y)
 
-            for (let eachShapeVM of this.$refs.shapes) {
+            for (var i = 0; i < this.$refs.shapes.length; i++) {
+                let eachShapeVM = this.$refs.shapes[i];
                 let result = eachShapeVM.handlerFor(x,y)
 
                 if (result) {
@@ -168,7 +169,8 @@ export default {
                 }
             }
 
-            for (let eachMeasureVM of this.$refs.measures) {
+            for (var i = 0; i < this.$refs.measures.length; i++) {
+                let eachMeasureVM = this.$refs.measures[i];
                 let result = eachMeasureVM.handlerFor(x,y)
 
                 if (result) {

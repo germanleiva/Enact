@@ -21,7 +21,7 @@
 import {extendArray} from './collections.js'
 extendArray(Array);
 
-import {globalStore, globalBus, VisualStateModel} from './store.js'
+import {globalStore, globalBus, VisualStateModel, InputEvent} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
@@ -67,7 +67,7 @@ export default {
         }
     }
     globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
-        this.deviceVisualState.currentInputEvent = data.message
+        this.deviceVisualState.currentInputEvent = new InputEvent(data.message)
     }.bind(this));
 
     globalBus.$on('didRecordingChanged',function(isRecording) {

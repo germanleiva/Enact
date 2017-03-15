@@ -10,14 +10,14 @@
                     </div>
                 </div>
                 <div class="outputDiffBox">
-                    <div class='box outputDiffElement' v-for="(diffArray,shapeKey) in outputDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{shapeKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+                    <div class='box outputDiffElement' v-for="(diffArray,shapeName) in outputDifferencesWithNextState">
+                        <div v-if="diffArray.length > 0"> {{shapeName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
                 <div class="measuresDiffBox">
-                    <div class='box measureDiffElement' v-for="(diffArray,measureKey) in measuresDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{measureKey}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+                    <div class='box measureDiffElement' v-for="(diffArray,measureName) in measuresDifferencesWithNextState">
+                        <div v-if="diffArray.length > 0"> {{measureName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
@@ -168,18 +168,19 @@ export default {
                     let comparingShape = this.nextState.shapeFor(shapeKey)
                     if (comparingShape) {
                         for (let eachDiff of aShape.diffArray(comparingShape)) {
-                            atIfNone(shapeKey,[]).push(eachDiff);
+                            atIfNone(comparingShape.name,[]).push(eachDiff);
                         }
                     } else {
                         // result.push('Removed Shape ' + aShape.id)
-                        atIfNone(shapeKey,[]).push({id: shapeKey,type: 'output', property: {name: "removed", before: undefined, after: aShape.id } })
+                        atIfNone(aShape.name,[]).push({id: shapeKey, name: aShape.name, type: 'output', property: {name: "removed", before: undefined, after: aShape.id } })
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
+                    let addedShape = this.nextState.shapesDictionary[nextShapeKey]
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
                         // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(nextShapeKey,[]).push({id: nextShapeKey,type: 'output', property: { name: "added", before: undefined, after: nextShapeKey } })
+                        atIfNone(addedShape.name,[]).push({id: nextShapeKey, name: addedShape.name, type: 'output', property: { name: "added", before: undefined, after: nextShapeKey } })
                     }
                 }
             }

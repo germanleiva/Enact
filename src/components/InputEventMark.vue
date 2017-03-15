@@ -1,6 +1,6 @@
 <template>
     <div v-if="inputEvent !== undefined" v-on:mousedown="draggedInputEventMark">
-        <touch v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :isActive="visualState != undefined"><touch>
+        <touch v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :is-active="visualState != undefined"><touch>
     </div>
 </template>
 <script>

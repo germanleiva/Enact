@@ -598,7 +598,7 @@ function sendEvent(anEvent,messageType="INPUT_EVENT") {
             console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
         }
     }
-    console.log("Sending event: " + JSON.stringify({ type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }))
+
     socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
 
 }

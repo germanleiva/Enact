@@ -1,16 +1,10 @@
 <template>
-    <!-- <div v-bind:style="styleObject">
-    </div> -->
-
-    <div :style="styleObject" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut">
-        <svg :style="svgStyleObject">
-            <g fill= "none">
-                <path :stroke="measureColor" :stroke-width="strokeWidth" :d="path"/>
-            </g>
-        </svg>
-        <div ref="relevantPointsElements" v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
-        </div>
-    <div>
+    <svg :style="svgStyle" width="1" height="1">
+        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" ></line>
+        <circle ref="relevantPointsElements" v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="(initialX + finalX)/2" :cy="(initialY + finalY)/2" :r="5" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)"></circle>
+        <!-- Invisible line to account for the mouseover/out event, measureModel.cachedFinalPosition == undefined means that we are moving the line with the mouse -->
+        <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="10" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line>
+    </svg>
 </template>
 <script>
 
@@ -20,7 +14,16 @@ import {globalStore,globalBus,logger} from '../store.js'
 
 export default {
     name: 'distance',
-    props: ['measureModel'],
+    props: {
+        measureModel: {
+            type: Object,
+            required: true
+        },
+        isLink: {
+            type: Boolean,
+            default: false
+        }
+    },
     data: function() {
         return {
             isHovered: false,
@@ -29,53 +32,43 @@ export default {
     },
     computed: {
         shouldShowPoints: function() {
-            return globalStore.toolbarState.measureMode
+            return !this.isLinking && globalStore.toolbarState.measureMode
         },
-        styleObject: function() {
+        svgStyle: function() {
             return {
-                // 'backgroundColor': 'red',
-                'position': 'absolute',
-                'left': this.startingX + 'px',
-                'top': this.startingY + 'px',
-                'width': Math.max(this.measureModel.width,2) + 'px',
-                'height': Math.max(this.measureModel.height,2) + 'px',
-                'pointer-events': this.shouldShowPoints && this.measureModel.to.id?'auto':'none' //This is a hack to let the mouse event PASS-THROUGH the measure
+                'position' : 'absolute',
+                'left': '0px',
+                'top': '0px',
+                'overflow': 'visible'
             }
         },
-        svgStyleObject: function() {
+        lineStyle: function() {
             return {
-                // 'backgroundColor': 'red',
-                'position': 'absolute',
-                'width': Math.max(this.measureModel.width,2) + 'px',
-                'height': Math.max(this.measureModel.height,2) + 'px',
-                'pointer-events': this.shouldShowPoints && this.measureModel.to.id?'auto':'none' //This is a hack to let the mouse event PASS-THROUGH the measure
+                'pointer-events': this.isLinking?'none':'auto'
             }
         },
-        startingX: function() {
-            let initialX = this.measureModel.initialPoint.x
-            if (initialX >= this.measureModel.finalPoint.x) {
-                initialX = this.measureModel.initialPoint.x + this.measureModel.deltaX
-            }
-            return initialX
+        initialX: function() {
+            return this.measureModel.initialPoint.x
         },
-        startingY: function() {
-            let initialY = this.measureModel.initialPoint.y
-            if (initialY >= this.measureModel.finalPoint.y) {
-                initialY = this.measureModel.initialPoint.y + this.measureModel.deltaY
-            }
-            return initialY
+        initialY: function() {
+            return this.measureModel.initialPoint.y
         },
-        path: function() {
-            let pathStartingX = this.measureModel.deltaX < 0 ? this.measureModel.width : 0
-            let pathStartingY = this.measureModel.deltaY < 0 ? this.measureModel.height : 0
-            return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.deltaX+" "+this.measureModel.deltaY
+        finalX: function() {
+            return this.measureModel.finalPoint.x
+        },
+        finalY: function() {
+            return this.measureModel.finalPoint.y
         },
         strokeWidth() {
             if (this.measureModel.highlight) {
-                return 10
+                return 4
             }
             return 2
+        },
+        isLinking() {
+            return this.isLink || this.measureModel.cachedFinalPosition != undefined
         }
+
     },
     destroyed: function() {
         console.log("WE DESTROYED MEASURE")
@@ -96,12 +89,14 @@ export default {
     // },
     methods: {
         onMouseOver(e) {
+            console.log("Distance >> onMouseOver")
             e.preventDefault();
             if (this.measureModel.to.id) {
                 this.isHovered = true
             }
         },
         onMouseOut(e) {
+            console.log("Distance >> onMouseOut")
             e.preventDefault();
             if (this.measureModel.to.id) {
                 this.isHovered = false
@@ -120,10 +115,12 @@ export default {
             }
         },
         handlerFor(x,y) {
-            for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
-                let isInside = x >= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft && x <= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y >= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop && y <= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
-                if (isInside) {
-                    return {type:'distance',id: this.measureModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
+            if (this.$refs.relevantPointsElements) {
+                for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
+                    let isInside = x >= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft && x <= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y >= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop && y <= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
+                    if (isInside) {
+                        return {type:'distance',id: this.measureModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
+                    }
                 }
             }
             return undefined
@@ -134,3 +131,15 @@ export default {
     }
 }
 </script>
+<style scoped>
+line {
+    stroke-linecap: round;
+}
+circle {
+    fill: red;
+    stroke-width: 1px;
+}
+circle:hover {
+    fill:gray;
+}
+</style>

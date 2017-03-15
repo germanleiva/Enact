@@ -12,10 +12,12 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'touch',
-    props: ['inputEvent','touch'],
+    props: ['inputEvent','touch','isActive'],
     template: ``,
     data: function() {
-        return { isActive: false }
+        return {
+
+        }
     },
     components: {
         Linea
@@ -30,8 +32,8 @@ export default {
                 width: (this.touch.radiusX * 2) + 'px',
                 height: (this.touch.radiusY * 2) + 'px',
                 // backgroundColor: this.visualState ? 'red' : 'pink',
-                backgroundColor: 'red',
-                opacity: this.isActive ? 1 : 0.3,
+                backgroundColor: this.isActive ? 'black':'red',
+                opacity: this.isActive ? 0.5 : 0.3,
                 // transform: "rotate(" + aTouch.rotationAngle + "deg)",
 
                 // 'z-index': 200

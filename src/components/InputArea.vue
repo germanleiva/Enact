@@ -13,7 +13,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus} from '../store.js'
+import {globalStore, globalBus, InputEvent} from '../store.js'
 import VisualStateMark from './VisualStateMark.vue'
 
 export default {
@@ -47,8 +47,7 @@ export default {
         //     }
         // }
 
-        let anInputEvent = data.message
-        anInputEvent['testShapes'] = []
+        let anInputEvent = new InputEvent(data.message)
 
         switch (anInputEvent.type) {
             case 'touchstart': {
@@ -184,19 +183,7 @@ export default {
                 globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].propertyObject })
             }
 
-            //Removing testShapes from the inputEvent
-            let leanInputEvents = []
-            for (let eachInputEvent of globalStore.inputEvents) {
-                let eachInputEventCopy = {}
-                for (let inputEventKey in eachInputEvent) {
-                    if (inputEventKey != 'testShapes') {
-                        eachInputEventCopy[inputEventKey] = eachInputEvent[inputEventKey]
-                    }
-                }
-                leanInputEvents.push(eachInputEventCopy)
-            }
-
-            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: leanInputEvents, eventIndexes: relevantEventsIndex })
+            globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents.map(eachInputEvent => eachInputEvent.leanJSON), eventIndexes: relevantEventsIndex })
         }
     }
 }

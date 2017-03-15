@@ -23,7 +23,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, ShapeModel, MeasureModel, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, logger }
+export { VisualStateModel, ShapeModel, MeasureModel, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, logger }
 
 export const globalBus = new Vue();
 
@@ -261,13 +261,13 @@ class MeasureModel {
                 if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
                     //No diff in starting point
                 } else {
-                    changes.push({ id: this.name, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
+                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
                 }
 
                 break;
             case "distance": //I'm interested in scaling
                 if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-                    changes.push({ id: this.name, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
                 }
                 break;
         }
@@ -569,6 +569,36 @@ class RelevantPoint {
     }
 }
 
+class InputEvent {
+    constructor({ type: type, touches: touches, timeStamp: timeStamp }) {
+        this.type = type
+        this.touches = []
+        for (let eachTouchObject of touches) {
+            this.touches.push(new InputEventTouch(eachTouchObject))
+        }
+        this.timeStamp = timeStamp
+        this.testShapes = []
+    }
+    get leanJSON() {
+        //Removing testShapes from the inputEvent
+        return {type: this.type, touches: this.touches.map(x => x.leanJSON), timeStamp: this.timeStamp }
+    }
+}
+
+class InputEventTouch {
+    constructor({x:x,y:y,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
+        this.x = x
+        this.y = y
+        this.radiusX = radiusX
+        this.radiusY = radiusY
+        this.angularRotation = angularRotation
+        this.force = force
+    }
+    get leanJSON() {
+        return {x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
+    }
+}
+
 class ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         this.id = id;
@@ -770,15 +800,15 @@ class ShapeModel {
         let changes = []
         if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor', this.backgroundColor.value, nextShapeWithTheSameModel.backgroundColor.value)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({ id: this.id, type: 'output', property: { name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
+            changes.push({ id: this.id, name: this.name, type: 'output', property: { name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation', this.translation.value, nextShapeWithTheSameModel.translation.value)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({ id: this.id, type: 'output', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
+            changes.push({ id: this.id, name: this.name, type: 'output', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
         }
         if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling', this.scaling.value, nextShapeWithTheSameModel.scaling.value)) {
             // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({ id: this.id, type: 'output', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
+            changes.push({ id: this.id, name: this.name, type: 'output', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
         }
         return changes
     }

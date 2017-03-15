@@ -10,7 +10,7 @@
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="inputCondition input" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')"placeholder="Min input">
+            <input class="inputCondition input" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="Min input">
             <input class="inputCondition input" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
         <div>{{rulePlaceholderModel.factor}}</div>
@@ -205,6 +205,7 @@ export default {
         mouseUpFor(event,ruleSide,ruleSection) {
             // event.preventDefault()
             // event.stopPropagation()
+            console.log("rulePlaceholderModel >> mouseUpFor ruleSide: " + ruleSide + " ruleSection: " + ruleSection)
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
                 switch(ruleSide) {

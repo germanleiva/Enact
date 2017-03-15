@@ -237,7 +237,7 @@ export default {
                 newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
 
                 const DistanceVM = Vue.extend(Distance);
-                let newDistanceVM = new DistanceVM({propsData: {measureModel: newMeasureModel }})
+                let newDistanceVM = new DistanceVM({propsData: {measureModel: newMeasureModel , isLink: true}})
                 newDistanceVM.measureColor = 'black';
                 newDistanceVM.$mount()
                 window.document.body.appendChild(newDistanceVM.$el);
