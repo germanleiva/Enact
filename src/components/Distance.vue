@@ -44,7 +44,7 @@ export default {
         },
         lineStyle: function() {
             return {
-                'pointer-events': this.isLinking?'none':'auto'
+                'pointer-events': this.isLinking || !globalStore.toolbarState.measureMode ?'none':'auto'
             }
         },
         initialX: function() {
@@ -89,14 +89,14 @@ export default {
     // },
     methods: {
         onMouseOver(e) {
-            console.log("Distance >> onMouseOver")
+            // console.log("Distance >> onMouseOver")
             e.preventDefault();
             if (this.measureModel.to.id) {
                 this.isHovered = true
             }
         },
         onMouseOut(e) {
-            console.log("Distance >> onMouseOut")
+            // console.log("Distance >> onMouseOut")
             e.preventDefault();
             if (this.measureModel.to.id) {
                 this.isHovered = false

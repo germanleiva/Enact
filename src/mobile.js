@@ -574,21 +574,23 @@ function sendEvent(anEvent,messageType="INPUT_EVENT") {
         let eachTouch = anEvent.touches[i];
 
         let radiusX = 20
-        if (eachTouch.hasOwnProperty('radiusX')) {
-            if (eachTouch.radiusX > 1) {
+        if (eachTouch['radiusX']) {
+            // console.log("eachTouch.radiusX: " + eachTouch.radiusX)
+            if (eachTouch.radiusX > 5) {
                 radiusX = eachTouch.radiusX
             }
         }
 
         let radiusY = 20
-        if (eachTouch.hasOwnProperty('radiusY')) {
-            if (eachTouch.radiusY > 1) {
+        if (eachTouch['radiusY']) {
+            // console.log("eachTouch.radiusY: " + eachTouch.radiusY)
+            if (eachTouch.radiusY > 5) {
                 radiusY = eachTouch.radiusY
             }
         }
 
         let rotationAngle = 0
-        if (eachTouch.hasOwnProperty('rotationAngle')) {
+        if (eachTouch['rotationAngle']) {
             rotationAngle = eachTouch.rotationAngle
         }
 
