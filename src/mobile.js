@@ -373,10 +373,12 @@ socket.on('message-from-server', function(data) {
                         let aTouchObject = aCachedEventObject.touches[i];
                         let createdTouch
 
-                        if (document.createTouch) {
+                        var isChrome = navigator.userAgent.indexOf("Chrome") > -1
+
+                        if (!isChrome && document.createTouch) {
                             //Safari hack
-                            // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY) {
-                            createdTouch = document.createTouch(window, document.getElementById('mobileCanvas'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y);
+                            // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY, radiusX, radiusY, rotationAngle, force) {
+                            createdTouch = document.createTouch(window, document.getElementById('mobileCanvas'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.radiusX, aTouchObject.radiusY, aTouchObject.rotationAngle, aTouchObject.force);
                         } else {
                             createdTouch = new Touch({
                                 identifier: aTouchObject.identifier,
@@ -386,7 +388,7 @@ socket.on('message-from-server', function(data) {
                                 pageX: aTouchObject.x,
                                 pageY: aTouchObject.y,
                                 radiusX: aTouchObject.radiusX,
-                                radiusY: aTouchObject.radiusX,
+                                radiusY: aTouchObject.radiusY,
                                 rotationAngle: aTouchObject.rotationAngle,
                                 force: aTouchObject.force,
                             });
@@ -432,7 +434,7 @@ socket.on('message-from-server', function(data) {
                     }
                 }, waitingTime);
             }
-
+            console.log("dispathWaiting >> " + JSON.stringify(data.message))
             testEvents(data.message, data.eventIndexes)
             break;
         }
@@ -601,8 +603,8 @@ function sendEvent(anEvent,messageType="INPUT_EVENT") {
         }
     }
 
+    // console.log(messageType + " >> " + JSON.stringify({ type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }}))
     socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
-
 }
 
 //To prevent scrolling - not working
@@ -627,7 +629,7 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
 
         sendEvent(event);
     } else {
-        console.log("We are starting interacting")
+        // console.log("We are starting interacting")
         for (let aRuleKey in mobileCanvasVM.rules) {
             //Does the event has a rule that control that touch?
             let aRule = mobileCanvasVM.rules[aRuleKey];
@@ -644,7 +646,7 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
     if (mobileCanvasVM.isRecording) {
         sendEvent(event);
     } else {
-        console.log("We are interacting")
+        // console.log("We are interacting")
 
         for (let anActiveRule of mobileCanvasVM.activeRules) {
             anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
@@ -660,7 +662,7 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
         sendEvent(event);
     } else {
         // We are interacting
-        console.log("We are ending interacting")
+        // console.log("We are ending interacting")
         for (let eachActiveRule of mobileCanvasVM.activeRules) {
             socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
         }

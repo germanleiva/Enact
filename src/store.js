@@ -586,7 +586,8 @@ class InputEvent {
 }
 
 class InputEventTouch {
-    constructor({x:x,y:y,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
+    constructor({identifier:identifier,x:x,y:y,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
+        this.identifier = identifier;
         this.x = x
         this.y = y
         this.radiusX = radiusX
@@ -595,7 +596,9 @@ class InputEventTouch {
         this.force = force
     }
     get leanJSON() {
-        return {x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
+        console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
+        //TODO check why angularRotation is not appearing, apparently when a value it is undefined cannot be added to the final JSON
+        return {identifier: this.identifier, x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
     }
 }
 
