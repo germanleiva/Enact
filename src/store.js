@@ -23,7 +23,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, ShapeModel, MeasureModel, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, logger }
+export { VisualStateModel, ShapeModel, MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, logger }
 
 export const globalBus = new Vue();
 
@@ -205,6 +205,8 @@ class MeasureModel {
                 return this.visualState.shapeFor(fromId)
             case 'distance':
                 return this.visualState.distanceFor(fromId)
+            case 'input':
+                return this.visualState.currentInputEvent.touchFor(fromId)
             default:
                 console.log("Unrecognized 'from' type in MeasureModel: " + this.from.type)
         }
@@ -583,11 +585,16 @@ class InputEvent {
         //Removing testShapes from the inputEvent
         return {type: this.type, touches: this.touches.map(x => x.leanJSON), timeStamp: this.timeStamp }
     }
+    touchFor(touchId) {
+        return this.touches.find(aTouch => aTouch.id == touchId)
+    }
 }
 
 class InputEventTouch {
     constructor({identifier:identifier,x:x,y:y,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
         this.identifier = identifier;
+        this.id = 'F'+identifier
+        this.name = this.id
         this.x = x
         this.y = y
         this.radiusX = radiusX
@@ -599,6 +606,13 @@ class InputEventTouch {
         console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
         //TODO check why angularRotation is not appearing, apparently when a value it is undefined cannot be added to the final JSON
         return {identifier: this.identifier, x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
+    }
+    positionOfHandler(handlerName) {
+        if (handlerName == 'center') {
+            return {x: this.x,y:this.y}
+        } else {
+            console.log("Unrecognized handlerName in InputEventTouch: " + handlerName)
+        }
     }
 }
 

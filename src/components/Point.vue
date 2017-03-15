@@ -46,35 +46,10 @@ export default {
             }
             return initialY
         },
-        path: function() {
-            let pathStartingX = this.measureModel.deltaX < 0 ? this.measureModel.width : 0
-            let pathStartingY = this.measureModel.deltaY < 0 ? this.measureModel.height : 0
-            return "M"+pathStartingX+ " "+pathStartingY+" l"+this.measureModel.deltaX+" "+this.measureModel.deltaY
-        },
-        strokeWidth() {
-            if (this.measureModel.highlight) {
-                return 5
-            }
-            return 2
-        }
     },
     destroyed: function() {
-        console.log("WE DESTROYED MEASURE")
+        console.log("WE DESTROYED MEASURE POINT")
     },
-    // watch: {
-    //     styleObject: function(val) {
-    //         if (this.shapeModel()) {
-    //             // console.log("IN COMPUTED styleObject the shapeModel().color is "+ this.shapeModel().color)
-
-    //             if (globalStore.visualStates[0] === this.visualState) {
-    //                 globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.shapeModel().id, color: this.shapeModel().color, width: this.shapeModel().width, height: this.shapeModel().height, top: this.shapeModel().top, left: this.shapeModel().left, opacity: this.shapeModel().opacity } })
-    //            }
-    //         } else {
-    //             //I WAS DELETED
-    //             console.log("Should i worry? " + this.shapeModelId)
-    //         }
-    //     }
-    // },
     methods: {
         handlerFor(x,y) {
             return undefined

@@ -1,5 +1,5 @@
 <template>
-    <div v-if="inputEvent !== undefined" v-on:mousedown="draggedInputEventMark">
+    <div v-if="inputEvent !== undefined">
         <touch v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :is-active="visualState != undefined"><touch>
     </div>
 </template>
@@ -27,7 +27,7 @@ export default {
                 return this.visualState.currentInputEvent
             }
             return this.initialInputEvent
-        }
+        },
     },
     methods: {
         draggedInputEventMark(e) {
@@ -41,7 +41,10 @@ export default {
             mouseMoveHandler = function(e) {
                 let deltaX = e.x - startingMousePositionX
                 let indexVariation = Math.floor(deltaX / 2);
-                let newIndex = Math.max(Math.min(initialIndex + indexVariation, globalStore.inputEvents.length - 1), 0);
+                let newIndex = Math.max(Math.min(initialIndex + indexVariation, globalStore.inputEvents.length - 1 -1), 0); //TODO We are using -2 instead of -1 to ignore the last event touchend
+
+                // console.log("Total events:" + globalStore.inputEvents.length + ". index: " + newIndex + ". Event: " + JSON.stringify(globalStore.inputEvents[newIndex]));
+
                 this.visualState.currentInputEvent = globalStore.inputEvents[newIndex];
                 this.visualState.showAllInputEvents = true;
             }.bind(this)
@@ -56,6 +59,9 @@ export default {
             window.addEventListener('mousemove', mouseMoveHandler, false);
             window.addEventListener('mouseup', mouseUpHandler, false);
         },
+        measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId) {
+            this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId)
+        }
     }
 }
 </script>

@@ -1,14 +1,16 @@
 <template>
-    <div :style="styleObject">
+    <div :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut" v-on:mousedown="draggedInputEventMark">
 <!--         <linea :start-point="startPoint" :end-point="endPoint" :line-color="isActive?'blue':'black'" :style="{'z-index': 300}"></linea>
- -->    </div>
+ -->
+         <div v-show="showCenterPoint" :id="relevantCenterPoint.namePrefix + '-' + inputEvent.id" :style="relevantCenterPointStyle" @mousedown="mouseDownStartedOnCenterRelevantPoint">
+    </div>
 </template>
 <script>
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import Linea from "./Linea.vue"
-import {globalStore} from '../store.js'
+import {globalStore, RelevantPoint} from '../store.js'
 
 export default {
     name: 'touch',
@@ -16,7 +18,8 @@ export default {
     template: ``,
     data: function() {
         return {
-
+            isHovered: false,
+            relevantCenterPoint: new RelevantPoint(this, 'center', 0.5, 0.5)
         }
     },
     components: {
@@ -38,6 +41,23 @@ export default {
 
                 // 'z-index': 200
             };
+        },
+        showCenterPoint() {
+            return this.isHovered && globalStore.toolbarState.measureMode
+        },
+        relevantCenterPointStyle() {
+            const size = 10
+            return {
+                borderRadius: "50%",
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                width: size + 'px',
+                height: size + 'px',
+                marginLeft: -size/2 + 'px',
+                marginTop: -size/2 + 'px',
+                backgroundColor: 'white'
+            }
         },
         startPoint() {
             return {x: this.touch.radiusX, y: this.touch.radiusY}
@@ -66,10 +86,35 @@ export default {
 
             //find should return undefined if the element isn't found in the array
             return nextInputEvent.touches.find(aTouch => aTouch.identifier == myTouch.identifier)
-
         },
+
     },
     methods: {
+        mouseOver(e) {
+            e.preventDefault()
+            // console.log("mouseOver")
+            this.isHovered = true
+        },
+        mouseOut(e) {
+            e.preventDefault()
+            // console.log("mouseOut")
+            this.isHovered = false
+        },
+        mouseDownStartedOnCenterRelevantPoint(e) {
+            e.preventDefault()
+            e.stopPropagation()
+
+            this.$parent.measureStartedOnRelevantPoint(e,this.relevantCenterPoint,'input',this.touch.id)
+            console.log("Touch >> mouseDownStartedOnCenterRelevantPoint")
+        },
+        draggedInputEventMark(e) {
+            if (globalStore.toolbarState.measureMode) {
+                return
+            }
+            e.preventDefault();
+            console.log("Touch >> draggedInputEventMark")
+            this.$parent.draggedInputEventMark(e)
+        },
     }
 }
 </script>

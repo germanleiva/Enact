@@ -4,8 +4,8 @@
         <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
             <div v-if="nextState != undefined" class='diffBox'>
                 <div class="inputDiffBox">
-                    <div class='box inputDiffElement' v-for="(diffArray,touchIndex) in inputDifferencesWithNextState">
-                        <div v-if="diffArray.length > 0"> {{'F'+touchIndex}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+                    <div class='box inputDiffElement' v-for="(diffArray,touchName) in inputDifferencesWithNextState">
+                        <div v-if="diffArray.length > 0"> {{touchName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
                         </div>
                     </div>
                 </div>
@@ -80,8 +80,8 @@ export default {
                         } else {
                             for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
                                 if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
-
-                                    atIfNone(i,[]).push({id: i, type: 'input', property: { name: "translation" , before: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, after: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                                    let touchName = 'F' + i
+                                    atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name: "translation" , before: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, after: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
                                 }
                             }
                         }
@@ -89,8 +89,9 @@ export default {
                         //The next state removed the input event or didn't set one
                         for (let eachTouch in this.currentInputEvent.touches) {
                             let i = this.currentInputEvent.touches.indexOf(eachTouch)
+                            let touchName = 'F' + i
 
-                            atIfNone(i,[]).push({id: i, type: 'input', property: { name: "removed", before: this.currentInputEvent, after: this.nextState.currentInputEvent } })
+                            atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name: "removed", before: this.currentInputEvent, after: this.nextState.currentInputEvent } })
                         }
 
                     }
@@ -100,8 +101,8 @@ export default {
 
                         for (let eachTouch in this.nextState.currentInputEvent.touches) {
                             let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
-
-                            atIfNone(i,[]).push({id: i, type: 'input', property: { name:"added" , before: this.currentInputEvent, after: this.nextState.currentInputEvent }} );
+                            let touchName = 'F' + i
+                            atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name:"added" , before: this.currentInputEvent, after: this.nextState.currentInputEvent }} );
                         }
 
                     } else {

@@ -55,13 +55,13 @@ export default {
 
                 // visualStateMark.style.left = percentageInTimeline + '%';
 
-                let totalEventCount = globalStore.inputEvents.length
+                let totalEventCount = globalStore.inputEvents.length - 1 //TODO We are ignoring the last event touchend because it does not have touches to show, this could also happen with touch cancel or fail in the middle of the sequence
                 let index = Math.round(totalEventCount * percentageInTimeline / 100)
                 index = Math.max(Math.min(index, totalEventCount - 1), 0);
 
                 let correspondingInputEvent = globalStore.inputEvents[index]
 
-                // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + totalEventCount + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
+                // console.log("% in timeline: " + percentageInTimeline + ". Total events:" + globalStore.inputEvents.length + ". index: " + index + ". Event: " + JSON.stringify(correspondingInputEvent));
 
                 this.visualState.currentInputEvent = correspondingInputEvent;
             }.bind(this);
