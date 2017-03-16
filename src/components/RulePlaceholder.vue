@@ -8,7 +8,7 @@
             <input class="MinMax max input" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="M">
             <input class="input" v-model="rulePlaceholderModel.input.property" placeholder="Property">
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
-            <select v-model="rulePlaceholderModel.input.axiss" style="height:35px" placeholder="Axis" multiple>
+            <select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
               <option>x</option>
               <option>y</option>
             </select>
@@ -20,7 +20,7 @@
             <input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
 <!--             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
  -->
-            <select v-model="rulePlaceholderModel.output.axiss" style="height:35px" placeholder="Output Axis" multiple>
+            <select v-model="rulePlaceholderModel.output.axiss" style="height:35px; width:50px" placeholder="Output Axis" multiple>
               <option>x</option>
               <option>y</option>
             </select>
@@ -273,7 +273,7 @@ input {
     font-size:1.1em;
     font-family: futura;
     padding: 2px;
-    width: 32%;
+    width: 30%;
 }
 
 .rule-placeholder {
@@ -284,8 +284,9 @@ input {
      overflow: visible; /* Or flex might break */
      font-size: 1em;
      padding: 5px !important;
-     width: 200px;
+     width: 250px;
      margin-bottom: 5px !important;
+     height: 150px;
 }
 .leftSide {
     /*height: 50px;*/
@@ -306,8 +307,8 @@ input {
 .MinMax {
     position:absolute;
     border-radius: 20px;
-    width: 30px;
-    height: 30px;
+    width: 30%;
+    height: 25px;
     border: 1px solid #ffffff;
     background-color: #333333;
     color: #ffffff;
@@ -326,7 +327,7 @@ input {
 .MinMax:focus {
     border-radius: 20px;
     min-width: 25%;
-    height: 30px;
+    height: 25px;
     border: 1px solid #333333;
     background-color: #333333;
     color: #eeeeee;
