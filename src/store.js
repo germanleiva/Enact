@@ -564,8 +564,9 @@ class VisualStateModel {
 }
 
 class RelevantPoint {
-    constructor(shapeOrMeasure, namePrefix, percentualX, percentualY) {
-        this.shapeOrMeasure = shapeOrMeasure
+    constructor(shapeOrMeasureOrInput, namePrefix, percentualX, percentualY) {
+        //Yeah, I know shapeOrMeasureOrInput ... but coming up with a variable named anObject or something like that was not expressive enough for me
+        this.shapeOrMeasureOrInput = shapeOrMeasureOrInput
         this.namePrefix = namePrefix;
         this.percentualX = percentualX;
         this.percentualY = percentualY;
@@ -578,10 +579,10 @@ class RelevantPoint {
         return this.centerY - size / 2
     }
     get centerX() {
-        return this.shapeOrMeasure.width * this.percentualX
+        return this.shapeOrMeasureOrInput.deltaX * this.percentualX
     }
     get centerY() {
-        return this.shapeOrMeasure.height * this.percentualY
+        return this.shapeOrMeasureOrInput.deltaY * this.percentualY
     }
     isInside(x,y,size) {
         return x > this.centerX - size && x < this.centerX + size && y > this.centerY - size && y < this.centerY + size
@@ -631,10 +632,10 @@ class InputEventTouch {
             console.log("Unrecognized handlerName in InputEventTouch: " + handlerName)
         }
     }
-    get width() {
+    get deltaX() {
         return this.radiusX * 2
     }
-    get height() {
+    get deltaY() {
         return this.radiusY * 2
     }
 }
@@ -700,6 +701,13 @@ class ShapeModel {
             'border:' + ('1px') + ' solid gray' + ";" +
             'overflow:' + 'visible' + ";" +
             'opacity:' + opacityValue
+    }
+    //deltaX to be used by the RelevantPoint
+    get deltaX() {
+        return this.width
+    }
+    get deltaY() {
+        return this.height
     }
     get left() {
         if (this.translation.value.x == null) {

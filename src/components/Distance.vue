@@ -8,7 +8,7 @@
         <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"  marker-start="url(#lineExtreme)" marker-end="url(#lineExtreme)"></line>
         <!-- Invisible line to account for the mouseover/out event -->
         <!-- <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="6" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line> -->
-        <circle v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="Math.min(initialX,finalX) + eachRelevantPoint.centerX" :cy="Math.min(initialY,finalY) + eachRelevantPoint.centerY" :r="pointSize / 2" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></circle>
+        <circle v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="initialX + eachRelevantPoint.centerX" :cy="initialY + eachRelevantPoint.centerY" :r="pointSize / 2" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></circle>
     </svg>
 </template>
 <script>
@@ -122,14 +122,11 @@ export default {
             }
         },
         handlerFor(canvasX,canvasY) {
-            // if (this.$refs.relevantPointsElements) {
-                // for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
-                for (let aRelevantPoint of this.measureModel.relevantPoints) {
-                    if (aRelevantPoint.isInside(canvasX - this.initialX, canvasY - this.initialY,this.pointSize)) {
-                        return {type:'distance',id: this.measureModel.id, handler: aRelevantPoint.namePrefix}
-                    }
+            for (let aRelevantPoint of this.measureModel.relevantPoints) {
+                if (aRelevantPoint.isInside(canvasX - this.initialX, canvasY - this.initialY,this.pointSize)) {
+                    return {type:'distance',id: this.measureModel.id, handler: aRelevantPoint.namePrefix}
                 }
-            // }
+            }
             return undefined
         },
         mouseDownStartedOnRelevantPoint(e,aRelevantPoint){
