@@ -62,6 +62,10 @@ export default {
 .ruleArea {
     width: 100%;
     background-color: #eeeeee;
+    display: flex;
+    flex-wrap: wrap;
+    align-content:flex-start;
+
 }
 .newRule{
     display: flex !important;

@@ -2,30 +2,30 @@
     <div class='box rule-placeholder'>
         <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
-            <input class="input" v-model="rulePlaceholderModel.input.type" style="width: 25%" placeholder="Type">
+            <input class="input" v-model="rulePlaceholderModel.input.type" placeholder="Type">
             <input class="input" v-model="rulePlaceholderModel.input.id" placeholder="Id">
-            <input class="input" v-model="rulePlaceholderModel.input.property" style="width: 25%" placeholder="Property">
+            <input class="MinMax min input" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="m">
+            <input class="MinMax max input" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="M">
+            <input class="input" v-model="rulePlaceholderModel.input.property" placeholder="Property">
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
-            <select v-model="rulePlaceholderModel.input.axiss" style="width: 25%; height:35px" placeholder="Axis" multiple>
+            <select v-model="rulePlaceholderModel.input.axiss" style="height:35px" placeholder="Axis" multiple>
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="inputCondition input" v-model="rulePlaceholderModel.input.min" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="Min input">
-            <input class="inputCondition input" v-model="rulePlaceholderModel.input.max" style="width: 50%" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="Max input">
         </div>
-        <div>{{rulePlaceholderModel.factor}}</div>
+        <div class="factor">{{rulePlaceholderModel.factor}}</div>
         <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')" :style="{ backgroundColor: activeColor }">
-            <input v-model="rulePlaceholderModel.output.type" style="width: 25%" placeholder="Output Type">
-            <input v-model="rulePlaceholderModel.output.id" style="width: 25%" placeholder="Output Id">
-            <input v-model="rulePlaceholderModel.output.property" style="width: 25%" placeholder="Output Property">
+            <input class="input" v-model="rulePlaceholderModel.output.type" placeholder="Output Type">
+            <input class="input" v-model="rulePlaceholderModel.output.id" placeholder="Output Id">
+            <input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
 <!--             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
  -->
-            <select v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis" multiple>
+            <select v-model="rulePlaceholderModel.output.axiss" style="height:35px" placeholder="Output Axis" multiple>
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="outputCondition" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min output">
-            <input class="outputCondition" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max output">
+            <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min">
+            <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max">
         </div>
     </div>
 </template>
@@ -272,41 +272,78 @@ export default {
 input {
     font-size:1.1em;
     font-family: futura;
-    width: 25%;
     padding: 2px;
-    border-radius: 0px !important;
+    width: 32%;
 }
 
 .rule-placeholder {
-    display: flex;
-    margin: 10px;
-    overflow: hidden; /* Or flex might break */
-    flex-wrap: wrap;
-    font-size: 1em;
-    padding: 5px !important;
+     display: flex;
+     flex-basis: auto;
+     flex-direction: column;
+     margin: 10px;
+     overflow: visible; /* Or flex might break */
+     font-size: 1em;
+     padding: 5px !important;
+     width: 200px;
+     margin-bottom: 5px !important;
 }
 .leftSide {
-    width: 50%;
     /*height: 50px;*/
+    position: relative;
     display:flex;
-    flex-wrap: wrap;
+    flex-direction: row;
 }
 .rightSide {
-    width: 50%;
     /*height: 50px;*/
+    position: relative;
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: row;
 }
 .condition {
     width: 100%;
     /*height: 50px;*/
 }
-.outputCondition {
-    width: 50%;
-    /*height: 50px;*/
+.MinMax {
+    position:absolute;
+    border-radius: 20px;
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ffffff;
+    background-color: #333333;
+    color: #ffffff;
+    text-align: center;
+    font-size: 0.8em;
 }
-.inputCondition {
-    width: 50%;
-    /*height: 50px;*/
+.MinMax:placeholder-shown{
+    background-color: rgba(255,255,255,1);
+    border: 1px solid #333333;
+    color: #ffffff;
+    border-radius: 10px;
+    width: 15px;
+    height: 15px;
+    font-size: 0.7em;
+}
+.MinMax:focus {
+    border-radius: 20px;
+    min-width: 25%;
+    height: 30px;
+    border: 1px solid #333333;
+    background-color: #333333;
+    color: #eeeeee;
+    text-align: center;
+    font-size: 0.8em;
+}
+.MinMax.min {
+    top:-10px;
+    left:0px;
+}
+.MinMax.max {
+    top:20px;
+    left:0px;
+}
+.factor {
+    font-size:1.1em;
+    font-family: futura;
+    text-align: center;
 }
 </style>
