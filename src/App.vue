@@ -67,6 +67,7 @@ export default {
         }
     }
     globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
+        console.log("TYPE OF EVENT " + data.message.type)
         this.deviceVisualState.currentInputEvent = new InputEvent(data.message)
     }.bind(this));
 

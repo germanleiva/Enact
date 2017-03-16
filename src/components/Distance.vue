@@ -1,11 +1,20 @@
 <template>
     <svg :style="svgStyle" width="1" height="1">
         <defs>
-            <marker id="lineExtreme" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
+            <marker v-if="!isLink" id="marker-lineStart" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
                 <path d="M 0,0 L 0,10" stroke="black" stroke-width="2"/>
             </marker>
+            <marker v-if="!isLink" id="marker-lineEnd" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
+                <path d="M 0,0 L 0,10" stroke="black" stroke-width="2"/>
+            </marker>
+<!--             <marker v-if="isLink" id="marker-arrow" markerWidth="10" markerHeight="10" refx="0" refy="0" orient="auto">
+                <path d="M-5,0 L0,10 L5,0 L-5,0" style="fill: #000000;" />
+            </marker> -->
+            <marker v-if="isLink" id="marker-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+              <path d="M0,0 L0,6 L9,3 z"/>
+            </marker>
         </defs>
-        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"  marker-start="url(#lineExtreme)" marker-end="url(#lineExtreme)"></line>
+        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut" :marker-start="markerStart" :marker-end="markerEnd"></line>
         <!-- Invisible line to account for the mouseover/out event -->
         <!-- <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="6" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line> -->
         <circle v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="initialX + eachRelevantPoint.centerX" :cy="initialY + eachRelevantPoint.centerY" :r="pointSize / 2" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></circle>
@@ -37,6 +46,21 @@ export default {
         }
     },
     computed: {
+        markerStart() {
+            if (this.isLink) {
+                return ""
+            }
+            return "url(#marker-lineStart)"
+        },
+        markerEnd() {
+            if (this.isLink) {
+                if (this.measureModel.width > 15 || this.measureModel.height > 15) {
+                    return "url(#marker-arrow)"
+                }
+                return ""
+            }
+            return "url(#marker-lineEnd)"
+        },
         shouldShowPoints: function() {
             return !this.isLinking && globalStore.toolbarState.measureMode
         },

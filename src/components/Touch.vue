@@ -28,6 +28,17 @@ export default {
     },
     computed: {
         styleObject() {
+            let opacity = 0.3
+            let color = 'red'
+            if (this.touch.highlight) {
+                color = 'blue'
+                opacity = 0.5
+            } else {
+                if (this.isActive) {
+                    color = 'black'
+                    opacity = 0.5
+                }
+            }
             return {
                 borderRadius: "50%",
                 position: 'absolute',
@@ -36,8 +47,8 @@ export default {
                 width: (this.touch.radiusX * 2) + 'px',
                 height: (this.touch.radiusY * 2) + 'px',
                 // backgroundColor: this.visualState ? 'red' : 'pink',
-                backgroundColor: this.isActive ? 'black':'red',
-                opacity: this.isActive ? 0.5 : 0.3,
+                backgroundColor: color,
+                opacity: opacity,
                 // transform: "rotate(" + aTouch.rotationAngle + "deg)",
 
                 // 'z-index': 200

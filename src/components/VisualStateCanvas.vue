@@ -159,21 +159,25 @@ export default {
             let y = mouseEvent.pageY - this.canvasOffsetTop()
             console.log("X: "+x+  " Y: "+y)
 
-            for (var i = 0; i < this.$refs.shapes.length; i++) {
-                let eachShapeVM = this.$refs.shapes[i];
-                let result = eachShapeVM.handlerFor(x,y)
+            if (this.$refs.shapes) {
+                for (var i = 0; i < this.$refs.shapes.length; i++) {
+                    let eachShapeVM = this.$refs.shapes[i];
+                    let result = eachShapeVM.handlerFor(x,y)
 
-                if (result) {
-                    return result
+                    if (result) {
+                        return result
+                    }
                 }
             }
 
-            for (var i = 0; i < this.$refs.measures.length; i++) {
-                let eachMeasureVM = this.$refs.measures[i];
-                let result = eachMeasureVM.handlerFor(x,y)
+            if (this.$refs.measures) {
+                for (var i = 0; i < this.$refs.measures.length; i++) {
+                    let eachMeasureVM = this.$refs.measures[i];
+                    let result = eachMeasureVM.handlerFor(x,y)
 
-                if (result) {
-                    return result
+                    if (result) {
+                        return result
+                    }
                 }
             }
 

@@ -508,17 +508,28 @@ class VisualStateModel {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
         }
     }
-    toggleHighlightForInvolvedElement(shapeOrMeasureId, aBoolean) {
+    toggleHighlightForInvolvedElement(shapeOrMeasureOrInputId, aBoolean) {
         function togglingHelper(aVisualState) {
-            let involvedShape = aVisualState.shapesDictionary[shapeOrMeasureId]
+            let involvedShape = aVisualState.shapesDictionary[shapeOrMeasureOrInputId]
             if (involvedShape) {
                 //We need to hightlighted and also the nextShape with the same id
                 involvedShape.highlight = aBoolean
             } else {
                 //Maybe the diff was talking about a measure
-                let involvedMeasure = aVisualState.measures.find(aMeasure => aMeasure.id == shapeOrMeasureId)
+                let involvedMeasure = aVisualState.measures.find(aMeasure => aMeasure.id == shapeOrMeasureOrInputId)
                 if (involvedMeasure) {
                     involvedMeasure.highlight = aBoolean
+                } else {
+                    //Maybe the diff was talking about an input
+                    let involvedInputEvent = aVisualState.currentInputEvent
+
+                    if (involvedInputEvent) {
+                        for(let eachTouch of involvedInputEvent.touches) {
+                            if (eachTouch.id == shapeOrMeasureOrInputId) {
+                                eachTouch.highlight = aBoolean
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -619,6 +630,7 @@ class InputEventTouch {
         this.radiusY = radiusY
         this.angularRotation = angularRotation
         this.force = force
+        this.highlight = false
     }
     get leanJSON() {
         console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
