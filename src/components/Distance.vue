@@ -1,9 +1,14 @@
 <template>
     <svg :style="svgStyle" width="1" height="1">
-        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" ></line>
-        <circle ref="relevantPointsElements" v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="(initialX + finalX)/2" :cy="(initialY + finalY)/2" :r="5" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)"></circle>
-        <!-- Invisible line to account for the mouseover/out event, measureModel.cachedFinalPosition == undefined means that we are moving the line with the mouse -->
-        <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="10" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line>
+        <defs>
+            <marker id="lineExtreme" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
+                <path d="M 0,0 L 0,10" stroke="black" stroke-width="2"/>
+            </marker>
+        </defs>
+        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"  marker-start="url(#lineExtreme)" marker-end="url(#lineExtreme)"></line>
+        <!-- Invisible line to account for the mouseover/out event -->
+        <!-- <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="6" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line> -->
+        <circle v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="Math.min(initialX,finalX) + eachRelevantPoint.centerX" :cy="Math.min(initialY,finalY) + eachRelevantPoint.centerY" :r="pointSize / 2" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></circle>
     </svg>
 </template>
 <script>
@@ -27,7 +32,8 @@ export default {
     data: function() {
         return {
             isHovered: false,
-            measureColor: 'red'
+            measureColor: 'red',
+            pointSize: 10,
         }
     },
     computed: {
@@ -66,6 +72,7 @@ export default {
             return 2
         },
         isLinking() {
+            // measureModel.cachedFinalPosition == undefined means that we are moving the line with the mouse
             return this.isLink || this.measureModel.cachedFinalPosition != undefined
         }
 
@@ -103,26 +110,26 @@ export default {
             }
         },
         relevantPointStyleObject: function(aPoint) {
+            const size = this.pointSize;
             return {
-                'left': aPoint.left + 'px',
-                'top': aPoint.top + 'px',
-                'width': '10px',
-                'height': '10px',
-                'background-color': 'red',
-                'border': '1px solid #000000',
                 'position':'absolute',
-                'border-radius': '5px'
+                'border-radius': '50%',
+                'left': aPoint.left(size) + 'px',
+                'top': aPoint.top(size) + 'px',
+                'width': size+'px',
+                'height': size+'px',
+                'background-color': 'red'
             }
         },
-        handlerFor(x,y) {
-            if (this.$refs.relevantPointsElements) {
-                for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
-                    let isInside = x >= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft && x <= this.measureModel.initialPoint.x + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y >= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop && y <= this.measureModel.initialPoint.y + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
-                    if (isInside) {
-                        return {type:'distance',id: this.measureModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
+        handlerFor(canvasX,canvasY) {
+            // if (this.$refs.relevantPointsElements) {
+                // for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
+                for (let aRelevantPoint of this.measureModel.relevantPoints) {
+                    if (aRelevantPoint.isInside(canvasX - this.initialX, canvasY - this.initialY,this.pointSize)) {
+                        return {type:'distance',id: this.measureModel.id, handler: aRelevantPoint.namePrefix}
                     }
                 }
-            }
+            // }
             return undefined
         },
         mouseDownStartedOnRelevantPoint(e,aRelevantPoint){
@@ -139,7 +146,7 @@ circle {
     fill: red;
     stroke-width: 1px;
 }
-circle:hover {
+/*circle:hover {
     fill:gray;
-}
+}*/
 </style>

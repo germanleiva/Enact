@@ -1,6 +1,6 @@
 <template>
     <div v-if="inputEvent !== undefined">
-        <touch v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :is-active="visualState != undefined"><touch>
+        <touch ref="touchesVM" v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :is-active="visualState != undefined"><touch>
     </div>
 </template>
 <script>
@@ -61,6 +61,20 @@ export default {
         },
         measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId) {
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId)
+        },
+        handlerFor(canvasX,canvasY) {
+            if (this.$refs.touchesVM) {
+                for (let i=0; i < this.$refs.touchesVM.length; i++) {
+                    let touchVM = this.$refs.touchesVM[i];
+                    let centerPoint = touchVM.relevantCenterPoint;
+                    console.log("Checking x: " + (canvasX - touchVM.$el.offsetLeft) + " y: " + (canvasY - touchVM.$el.offsetTop));
+                    console.log("Against x: " + centerPoint.centerX + " y: " + centerPoint.centerY);
+
+                    if (centerPoint.isInside(canvasX - touchVM.$el.offsetLeft,canvasY - touchVM.$el.offsetTop,touchVM.centerPointSize)) {
+                        return {type:'input',id: touchVM.touch.id, handler: centerPoint.namePrefix}
+                    }
+                }
+            }
         }
     }
 }

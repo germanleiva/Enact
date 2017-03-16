@@ -133,7 +133,7 @@ export default {
                 let visualState = globalStore.visualStates[dataObject.visualStateIndex]
                 //the dataObject have the input diff values
 
-                this.rulePlaceholderModel.output.property //We assume this is 'translation'
+                this.rulePlaceholderModel.output.property //TODO We assume this is 'translation'
                 let outputPositionBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id].position
                 let outputPositionAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id].position
 
@@ -177,9 +177,9 @@ export default {
                 let visualState = globalStore.visualStates[dataObject.visualStateIndex]
                 //the dataObject have the input diff values
 
-                this.rulePlaceholderModel.input.property //We assume this is 'translation'
-                let inputPositionBefore = visualState.currentInputEvent.touches[this.rulePlaceholderModel.input.id]
-                let inputPositionAfter = visualState.nextState.currentInputEvent.touches[this.rulePlaceholderModel.input.id]
+                this.rulePlaceholderModel.input.property //TODO We assume this is 'translation'
+                let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+                let inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
 
                 this.calculateFactor(inputPositionBefore,inputPositionAfter,dataObject.property.before,dataObject.property.after)
             }

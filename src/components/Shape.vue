@@ -153,26 +153,27 @@ export default {
     },
     methods: {
         handlerStyleObject: function(aHandler) {
+            const size = 10
             return {
-                'left': aHandler.left + 'px',
-                'top': aHandler.top + 'px',
-                'width': '10px',
-                'height': '10px',
+                'left': aHandler.left(size) + 'px',
+                'top': aHandler.top(size) + 'px',
+                'width': size + 'px',
+                'height': size + 'px',
                 'background-color': '#ffffff',
                 'border': '1px solid #000000',
                 'position':'absolute',
             }
         },
         relevantPointStyleObject: function(aPoint) {
+            const size = 10;
             return {
-                'left': aPoint.left + 'px',
-                'top': aPoint.top + 'px',
-                'width': '10px',
-                'height': '10px',
-                'background-color': 'red',
-                'border': '1px solid #000000',
                 'position':'absolute',
-                'border-radius': '5px'
+                'border-radius': '50%',
+                'left': aPoint.left(size) + 'px',
+                'top': aPoint.top(size) + 'px',
+                'width': size+'px',
+                'height': size+'px',
+                'background-color': 'red'
             }
         },
         handlerFor(x,y) {

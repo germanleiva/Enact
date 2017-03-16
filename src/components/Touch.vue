@@ -19,7 +19,8 @@ export default {
     data: function() {
         return {
             isHovered: false,
-            relevantCenterPoint: new RelevantPoint(this, 'center', 0.5, 0.5)
+            relevantCenterPoint: new RelevantPoint(this.touch, 'center', 0.5, 0.5),
+            centerPointSize: 10
         }
     },
     components: {
@@ -46,16 +47,15 @@ export default {
             return this.isHovered && globalStore.toolbarState.measureMode
         },
         relevantCenterPointStyle() {
-            const size = 10
             return {
                 borderRadius: "50%",
                 position: 'absolute',
                 left: '50%',
                 top: '50%',
-                width: size + 'px',
-                height: size + 'px',
-                marginLeft: -size/2 + 'px',
-                marginTop: -size/2 + 'px',
+                width: this.centerPointSize + 'px',
+                height: this.centerPointSize + 'px',
+                marginLeft: -this.centerPointSize/2 + 'px',
+                marginTop: -this.centerPointSize/2 + 'px',
                 backgroundColor: 'white'
             }
         },

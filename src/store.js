@@ -218,6 +218,8 @@ class MeasureModel {
                 return this.visualState.shapeFor(toId)
             case 'distance':
                 return this.visualState.distanceFor(toId)
+            case 'input':
+                return this.visualState.currentInputEvent.touchFor(toId)
             default:
                 console.log("Unrecognized 'to' type in MeasureModel: " + this.to.type)
         }
@@ -368,10 +370,18 @@ class VisualStateModel {
             case "distance":
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
-                        //This VisualState has the starting Shape so we import the measure
+                        //This VisualState has the starting measure so we import the measure
                         return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
+                break;
+            case "input":
+                // if (this.currentInputEvent) {
+                    // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
+                        //This VisualState has the starting event so we import the measure
+                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                    // }
+                // }
                 break;
         }
 
@@ -560,14 +570,21 @@ class RelevantPoint {
         this.percentualX = percentualX;
         this.percentualY = percentualY;
         this.isHandler = [0, 1].includes(percentualX) && [0, 1].includes(percentualY)
-        this.leftMargin = -6
-        this.topMargin = -6
     }
-    get left() {
-        return this.shapeOrMeasure.width * this.percentualX + this.leftMargin
+    left(size) {
+        return this.centerX - size / 2
     }
-    get top() {
-        return this.shapeOrMeasure.height * this.percentualY + this.topMargin
+    top(size) {
+        return this.centerY - size / 2
+    }
+    get centerX() {
+        return this.shapeOrMeasure.width * this.percentualX
+    }
+    get centerY() {
+        return this.shapeOrMeasure.height * this.percentualY
+    }
+    isInside(x,y,size) {
+        return x > this.centerX - size && x < this.centerX + size && y > this.centerY - size && y < this.centerY + size
     }
 }
 
@@ -613,6 +630,12 @@ class InputEventTouch {
         } else {
             console.log("Unrecognized handlerName in InputEventTouch: " + handlerName)
         }
+    }
+    get width() {
+        return this.radiusX * 2
+    }
+    get height() {
+        return this.radiusY * 2
     }
 }
 

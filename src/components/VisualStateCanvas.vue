@@ -4,7 +4,7 @@
         <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
         <shape v-for="aShapeModel in visualStateModel.testShapes" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="true"></shape>
-        <input-event-mark :visual-state="visualStateModel"></input-event-mark>
+        <input-event-mark ref="currentInputEventMarkVM" :visual-state="visualStateModel"></input-event-mark>
     </div>
 </template>
 
@@ -176,6 +176,14 @@ export default {
                     return result
                 }
             }
+
+            if (this.$refs.currentInputEventMarkVM) {
+                let result = this.$refs.currentInputEventMarkVM.handlerFor(x,y)
+                if (result) {
+                    return result
+                }
+            }
+
             return undefined
         },
         mirrorDragged(event) {
@@ -221,6 +229,8 @@ export default {
 
         //DRAWING METHODS
         drawingStarted: function(e) {
+            globalStore.deselectAllShapes()
+
             var newShapeModel = this.visualStateModel.addNewShape();
             if (this.nextState) {
                 this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
@@ -267,6 +277,12 @@ export default {
             // if (this.nextState) {
             //     this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
             // }
+            //TODO repeated code with Toolbar >> selectionSelected, we should use globalBus
+            globalStore.toolbarState.drawMode = false;
+            globalStore.toolbarState.selectionMode = true;
+            globalStore.toolbarState.measureMode = false;
+
+            newShapeModel.isSelected = true;
         },
 
         updateShapeProperties: function(e, newShapeModel, startingWindowMousePosition) {

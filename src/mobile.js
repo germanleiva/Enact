@@ -259,7 +259,7 @@ socket.on('message-from-server', function(data) {
                         if (editedRule.input == undefined || !editedRule.input instanceof TouchInput) {
                             editedRule.input = new TouchInput(receivedRule.input.id,receivedRule.input.property,receivedRule.input.axiss)
                         }
-                        editedRule.input.touchId = receivedRule.input.id
+                        editedRule.input.touchId = receivedRule.input.id.slice(1,receivedRule.input.id.length) //TODO this removes the first character F of the id
                         editedRule.input.property = receivedRule.input.property
                         editedRule.input.axis = receivedRule.input.axiss
 
