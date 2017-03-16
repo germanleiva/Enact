@@ -10,8 +10,8 @@
             <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
             <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
-        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px" v-show="shapeModel.isResizing">{{shapeModel.width}}px</div>
-        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px" v-show="shapeModel.isResizing">{{shapeModel.height}}px</div>
+        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999" v-show="shapeModel.isResizing">{{shapeModel.width}}px</div>
+        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999" v-show="shapeModel.isResizing">{{shapeModel.height}}px</div>
     </div>
 
 </template>
@@ -91,21 +91,24 @@ export default {
                 'height': this.shapeModel.top + 'px',
                 'border-right': '1px black dotted',
                 'border-bottom': '1px black dotted',
-                'text-align': 'center'
+                'text-align': 'center',
+                'z-index': 999
             }
         },
         positionXStyleObject: function() {
             return {
                 'position':'absolute',
                 'left': this.shapeModel.left / 2 + 'px',
-                'top': this.shapeModel.top + 'px'
+                'top': this.shapeModel.top + 'px',
+                'z-index':999
             }
         },
         positionYStyleObject: function() {
             return {
                 'position':'absolute',
                 'top': this.shapeModel.top / 2 + 'px',
-                'left': this.shapeModel.left + 'px'
+                'left': this.shapeModel.left + 'px',
+                'z-index':999
             }
         },
         overlayStyleObject: function() {
