@@ -2,19 +2,21 @@
     <div :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut" v-on:mousedown="draggedInputEventMark">
 <!--         <linea :start-point="startPoint" :end-point="endPoint" :line-color="isActive?'blue':'black'" :style="{'z-index': 300}"></linea>
  -->
-         <div v-show="showCenterPoint" :id="relevantCenterPoint.namePrefix + '-' + inputEvent.id" :style="relevantCenterPointStyle" @mousedown="mouseDownStartedOnCenterRelevantPoint">
+         <div v-show="showCenterPoint" :id="relevantCenterPoint.namePrefix + '-' + touch.id" :style="relevantCenterPointStyle" @mousedown="mouseDownStartedOnCenterRelevantPoint">
     </div>
 </template>
 <script>
 
+import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import Linea from "./Linea.vue"
-import {globalStore, RelevantPoint} from '../store.js'
+import Distance from "./Distance.vue"
+// import Linea from "./Linea.vue"
+import {globalStore, RelevantPoint, MeasureModel} from '../store.js'
 
 export default {
     name: 'touch',
-    props: ['inputEvent','touch','isActive'],
+    props: ['parentVisualState','touch','isActive'],
     template: ``,
     data: function() {
         return {
@@ -24,7 +26,7 @@ export default {
         }
     },
     components: {
-        Linea
+        // Linea
     },
     computed: {
         styleObject() {
@@ -119,12 +121,44 @@ export default {
             console.log("Touch >> mouseDownStartedOnCenterRelevantPoint")
         },
         draggedInputEventMark(e) {
-            if (globalStore.toolbarState.measureMode) {
-                return
-            }
-            e.preventDefault();
             console.log("Touch >> draggedInputEventMark")
-            this.$parent.draggedInputEventMark(e)
+            e.preventDefault();
+            e.stopPropagation();
+
+            if (e.ctrlKey) {
+                //Let's draw a line to the rule, we can create a measure from this point to the mouse
+                let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'input',id:this.touch.id,handler:undefined})
+                newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
+                newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
+
+                const DistanceVM = Vue.extend(Distance);
+                let newDistanceVM = new DistanceVM({propsData: {measureModel: newMeasureModel , isLink: true}})
+                newDistanceVM.measureColor = 'black';
+                newDistanceVM.$mount()
+                window.document.body.appendChild(newDistanceVM.$el);
+
+                globalStore.toolbarState.linkingObject = this.touch;
+
+                var moveHandler = function(e) {
+                    newMeasureModel.cachedFinalPosition.x = e.pageX
+                    newMeasureModel.cachedFinalPosition.y = e.pageY
+                }.bind(this);
+                window.addEventListener('mousemove', moveHandler, false);
+
+                var upHandler
+                upHandler = function(e) {
+                    // This handler should be trigger AFTER the rule upHandler"
+                    globalStore.toolbarState.linkingObject = undefined;
+                    newMeasureModel.deleteYourself();
+                    window.document.body.removeChild(newDistanceVM.$el);
+                    newDistanceVM.$destroy();
+                    window.removeEventListener('mousemove', moveHandler, false);
+                    window.removeEventListener('mouseup', upHandler, false);
+                }.bind(this);
+                window.addEventListener('mouseup', upHandler, false);
+            } else {
+                this.$parent.draggedInputEventMark(e)
+            }
         },
     }
 }

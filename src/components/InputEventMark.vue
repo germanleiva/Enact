@@ -1,6 +1,6 @@
 <template>
     <div v-if="inputEvent !== undefined">
-        <touch ref="touchesVM" v-for="touch in inputEvent.touches" :input-event="inputEvent" :touch="touch" :is-active="visualState != undefined"><touch>
+        <touch ref="touchesVM" v-for="touch in inputEvent.touches" :parent-visual-state="visualState" :touch="touch" :is-active="visualState != undefined"><touch>
     </div>
 </template>
 <script>

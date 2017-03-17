@@ -1,5 +1,6 @@
 <template>
-    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"></i></a>
+    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
+</i></a>
 </template>
 
 <script>
@@ -65,8 +66,54 @@ export default {
 
 <style>
 
-.diff{
+.diff {
     width: 30px;
     height: 20px;
+}
+
+/* Tooltip container */
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+}
+
+/* Tooltip text */
+.diff .tooltiptext {
+    visibility: hidden;
+    /*width: 120px;*/
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 5px;
+    border-radius: 6px;
+
+    /* Position the tooltip text - see examples below! */
+    position: absolute;
+    z-index: 1;
+    top: 15%;
+    left: 120%;
+
+    font-family: Verdana,sans-serif;
+    font-size: 8px;
+    line-height: 1.5;
+
+    pointer-events: none;
+}
+
+/* Show the tooltip text when you mouse over the tooltip container */
+.diff:hover .tooltiptext {
+    visibility: visible;
+}
+
+.diff .tooltiptext::after {
+    content: " ";
+    position: absolute;
+    top: 50%;
+    right: 100%; /* To the left of the tooltip */
+    margin-top: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent black transparent transparent;
 }
 </style>

@@ -34,7 +34,7 @@
 import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore} from '../store.js'
+import {globalStore,ShapeModel,InputEventTouch} from '../store.js'
 
 let ContextMenu = Vue.extend({
     template: `<div :style="styleObject">
@@ -216,11 +216,17 @@ export default {
                         break;
                     case 'input':
                         //This should only work if the linkingObject can act as an input
-                        console.log("Ignoring link in inputRule")
-                        return
+                        if (!linkingObject instanceof InputEventTouch) {
+                            console.log("Ignoring link in inputRule")
+                            return
+                        }
                         break;
                     case 'output':
                         //This should only work if the linkingObject can act as an output
+                        if (!linkingObject instanceof ShapeModel) {
+                            console.log("Ignoring link in outputRule")
+                            return
+                        }
                         break;
                     default:
                         console.log("Unrecognized rule side: " + ruleSide)

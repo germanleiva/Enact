@@ -7,9 +7,6 @@
             <marker v-if="!isLink" id="marker-lineEnd" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
                 <path d="M 0,0 L 0,10" stroke="black" stroke-width="2"/>
             </marker>
-<!--             <marker v-if="isLink" id="marker-arrow" markerWidth="10" markerHeight="10" refx="0" refy="0" orient="auto">
-                <path d="M-5,0 L0,10 L5,0 L-5,0" style="fill: #000000;" />
-            </marker> -->
             <marker v-if="isLink" id="marker-arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
               <path d="M0,0 L0,6 L9,3 z"/>
             </marker>
