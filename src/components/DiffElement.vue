@@ -91,11 +91,11 @@ export default {
     /* Position the tooltip text - see examples below! */
     position: absolute;
     z-index: 1;
-    top: 15%;
+    top: 0%;
     left: 120%;
 
     font-family: Verdana,sans-serif;
-    font-size: 8px;
+    font-size: 1em;
     line-height: 1.5;
 
     pointer-events: none;
