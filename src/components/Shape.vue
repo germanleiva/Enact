@@ -1,5 +1,5 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover="isHovered = true" v-on:mouseout="isHovered = false" v-show="!isTestShape || !testResult">
+    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-show="!isTestShape || !testResult">
         <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">

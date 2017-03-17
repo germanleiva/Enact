@@ -74,37 +74,35 @@ export default {
                 if (this.currentInputEvent) {
                     if (this.nextState.currentInputEvent) {
                         //Both states have an input event
-                        if (this.currentInputEvent.touches.length != this.nextState.currentInputEvent.touches.length) {
-                            //TODO there's a difference that needs to be informed
-                            console.log("another WERID!!!!!")
-                        } else {
-                            for (let i = 0; i < this.currentInputEvent.touches.length; i++) {
-                                if (this.currentInputEvent.touches[i].x != this.nextState.currentInputEvent.touches[i].x || this.currentInputEvent.touches[i].y != this.nextState.currentInputEvent.touches[i].y) {
-                                    let touchName = 'F' + i
-                                    atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name: "translation" , before: { x: this.currentInputEvent.touches[i].x, y: this.currentInputEvent.touches[i].y }, after: { x: this.nextState.currentInputEvent.touches[i].x, y: this.nextState.currentInputEvent.touches[i].y } } })
+                        let comparedTouches = []
+                        for (let aTouch of this.currentInputEvent.touches) {
+                            comparedTouches.push(aTouch.id)
+                            let comparingTouch = this.nextState.currentInputEvent.touchFor(aTouch.id)
+
+                            if (comparingTouch) {
+                                for (let eachDiff of aTouch.diffArray(comparingTouch)) {
+                                    atIfNone(aTouch.name,[]).push(eachDiff);
                                 }
+                            } else {
+                                atIfNone(aTouch.name,[]).push({id: aTouch.id, name: aTouch.name, type: 'input', property: {name: "removed", before: undefined, after: aTouch.name } })
+                            }
+                        }
+
+                        for (let addedTouch of this.nextState.currentInputEvent.touches) {
+                            if (comparedTouches.indexOf(addedTouch.id) < 0) {
+                                //key not found
+                                // result.push('Added Shape ' + nextShapeKey)
+                                atIfNone(addedTouch.name,[]).push({id: addedTouch.id, name: addedTouch.name, type: 'input', property: { name: "added", before: undefined, after: addedTouch.name } })
                             }
                         }
                     } else {
                         //The next state removed the input event or didn't set one
-                        for (let eachTouch in this.currentInputEvent.touches) {
-                            let i = this.currentInputEvent.touches.indexOf(eachTouch)
-                            let touchName = 'F' + i
-
-                            atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name: "removed", before: this.currentInputEvent, after: this.nextState.currentInputEvent } })
-                        }
-
+                        console.log("another WERID!!!!!")
                     }
                 } else {
                     if (this.nextState.currentInputEvent) {
                         //The next state added an input event and I don't have one
-
-                        for (let eachTouch in this.nextState.currentInputEvent.touches) {
-                            let i = this.nextState.currentInputEvent.touches.indexOf(eachTouch)
-                            let touchName = 'F' + i
-                            atIfNone(touchName,[]).push({id: touchName, name: touchName, type: 'input', property: { name:"added" , before: this.currentInputEvent, after: this.nextState.currentInputEvent }} );
-                        }
-
+                        console.log("another WERID!!!!!")
                     } else {
                         //Both states don't have an input event
                     }

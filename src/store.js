@@ -151,6 +151,20 @@ export const globalStore = new Vue({
     // }
 })
 
+class DiffModel {
+
+}
+
+class DiffShapeModel extends DiffModel {
+
+}
+class DiffMeasureModel extends DiffModel {
+
+}
+class DiffTouchModel extends DiffModel {
+
+}
+
 class MeasureModel {
     constructor(visualState, from, to, cachedFinalPosition) {
         this.visualState = visualState
@@ -649,6 +663,17 @@ class InputEventTouch {
     }
     get deltaY() {
         return this.radiusY * 2
+    }
+    diffArray(comparingTouch) {
+        let changes = []
+
+        if (this.x != comparingTouch.x || this.y != comparingTouch.y) {
+            changes.push({id: this.id, name: this.name, type: 'input', property: { name: "translation" , before: { x: this.x, y: this.y }, after: { x: comparingTouch.x, y: comparingTouch.y } } })
+        }
+        if (this.radiusX != comparingTouch.radiusX || this.radiusY != comparingTouch.radiusY) {
+            changes.push({id: this.id, name: this.name, type: 'input', property: { name: "scaling" , before: { w: this.radiusX, h: this.radiusY }, after: { w: comparingTouch.radiusX, h: comparingTouch.radiusY } } })
+        }
+        return changes
     }
 }
 

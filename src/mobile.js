@@ -123,7 +123,7 @@ let ShapeVM = Vue.extend({
             }
         },
         styleObject: {
-            cache: false,
+            // cache: false,
             get: function() {
                 return {
                     'backgroundColor': this.shapeModel.color,

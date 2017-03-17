@@ -1,5 +1,5 @@
 <template>
-    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
+    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover.prevent="mouseOver" v-on:mouseout.prevent="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
 </i></a>
 </template>
 
@@ -18,7 +18,7 @@ export default {
     },
     computed: {
         classObject: {
-            cache: false,
+            // cache: false,
             get: function() {
                 let propertyName = this.diffData.property.name
                 let before = this.diffData.property.before
