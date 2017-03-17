@@ -53,11 +53,15 @@ export default {
             }
 
             e.dataTransfer.setData(dataType, JSON.stringify(diffDataObject));
+            this.$parent.didMouseOut(this)
+
         },
         mouseOver(e) {
+            console.log("mouseOver")
             this.$parent.didMouseOver(this)
         },
         mouseOut(e) {
+            console.log("mouseOut")
             this.$parent.didMouseOut(this)
         }
     }

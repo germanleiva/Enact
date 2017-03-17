@@ -1,5 +1,5 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-show="!isTestShape || !testResult">
+    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult">
         <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
@@ -443,16 +443,18 @@ export default {
             let diffModel = new DiffModel(JSON.parse(data))
 
             diffModel.applyDelta(this.visualState,this.shapeModel)
+            this.shapeModel.highlight = false
         },
-        dragOverForShape() {
+        dragOverForShape(event) {
             var dataType = event.dataTransfer.types;
             console.log("dragOverForShape >> " + dataType)
-            if ([...dataType].includes("text/diff-shape")) {
+            if (["text/diff-shape","text/diff-touch"].some(type => [...dataType].includes(type))) {
+                this.shapeModel.highlight = true
                 event.preventDefault()
             }
-            if ([...dataType].includes("text/diff-touch")) {
-                event.preventDefault()
-            }
+            // if ([...dataType].includes()) {
+            //     event.preventDefault()
+            // }
         }
     }
 }

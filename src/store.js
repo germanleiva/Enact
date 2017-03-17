@@ -46,8 +46,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660 //iPhone 667 Nexus 5X 660
+        mobileWidth: 200, //iPhone 375 Nexus 5X 410
+        mobileHeight: 300 //iPhone 667 Nexus 5X 660
     },
     watch: {
         isRecording: function(newValue) {

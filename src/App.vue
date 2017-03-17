@@ -271,7 +271,6 @@ export default {
 }
 
 .outputArea {
-    height: 700px;
     background-color: #eeeeee;
     display: flex; /*This doesn't work with block*/
     width: 100%;
