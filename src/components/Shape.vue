@@ -1,5 +1,5 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-show="!isTestShape || !testResult">
+    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-show="!isTestShape || !testResult">
         <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
         <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
@@ -21,7 +21,7 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import Vue from 'vue'
 import Distance from './Distance.vue'
-import {globalStore,globalBus,logger, MeasureModel} from '../store.js'
+import {globalStore,globalBus,logger, MeasureModel, DiffModel} from '../store.js'
 
 // class Handler {
 //     constructor(namePrefix, left, top, right, bottom) {
@@ -424,6 +424,34 @@ export default {
                 if (this.visualState.nextState) {
                     this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'scaling');
                 }
+            }
+        },
+        dropForShape(event) {
+            event.preventDefault();
+            var data = event.dataTransfer.getData("text/diff-shape");
+            if (!data) {
+                data = event.dataTransfer.getData("text/diff-touch");
+            }
+
+            //data = {"id":"shape0","type":"output","property":{"name":"translation","before":{"x":141,"y":126},"after":{"x":141,"y":195}}}
+
+            // let outputRuleObject = {}
+            // outputRuleObject.id = data.id
+            // outputRuleObject.property = "translation"
+            // outputRuleObject.
+            console.log("dropForShape >> " + data)
+            let diffModel = new DiffModel(JSON.parse(data))
+
+            diffModel.applyDelta(this.visualState,this.shapeModel)
+        },
+        dragOverForShape() {
+            var dataType = event.dataTransfer.types;
+            console.log("dragOverForShape >> " + dataType)
+            if ([...dataType].includes("text/diff-shape")) {
+                event.preventDefault()
+            }
+            if ([...dataType].includes("text/diff-touch")) {
+                event.preventDefault()
             }
         }
     }

@@ -90,7 +90,7 @@ export default {
     methods: {
         dropForInput(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text/input");
+            var data = event.dataTransfer.getData("text/diff-touch");
 
             let dataObject = undefined
             if (data) {
@@ -100,7 +100,7 @@ export default {
                 this.rulePlaceholderModel.input.type = "touch";
                 this.rulePlaceholderModel.input.property = "translation"
             } else {
-                data = event.dataTransfer.getData("text/measure");
+                data = event.dataTransfer.getData("text/diff-measure");
                 if (data) {
                     //It's a measure
                     dataObject = JSON.parse(data)
@@ -143,7 +143,7 @@ export default {
         },
         dropForOutput(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text/output");
+            var data = event.dataTransfer.getData("text/diff-shape");
 
             //data = {"id":"shape0","type":"output","property":{"name":"translation","before":{"x":141,"y":126},"after":{"x":141,"y":195}}}
 
@@ -187,10 +187,10 @@ export default {
         dragOverForInput(event) {
             var dataType = event.dataTransfer.types;
             console.log("dragOverForInput >> " + dataType)
-            if (dataType == "text/input") {
+            if ([...dataType].includes("text/diff-touch")) {
                 event.preventDefault()
             }
-            if (dataType == "text/measure") {
+            if ([...dataType].includes("text/diff-measure")) {
                 event.preventDefault()
             }
         },
@@ -198,7 +198,7 @@ export default {
             var dataType = event.dataTransfer.types;
             console.log("dragOverForOutput >> " + dataType)
 
-            if (dataType == "text/output") {
+            if ([...dataType].includes("text/diff-shape")) {
                 event.preventDefault()
             }
         },

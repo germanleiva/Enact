@@ -1,5 +1,5 @@
 <template>
-    <a draggable="true" v-on:dragstart="drag" class="button diff" :style="styleObject" v-on:mouseover.prevent="mouseOver" v-on:mouseout.prevent="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
+    <a draggable="true" v-on:dragstart="dragDiffElement" class="button diff" :style="styleObject" v-on:mouseover.prevent="mouseOver" v-on:mouseout.prevent="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
 </i></a>
 </template>
 
@@ -43,8 +43,8 @@ export default {
         }
     },
     methods: {
-        drag(e) {
-            let dataType = "text/" + this.diffData.type
+        dragDiffElement(e) {
+            let dataType = "text/diff-" + this.diffData.type
 
             let cachedData = this.diffData
             let diffDataObject = {visualStateIndex: globalStore.visualStates.indexOf(this.visualStateModel)}

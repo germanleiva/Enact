@@ -84,7 +84,7 @@ export default {
                                     atIfNone(aTouch.name,[]).push(eachDiff);
                                 }
                             } else {
-                                atIfNone(aTouch.name,[]).push({id: aTouch.id, name: aTouch.name, type: 'input', property: {name: "removed", before: undefined, after: aTouch.name } })
+                                atIfNone(aTouch.name,[]).push({id: aTouch.id, name: aTouch.name, type: 'touch', property: {name: "removed", before: undefined, after: aTouch.name } })
                             }
                         }
 
@@ -92,7 +92,7 @@ export default {
                             if (comparedTouches.indexOf(addedTouch.id) < 0) {
                                 //key not found
                                 // result.push('Added Shape ' + nextShapeKey)
-                                atIfNone(addedTouch.name,[]).push({id: addedTouch.id, name: addedTouch.name, type: 'input', property: { name: "added", before: undefined, after: addedTouch.name } })
+                                atIfNone(addedTouch.name,[]).push({id: addedTouch.id, name: addedTouch.name, type: 'touch', property: { name: "added", before: undefined, after: addedTouch.name } })
                             }
                         }
                     } else {
@@ -171,7 +171,7 @@ export default {
                         }
                     } else {
                         // result.push('Removed Shape ' + aShape.id)
-                        atIfNone(aShape.name,[]).push({id: shapeKey, name: aShape.name, type: 'output', property: {name: "removed", before: undefined, after: aShape.id } })
+                        atIfNone(aShape.name,[]).push({id: shapeKey, name: aShape.name, type: 'shape', property: {name: "removed", before: undefined, after: aShape.id } })
                     }
                 }
                 for (let nextShapeKey in this.nextState.shapesDictionary) {
@@ -179,7 +179,7 @@ export default {
                     if (comparedShapesKey.indexOf(nextShapeKey) < 0) {
                         //key not found
                         // result.push('Added Shape ' + nextShapeKey)
-                        atIfNone(addedShape.name,[]).push({id: nextShapeKey, name: addedShape.name, type: 'output', property: { name: "added", before: undefined, after: nextShapeKey } })
+                        atIfNone(addedShape.name,[]).push({id: nextShapeKey, name: addedShape.name, type: 'shape', property: { name: "added", before: undefined, after: nextShapeKey } })
                     }
                 }
             }
@@ -202,7 +202,7 @@ export default {
         allowDropMirrorMobile(event) {
             var dataType = event.dataTransfer.types;
             console.log("allowDropMirrorMobile >> " + dataType)
-            if (dataType == "text/visual-state") {
+            if ([...dataType].includes("text/visual-state")) {
                 event.preventDefault()
             }
         },
