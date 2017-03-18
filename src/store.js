@@ -15,6 +15,7 @@ extendArray(Array);
 import Vue from 'vue';
 import io from 'socket.io-client';
 import _ from 'lodash';
+import tinyColor from 'tinycolor2';
 
 let isLoggerActive = false;
 let logger = function(text) {
@@ -181,11 +182,28 @@ class ScalingDiff extends PropertyDiff {
 
 class BackgroundColorDiff extends PropertyDiff {
     get delta() {
-        return this.after
+        let colorAfterRgb = tinyColor(this.after).toRgb()
+        let colorBeforeRgb = tinyColor(this.before).toRgb()
+
+        let deltaColor = {r: colorAfterRgb.r - colorBeforeRgb.r,g: colorAfterRgb.g - colorBeforeRgb.g, b: colorAfterRgb.b - colorBeforeRgb.b}
+
+        return deltaColor
     }
 
     applyDelta(visualState,shapeModel) {
-        visualState.changeProperty(shapeModel,'backgroundColor',shapeModel.color, this.delta)
+        let deltaColorRgb = this.delta
+
+        let originalColorRgb = tinyColor(shapeModel.color).toRgb()
+
+        let newColorRgb = {}
+        //white #ffffff (255,255,255) is boring
+        for (let colorComponent of "rgb") {
+            newColorRgb[colorComponent] = (originalColorRgb[colorComponent] + deltaColorRgb[colorComponent]) //% 255
+        }
+        // console.log("delta: " + JSON.stringify(deltaColorRgb));
+        // console.log("original: " + JSON.stringify(originalColorRgb));
+        // console.log("new: " + JSON.stringify(newColorRgb));
+        visualState.changeProperty(shapeModel,'backgroundColor',shapeModel.color, tinyColor(newColorRgb).toHexString())
     }
 }
 

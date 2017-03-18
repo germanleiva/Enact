@@ -426,35 +426,38 @@ export default {
                 }
             }
         },
+        draggedTypeFor(dataTransfer) {
+            const acceptedTypes = ["text/diff-shape","text/diff-touch"];
+            let receivedTypes = [...dataTransfer.types]
+            for (let acceptedType of acceptedTypes) {
+                for (let receivedType of receivedTypes) {
+                    if (acceptedType == receivedType) {
+                        return acceptedType
+                    }
+                }
+            }
+            return undefined
+        },
         dropForShape(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text/diff-shape");
-            if (!data) {
-                data = event.dataTransfer.getData("text/diff-touch");
+            let dataType = this.draggedTypeFor(event.dataTransfer)
+            let data = event.dataTransfer.getData(dataType)
+            if (data) {
+                console.log("dropForShape >> " + data)
+                let diffModel = new DiffModel(JSON.parse(data))
+
+                diffModel.applyDelta(this.visualState,this.shapeModel)
+                this.shapeModel.highlight = false
+            } else {
+                console.log("WEIRD, we accepted the drop but there is no data for us =(")
             }
-
-            //data = {"id":"shape0","type":"output","property":{"name":"translation","before":{"x":141,"y":126},"after":{"x":141,"y":195}}}
-
-            // let outputRuleObject = {}
-            // outputRuleObject.id = data.id
-            // outputRuleObject.property = "translation"
-            // outputRuleObject.
-            console.log("dropForShape >> " + data)
-            let diffModel = new DiffModel(JSON.parse(data))
-
-            diffModel.applyDelta(this.visualState,this.shapeModel)
-            this.shapeModel.highlight = false
         },
         dragOverForShape(event) {
-            var dataType = event.dataTransfer.types;
-            console.log("dragOverForShape >> " + dataType)
-            if (["text/diff-shape","text/diff-touch"].some(type => [...dataType].includes(type))) {
+            console.log("dragOverForShape >> " + event.dataTransfer.types)
+            if (this.draggedTypeFor(event.dataTransfer)) {
                 this.shapeModel.highlight = true
                 event.preventDefault()
             }
-            // if ([...dataType].includes()) {
-            //     event.preventDefault()
-            // }
         }
     }
 }
