@@ -107,6 +107,11 @@ export default {
     var that = this;
     window.addEventListener('keydown', function(e) {
         // e.preventDefault()
+        if (e.target.tagName == "INPUT") {
+            //ignore
+            return
+        }
+
         let arrowDisplacement = 1;
         console.log("keydown keyCode: " + e.keyCode)
 

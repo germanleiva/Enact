@@ -169,6 +169,18 @@ class TranslationDiff extends PropertyDiff {
     applyDelta(visualState,shapeModel) {
         visualState.changeProperty(shapeModel,'translation',shapeModel.position,{x:shapeModel.left+this.delta.x,y:shapeModel.top+this.delta.y})
     }
+    loadRulePlaceholder(rulePlaceholderSide) {
+        rulePlaceholderSide.axiss = []
+        if (this.before.x != this.after.x) {
+            rulePlaceholderSide.axiss.push('x')
+        }
+        if (this.before.y != this.after.y) {
+            rulePlaceholderSide.axiss.push('y')
+        }
+    }
+    get name() {
+        return "translation"
+    }
 }
 
 class ScalingDiff extends PropertyDiff {
@@ -177,6 +189,19 @@ class ScalingDiff extends PropertyDiff {
     }
     applyDelta(visualState,shapeModel) {
         visualState.changeProperty(shapeModel,'scaling',shapeModel.scale,{w:shapeModel.width+this.delta.w,h:shapeModel.height+this.delta.h})
+    }
+    loadRulePlaceholder(rulePlaceholderSide) {
+        rulePlaceholderSide.axiss = []
+
+        if (this.before.w != this.after.w) {
+            rulePlaceholderSide.axiss.push('x')
+        }
+        if (this.before.h != this.after.h) {
+            rulePlaceholderSide.axiss.push('y')
+        }
+    }
+    get name() {
+        return "scaling"
     }
 }
 
@@ -205,14 +230,23 @@ class BackgroundColorDiff extends PropertyDiff {
         // console.log("new: " + JSON.stringify(newColorRgb));
         visualState.changeProperty(shapeModel,'backgroundColor',shapeModel.color, tinyColor(newColorRgb).toHexString())
     }
+    get name() {
+        return "backgroundColor"
+    }
 }
 
 class AddedDiff extends PropertyDiff {
 
+    get name() {
+        return "added"
+    }
 }
 
 class RemovedDiff extends PropertyDiff {
 
+    get name() {
+        return "removed"
+    }
 }
 
 class DiffModel {
@@ -255,6 +289,12 @@ class DiffModel {
     }
     applyDelta(visualState,shapeModel) {
         this.property.applyDelta(visualState,shapeModel)
+    }
+    loadRulePlaceholder(rulePlaceholderSide) {
+        rulePlaceholderSide.type = this.type
+        rulePlaceholderSide.id = this.id
+        rulePlaceholderSide.property = this.property.name
+        this.property.loadRulePlaceholder(rulePlaceholderSide)
     }
 }
 

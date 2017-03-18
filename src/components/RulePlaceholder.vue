@@ -34,7 +34,7 @@
 import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,ShapeModel,InputEventTouch} from '../store.js'
+import {globalStore,ShapeModel,InputEventTouch, DiffModel} from '../store.js'
 
 let ContextMenu = Vue.extend({
     template: `<div :style="styleObject">
@@ -70,6 +70,9 @@ let ContextMenu = Vue.extend({
       }
 });
 
+const acceptedInputTypes = ["text/diff-touch","text/diff-measure"]
+const acceptedOutputTypes = ["text/diff-shape"]
+
 export default {
     name: 'rule-placeholder',
     props:['rulePlaceholderModel'],
@@ -90,115 +93,75 @@ export default {
     methods: {
         dropForInput(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text/diff-touch");
 
-            let dataObject = undefined
-            if (data) {
-                //It's an touch input
-                dataObject = JSON.parse(data)
-
-                this.rulePlaceholderModel.input.type = "touch";
-                this.rulePlaceholderModel.input.property = "translation"
-            } else {
-                data = event.dataTransfer.getData("text/diff-measure");
-                if (data) {
-                    //It's a measure
-                    dataObject = JSON.parse(data)
-                    // {type:'point', fromType: 'distance', fromId:'distance0',fromHandler:'center',toType:'distance', toId:'distance0',toHandler:'center',axiss:['y']},
-                    this.rulePlaceholderModel.input.type = "measure"
-                    this.rulePlaceholderModel.input.property = dataObject.property.name
-
-                }
+            var dataType = this.draggedTypeFor(event.dataTransfer,acceptedInputTypes)
+            var data = event.dataTransfer.getData(dataType);
+            if (!data) {
+                console.log("WEIRD, we accepted the drop but there is no data for us =(")
+                return
             }
+            console.log("dropForOutput >> " + data)
 
-            this.rulePlaceholderModel.input.id = dataObject.id
+            let diffModel = new DiffModel(JSON.parse(data))
 
-            this.rulePlaceholderModel.input.axiss = []
-            if (dataObject.property.before.x != dataObject.property.after.x) {
-                this.rulePlaceholderModel.input.axiss.push('x')
-            }
-            if (dataObject.property.before.y != dataObject.property.after.y) {
-                this.rulePlaceholderModel.input.axiss.push('y')
-            }
-
-            //To account for the ≠ naming of the scaling axis (w & h)
-            if (dataObject.property.before.w != dataObject.property.after.w) {
-                this.rulePlaceholderModel.output.axiss.push('x')
-            }
-            if (dataObject.property.before.h != dataObject.property.after.h) {
-                this.rulePlaceholderModel.output.axiss.push('y')
-            }
+            diffModel.loadRulePlaceholder(this.rulePlaceholderModel.input)
 
             if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
-                let visualState = globalStore.visualStates[dataObject.visualStateIndex]
-                //the dataObject have the input diff values
+                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-                this.rulePlaceholderModel.output.property //TODO We assume this is 'translation'
-                let outputPositionBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id].position
-                let outputPositionAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id].position
+                let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id]
+                let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id]
 
-                this.calculateFactor(dataObject.property.before,dataObject.property.after,outputPositionBefore,outputPositionAfter)
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property],outputAfter[this.rulePlaceholderModel.output.property])
             }
 
         },
         dropForOutput(event) {
             event.preventDefault();
-            var data = event.dataTransfer.getData("text/diff-shape");
 
-            //data = {"id":"shape0","type":"output","property":{"name":"translation","before":{"x":141,"y":126},"after":{"x":141,"y":195}}}
-
-            // let outputRuleObject = {}
-            // outputRuleObject.id = data.id
-            // outputRuleObject.property = "translation"
-            // outputRuleObject.
+            var dataType = this.draggedTypeFor(event.dataTransfer,acceptedOutputTypes)
+            var data = event.dataTransfer.getData(dataType);
+            if (!data) {
+                console.log("WEIRD, we accepted the drop but there is no data for us =(")
+            }
             console.log("dropForOutput >> " + data)
-            let dataObject = JSON.parse(data)
-            this.rulePlaceholderModel.output.type = "shape"
-            this.rulePlaceholderModel.output.id = dataObject.id
-            this.rulePlaceholderModel.output.property = dataObject.property.name
 
-            this.rulePlaceholderModel.output.axiss = []
-            if (dataObject.property.before.x != dataObject.property.after.x) {
-                this.rulePlaceholderModel.output.axiss.push('x')
-            }
-            if (dataObject.property.before.y != dataObject.property.after.y) {
-                this.rulePlaceholderModel.output.axiss.push('y')
-            }
+            let diffModel = new DiffModel(JSON.parse(data))
 
-            //To account for the ≠ naming of the scaling axis (w & h)
-            if (dataObject.property.before.w != dataObject.property.after.w) {
-                this.rulePlaceholderModel.output.axiss.push('x')
-            }
-            if (dataObject.property.before.h != dataObject.property.after.h) {
-                this.rulePlaceholderModel.output.axiss.push('y')
-            }
+            diffModel.loadRulePlaceholder(this.rulePlaceholderModel.output)
 
             if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
-                let visualState = globalStore.visualStates[dataObject.visualStateIndex]
-                //the dataObject have the input diff values
+                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-                this.rulePlaceholderModel.input.property //TODO We assume this is 'translation'
                 let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
                 let inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
 
-                this.calculateFactor(inputPositionBefore,inputPositionAfter,dataObject.property.before,dataObject.property.after)
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
             }
         },
-        dragOverForInput(event) {
-            var dataType = event.dataTransfer.types;
-            console.log("dragOverForInput >> " + dataType)
-            if ([...dataType].includes("text/diff-touch")) {
-                event.preventDefault()
+        draggedTypeFor(dataTransfer,acceptedTypes) {
+            let receivedTypes = [...dataTransfer.types]
+            for (let acceptedType of acceptedTypes) {
+                for (let receivedType of receivedTypes) {
+                    if (acceptedType == receivedType) {
+                        return acceptedType
+                    }
+                }
             }
-            if ([...dataType].includes("text/diff-measure")) {
+            return undefined
+        },
+        dragOverForInput(event) {
+            console.log("dragOverForInput >> " + event.dataTransfer.types)
+
+            if (this.draggedTypeFor(event.dataTransfer,acceptedInputTypes)) {
                 event.preventDefault()
             }
         },
         dragOverForOutput(event) {
             var dataType = event.dataTransfer.types;
-            console.log("dragOverForOutput >> " + dataType)
+            console.log("dragOverForOutput >> " + event.dataTransfer.types)
 
-            if ([...dataType].includes("text/diff-shape")) {
+            if (this.draggedTypeFor(event.dataTransfer,acceptedOutputTypes)) {
                 event.preventDefault()
             }
         },
@@ -261,10 +224,42 @@ export default {
                 }
             }
         },
-        calculateFactor(inputPositionBefore,inputPositionAfter,outputPositionBefore,outputPositionAfter) {
+        calculateFactor(inputProperty,outputProperty,inputBefore,inputAfter,outputBefore,outputAfter) {
             // input * factor = output => factor = output/input
-            this.rulePlaceholderModel.factor.x = (outputPositionAfter.x - outputPositionBefore.x) / (inputPositionAfter.x - inputPositionBefore.x); //because Nacho asked
-            this.rulePlaceholderModel.factor.y = (outputPositionAfter.y - outputPositionBefore.y) / (inputPositionAfter.y - inputPositionBefore.y);
+            let deltaOutput = {x:1,y:1}
+            let deltaInput = {x:1,y:1}
+            switch (inputProperty) {
+                case 'translation': {
+                    deltaInput.x = inputAfter.x - inputBefore.x
+                    deltaInput.y = inputAfter.y - inputBefore.y
+                    break;
+                }
+                case 'scaling': {
+                    if (inputAfter.radiusX) {
+                        deltaInput.x = inputAfter.radiusX - inputBefore.radiusX
+                        deltaInput.y = inputAfter.radiusY - inputBefore.radiusY
+                    } else {
+                        deltaInput.x = inputAfter.w - inputBefore.w
+                        deltaInput.y = inputAfter.h - inputBefore.h
+
+                    }
+                    break;
+                }
+            }
+            switch (outputProperty) {
+                case 'translation': {
+                    deltaOutput.x = outputAfter.x - outputBefore.x
+                    deltaOutput.y = outputAfter.y - outputBefore.y
+                    break;
+                }
+                case 'scaling': {
+                    deltaOutput.x = outputAfter.w - outputBefore.w
+                    deltaOutput.y = outputAfter.h - outputBefore.h
+                    break;
+                }
+            }
+            this.rulePlaceholderModel.factor.x = deltaOutput.x / deltaInput.x;
+            this.rulePlaceholderModel.factor.y = deltaOutput.y / deltaInput.y;
         }
     },
     computed: {
