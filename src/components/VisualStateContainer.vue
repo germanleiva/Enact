@@ -125,7 +125,7 @@ export default {
                 for (let aMeasure of this.visualStateModel.measures) {
                     let aMeasureName = aMeasure.name
                     comparedMeasuresNames.push(aMeasureName)
-                    let comparingMeasure = this.nextState.measureFor(aMeasure)
+                    let comparingMeasure = this.nextState.measureFor(aMeasure.id)
                     if (comparingMeasure) {
                         for (let eachDiff of aMeasure.diffArray(comparingMeasure)) {
                             atIfNone(aMeasureName,[]).push(eachDiff);

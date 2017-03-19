@@ -112,7 +112,7 @@ export default {
                 let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id]
                 let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id]
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property],outputAfter[this.rulePlaceholderModel.output.property])
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property].value,outputAfter[this.rulePlaceholderModel.output.property].value)
             }
 
         },
@@ -134,7 +134,15 @@ export default {
                 let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
                 let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
-                let inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+                let inputPositionAfter
+                if (inputPositionBefore) {
+                    //Ok we found an touch with that id
+                    inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+                } else {
+                    //Let's try a measure
+                    inputPositionBefore = visualState.measureFor(this.rulePlaceholderModel.input.id)
+                    inputPositionAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
+                }
 
                 this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
             }
@@ -228,10 +236,16 @@ export default {
             // input * factor = output => factor = output/input
             let deltaOutput = {x:1,y:1}
             let deltaInput = {x:1,y:1}
+            debugger;
             switch (inputProperty) {
                 case 'translation': {
-                    deltaInput.x = inputAfter.x - inputBefore.x
-                    deltaInput.y = inputAfter.y - inputBefore.y
+                    if (inputAfter.x) {
+                        deltaInput.x = inputAfter.x - inputBefore.x
+                        deltaInput.y = inputAfter.y - inputBefore.y
+                    } else {
+                        deltaInput.x = inputAfter.initialPoint.x - inputBefore.initialPoint.x
+                        deltaInput.y = inputAfter.initialPoint.y - inputBefore.initialPoint.y
+                    }
                     break;
                 }
                 case 'scaling': {
@@ -239,8 +253,9 @@ export default {
                         deltaInput.x = inputAfter.radiusX - inputBefore.radiusX
                         deltaInput.y = inputAfter.radiusY - inputBefore.radiusY
                     } else {
-                        deltaInput.x = inputAfter.w - inputBefore.w
-                        deltaInput.y = inputAfter.h - inputBefore.h
+                        //it's a measure?
+                        deltaInput.x = inputAfter.width - inputBefore.width
+                        deltaInput.y = inputAfter.height - inputBefore.height
 
                     }
                     break;

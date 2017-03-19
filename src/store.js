@@ -606,8 +606,8 @@ class VisualStateModel {
     distanceFor(aMeasureKey) {
         return this.measures.find(x => x.id == aMeasureKey)
     }
-    measureFor(measureToCompare) {
-        return this.measures.find(aMeasure => aMeasure.id === measureToCompare.id)
+    measureFor(measureId) {
+        return this.measures.find(aMeasure => aMeasure.id === measureId)
     }
     somethingChangedPreviousState(shapeId, previousValue, changedValue, changedPropertyName) {
         let relatedShape = this.shapesDictionary[shapeId]
