@@ -57,11 +57,11 @@ export default {
 
         },
         mouseOver(e) {
-            console.log("mouseOver")
+            // console.log("mouseOver")
             this.$parent.didMouseOver(this)
         },
         mouseOut(e) {
-            console.log("mouseOut")
+            // console.log("mouseOut")
             this.$parent.didMouseOut(this)
         }
     }
