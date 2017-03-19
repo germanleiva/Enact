@@ -28,7 +28,7 @@ export default {
 
             globalStore.rulesPlaceholders.push(newRulePlaceholder);
 
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder })
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder.toJSON() })
         }
     },
     computed: {

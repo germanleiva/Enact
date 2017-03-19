@@ -169,15 +169,6 @@ class TranslationDiff extends PropertyDiff {
     applyDelta(visualState,shapeModel) {
         visualState.changeProperty(shapeModel,'translation',shapeModel.position,{x:shapeModel.left+this.delta.x,y:shapeModel.top+this.delta.y})
     }
-    loadRulePlaceholder(rulePlaceholderSide) {
-        rulePlaceholderSide.axiss = []
-        if (this.before.x != this.after.x) {
-            rulePlaceholderSide.axiss.push('x')
-        }
-        if (this.before.y != this.after.y) {
-            rulePlaceholderSide.axiss.push('y')
-        }
-    }
     get name() {
         return "translation"
     }
@@ -189,16 +180,6 @@ class ScalingDiff extends PropertyDiff {
     }
     applyDelta(visualState,shapeModel) {
         visualState.changeProperty(shapeModel,'scaling',shapeModel.scale,{w:shapeModel.width+this.delta.w,h:shapeModel.height+this.delta.h})
-    }
-    loadRulePlaceholder(rulePlaceholderSide) {
-        rulePlaceholderSide.axiss = []
-
-        if (this.before.w != this.after.w) {
-            rulePlaceholderSide.axiss.push('x')
-        }
-        if (this.before.h != this.after.h) {
-            rulePlaceholderSide.axiss.push('y')
-        }
     }
     get name() {
         return "scaling"
@@ -289,12 +270,6 @@ class DiffModel {
     }
     applyDelta(visualState,shapeModel) {
         this.property.applyDelta(visualState,shapeModel)
-    }
-    loadRulePlaceholder(rulePlaceholderSide) {
-        rulePlaceholderSide.type = this.type
-        rulePlaceholderSide.id = this.id
-        rulePlaceholderSide.property = this.property.name
-        this.property.loadRulePlaceholder(rulePlaceholderSide)
     }
 }
 
@@ -1073,37 +1048,138 @@ class ShapeModel {
 class RulePlaceholderModel {
     constructor(id) {
         this.id = id;
-        this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        // this.input = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        this.input = new RuleSidePlaceholder({type:undefined,id:undefined,property:undefined})
         this.factor = {x:1,y:1}
-        this.output = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        // this.output = { type: undefined, id: undefined, property: undefined, axiss: [], min: undefined, max: undefined };
+        this.output = new RuleSidePlaceholder({type:undefined,id:undefined,property:undefined})
+    }
+    dropForInput(diffModel) {
+        this.input.droppedDiff(diffModel)
+    }
+    dropForOutput(diffModel) {
+        this.output.droppedDiff(diffModel)
+    }
+    toJSON() {
+        return {id:this.id,input:this.input.toJSON(),factor:this.factor,output:this.output.toJSON()}
     }
 }
 
-class ShapeOutputRule {
+class RuleSidePlaceholder {
+    constructor({type,id,property}) {
+        this.type = type
+        this.id = id
+        this.name = name
+        this.property = property
+        this.axisX = new RuleAxis(this,'x')
+        this.axisY = new RuleAxis(this,'y')
+    }
+    droppedDiff(diffModel) {
+        this.type = diffModel.type
+        this.id = diffModel.id
+        this.name = diffModel.name
+        this.property = diffModel.property.name
+        this.axisX.isActive = diffModel.delta.x != 0
+        this.axisY.isActive = diffModel.delta.y != 0
+    }
+    get axiss() {
+        let axiss = []
+        if (this.axisX.isActive) {
+            axiss.push('x')
+        }
+        if (this.axisY.isActive) {
+            axiss.push('y')
+        }
+        return axiss
+    }
+    set axiss(axissNameArray) {
+        this.axisX.isActive = false
+        this.axisY.isActive = false
+
+        for (let eachAxisName of axissNameArray) {
+            if (eachAxisName == 'x') {
+                this.axisX.isActive = true
+            }
+            if (eachAxisName == 'y') {
+                this.axisY.isActive = true
+            }
+        }
+    }
+    toJSON() {
+        return { type: this.type, id: this.id, property: this.property, axiss: this.axiss, min: {x:this.axisX.min,y:this.axisY.min}, max: {x:this.axisX.max,y:this.axisY.max} }
+    }
+    getValue(element,axisName) {
+        return element[this.property].value[axisName]
+    }
+}
+
+class RuleAxis {
+    constructor(ruleSide,name) {
+        this.ruleSide = ruleSide
+        this.name = name
+        this.min = undefined
+        this.max = undefined
+        this.isActive = false
+    }
+    loadMin(element) {
+        this.min = this.ruleSide.getValue(element,this.name)
+    }
+    loadMax(element) {
+        this.max = this.ruleSide.getValue(element,this.name)
+    }
+}
+
+class MinMaxRule {
+    constructor() {
+        this.minX = undefined;
+        this.minY = undefined;
+        this.maxX = undefined;
+        this.maxY = undefined;
+    }
+    get minX() {
+        if (this._minX) {
+            return this._minX
+        }
+        return -Number.MAX_VALUE
+    }
+    get minY() {
+        if (this._minY) {
+            return this._minY
+        }
+        return -Number.MAX_VALUE
+    }
+    set minX(aValue) {
+        this._minX = aValue
+    }
+    set minY(aValue) {
+        this._minY = aValue
+    }
+    get maxX() {
+        if (this._maxX) {
+            return this._maxX
+        }
+        return Number.MAX_VALUE
+    }
+    get maxY() {
+        if (this._maxY) {
+            return this._maxY
+        }
+        return Number.MAX_VALUE
+    }
+    set maxX(aValue) {
+        this._maxX = aValue
+    }
+    set maxY(aValue) {
+        this._maxY = aValue
+    }
+}
+
+class ShapeOutputRule extends MinMaxRule {
     constructor(shapeId, property, axis) {
+        super()
         this.id = shapeId;
         this.property = property;
         this.axis = axis;
-        this.minValue = undefined;
-        this.maxValue = undefined;
-    }
-    get minValue() {
-        if (this._minValue) {
-            return this._minValue
-        }
-        return { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE }
-    }
-    set minValue(aValue) {
-        this._minValue = aValue
-    }
-    get maxValue() {
-        if (this._maxValue) {
-            return this._maxValue
-        }
-        return { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
-    }
-    set maxValue(aValue) {
-        this._maxValue = aValue
     }
     shouldActivate() {
         return this.id != undefined && this.property != undefined && this.axis.length > 0
@@ -1145,7 +1221,7 @@ class RuleModel {
 
     }
     shouldKeepApplying(oldOutputValue, newOutputValue, anAxis, globalShapeDictionary) {
-        return newOutputValue >= this.output.minValue[anAxis] && newOutputValue <= this.output.maxValue[anAxis]
+        return newOutputValue >= this.output['min' +  anAxis.toUpperCase()] && newOutputValue <= this.output['max' +  anAxis.toUpperCase()]
     }
     actuallyApply(delta, newEvent, globalShapeDictionary) {
         if (!this.input.condition(newEvent, this.currentOutput, globalShapeDictionary)) {
@@ -1219,28 +1295,9 @@ class RuleModel {
     }
 }
 
-class InputRule {
+class InputRule extends MinMaxRule {
     constructor() {
-        this.minPosition = undefined;
-        this.maxPosition = undefined;
-    }
-    get minPosition(){
-        if (this._minPosition) {
-            return this._minPosition
-        }
-        return { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE }
-    }
-    set minPosition(newMinPosition){
-        this._minPosition = newMinPosition
-    }
-    get maxPosition() {
-        if (this._maxPosition) {
-            return this._maxPosition
-        }
-        return { x: Number.MAX_VALUE, y: Number.MAX_VALUE }
-    }
-    set maxPosition(newMaxPosition){
-        this._maxPosition = newMaxPosition
+        super()
     }
 }
 
@@ -1253,7 +1310,7 @@ class TouchInput extends InputRule {
     }
     condition(event, aShape) {
         let touch = this.touchFor(event)
-        return this.axis.every(eachAxis => touch['page' + eachAxis.toUpperCase()] >= this.minPosition[eachAxis] && touch['page' + eachAxis.toUpperCase()] <= this.maxPosition[eachAxis])
+        return this.axis.every(eachAxis => touch['page' + eachAxis.toUpperCase()] >= this['min' + eachAxis.toUpperCase()] && touch['page' + eachAxis.toUpperCase()] <= this['max' + eachAxis.toUpperCase()])
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
@@ -1272,7 +1329,6 @@ class TouchInput extends InputRule {
         }
         if (this.axis.length > aRule.output.axis.length) {
             console.log("Fatal error TouchInput: there are more input axis than output axis on this rule: " + aRule)
-            abort()
         }
 
         let delta = { x: 0, y: 0 }
@@ -1311,7 +1367,6 @@ class MeasureInput extends InputRule {
 
         if (this.axis.length > aRule.output.axis.length) {
             console.log("Fatal error MeasureInput: there are more input axis than output axis on this rule: " + aRule)
-            abort()
         }
 
         let delta = { x: 0, y: 0 }

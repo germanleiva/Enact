@@ -4,8 +4,8 @@
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
             <input class="input" v-model="rulePlaceholderModel.input.type" placeholder="Type">
             <input class="input" v-model="rulePlaceholderModel.input.id" placeholder="Id">
-            <input class="MinMax min input" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="m">
-            <input class="MinMax max input" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="M">
+            <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="m"> -->
+            <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="M"> -->
             <input class="input" v-model="rulePlaceholderModel.input.property" placeholder="Property">
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
             <select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
@@ -24,8 +24,8 @@
               <option>x</option>
               <option>y</option>
             </select>
-            <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min">
-            <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max">
+            <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min"> -->
+            <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max"> -->
         </div>
     </div>
 </template>
@@ -84,8 +84,8 @@ export default {
     watch: {
         rulePlaceholderModel: {
             handler: function(newValue,oldValue) {
-                console.log('rulePlaceholderModel changed to '+newValue+" ("+oldValue+")");
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_RULE", message: newValue })
+                console.log('rulePlaceholderModel changed from '+ JSON.stringify(oldValue.toJSON())+" to "+JSON.stringify(newValue.toJSON()));
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_RULE", message: newValue.toJSON() })
             },
             deep: true
         }
@@ -104,7 +104,7 @@ export default {
 
             let diffModel = new DiffModel(JSON.parse(data))
 
-            diffModel.loadRulePlaceholder(this.rulePlaceholderModel.input)
+            this.rulePlaceholderModel.dropForInput(diffModel)
 
             if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
                 let visualState = globalStore.visualStates[diffModel.visualStateIndex]
@@ -128,7 +128,7 @@ export default {
 
             let diffModel = new DiffModel(JSON.parse(data))
 
-            diffModel.loadRulePlaceholder(this.rulePlaceholderModel.output)
+            this.rulePlaceholderModel.dropForOutput(diffModel)
 
             if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
                 let visualState = globalStore.visualStates[diffModel.visualStateIndex]
@@ -236,7 +236,7 @@ export default {
             // input * factor = output => factor = output/input
             let deltaOutput = {x:1,y:1}
             let deltaInput = {x:1,y:1}
-            debugger;
+
             switch (inputProperty) {
                 case 'translation': {
                     if (inputAfter.x) {

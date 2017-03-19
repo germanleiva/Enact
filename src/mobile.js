@@ -240,6 +240,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_RULE":{
+            console.log("NEW_RULE => " + JSON.stringify(data.message))
             let newRule = new RuleModel(data.message.id)
             // Vue.set(object, key, value)
             Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
@@ -247,6 +248,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_RULE":{
+            console.log("EDIT_RULE => " + JSON.stringify(data.message))
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
@@ -263,17 +265,11 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.property = receivedRule.input.property
                         editedRule.input.axis = receivedRule.input.axiss
 
-                        let minObtained = receivedRule.input.min
-                        if (typeof minObtained === 'string' || minObtained instanceof String) {
-                            minObtained = JSON.parse(minObtained)
-                        }
-                        editedRule.input.minPosition = minObtained
+                        editedRule.input.minX = receivedRule.output.min.x
+                        editedRule.input.minY = receivedRule.output.min.y
 
-                        let maxObtained = receivedRule.input.max
-                        if (typeof maxObtained === 'string' || maxObtained instanceof String) {
-                            maxObtained = JSON.parse(maxObtained)
-                        }
-                        editedRule.input.maxPosition = maxObtained
+                        editedRule.input.maxX = receivedRule.output.max.x
+                        editedRule.input.maxY = receivedRule.output.max.y
                         break;
                     case 'measure':
                         if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {
@@ -297,17 +293,11 @@ socket.on('message-from-server', function(data) {
                             editedRule.output.property = receivedRule.output.property
                             editedRule.output.axis = receivedRule.output.axiss
 
-                            let minObtained = receivedRule.output.min
-                            if (typeof minObtained === 'string' || minObtained instanceof String) {
-                                minObtained = JSON.parse(minObtained)
-                            }
-                            editedRule.output.minValue = minObtained
+                            editedRule.output.minX = receivedRule.output.min.x
+                            editedRule.output.minY = receivedRule.output.min.y
 
-                            let maxObtained = receivedRule.output.max
-                            if (typeof maxObtained === 'string' || maxObtained instanceof String) {
-                                maxObtained = JSON.parse(maxObtained)
-                            }
-                            editedRule.output.maxValue = maxObtained
+                            editedRule.output.maxX = receivedRule.output.max.x
+                            editedRule.output.maxY = receivedRule.output.max.y
                             break;
                         default:
                             console.log("EDIT_RULE >> unrecognized output type: "+receivedRule.output.type)

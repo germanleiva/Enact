@@ -314,6 +314,26 @@ export default {
                 x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.maxWidth),
                 y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.maxHeight)
             }
+
+            //Snap to testShapes or previous state value
+            let shapesToSnap = [...this.visualState.testShapes]
+
+            if (this.visualState.previousState) {
+                let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
+                if (previousShape) {
+                    shapesToSnap.push(previousShape)
+                }
+            }
+
+            for (let testShape of shapesToSnap) {
+                if (Math.abs(newValue.x - testShape.position.x) < 5) {
+                    newValue.x = testShape.position.x
+                }
+                if (Math.abs(newValue.y - testShape.position.y) < 5) {
+                    newValue.y = testShape.position.y
+                }
+            }
+
             logger('moveChanged');
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
