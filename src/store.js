@@ -24,7 +24,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, ShapeModel, MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, DiffModel, logger }
+export { VisualStateModel, RectangleModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, DiffModel, logger }
 
 export const globalBus = new Vue();
 
@@ -41,14 +41,15 @@ export const globalStore = new Vue({
             selectionMode: true,
             multiSelectionMode: false,
             measureMode: false,
+            shapeType: 'rectangle',
             linkingObject: undefined,
-            currentColor: '#1a60f3'
+            currentColor: '#1a60f3',
         },
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 200, //iPhone 375 Nexus 5X 410
-        mobileHeight: 300 //iPhone 667 Nexus 5X 660
+        mobileWidth: 410, //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
     watch: {
         isRecording: function(newValue) {
@@ -66,6 +67,32 @@ export const globalStore = new Vue({
         }
     },
     methods: {
+        setSelectionMode() {
+            this.toolbarState.drawMode = false;
+            this.toolbarState.selectionMode = true;
+            this.toolbarState.measureMode = false;
+            this.cursorType = "default";
+        },
+        setDrawMode() {
+            this.toolbarState.drawMode = true;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = false;
+            this.cursorType = "crosshair";
+        },
+        setRectangleMode() {
+            this.setDrawMode();
+            this.toolbarState.shapeType = 'rectangle';
+        },
+        setPolygonMode() {
+            this.setDrawMode();
+            this.toolbarState.shapeType = 'polygon';
+        },
+        setMeasureMode() {
+            this.toolbarState.drawMode = false;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = true;
+            this.cursorType = "crosshair";
+        },
         deselectAllShapes() {
             for (let eachVisualState of this.visualStates) {
                 eachVisualState.deselectShapes()
@@ -76,9 +103,10 @@ export const globalStore = new Vue({
 
             for (let eachShapeKey in aShapeDictionary) {
                 console.log("Iterating aShapeDicionary: " + eachShapeKey)
-                let clonedShapeModel = newVisualState.addNewShape(eachShapeKey)
-
                 let referenceShape = aShapeDictionary[eachShapeKey]
+
+                let clonedShapeModel = newVisualState.addNewShape(referenceShape.type,eachShapeKey)
+
                 clonedShapeModel.color = referenceShape.color
                 clonedShapeModel.left = referenceShape.left
                 clonedShapeModel.top = referenceShape.top
@@ -96,10 +124,8 @@ export const globalStore = new Vue({
                 let aPreviousShape = previousVisualState.shapesDictionary[previousShapeId]
                 let aNewShape = newVisualState.shapesDictionary[previousShapeId]
                 if (aNewShape) {
-                    for (let eachProperty of ['backgroundColor','translation','scaling']) {
-                        let mapper = {'backgroundColor':'color','translation':'position','scaling':'scale'};
-
-                        if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[mapper[eachProperty]],aNewShape[mapper[eachProperty]])) {
+                    for (let eachProperty of ['color','position','size']) {
+                        if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[eachProperty],aNewShape[eachProperty])) {
                             aNewShape.followMaster(eachProperty)
                         }
                     }
@@ -117,10 +143,8 @@ export const globalStore = new Vue({
                     let aNewShape = newVisualState.shapesDictionary[nextShapeId]
 
                     if (aNewShape) {
-                        for (let eachProperty of ['backgroundColor','translation','scaling']) {
-                        let mapper = {'backgroundColor':'color','translation':'position','scaling':'scale'};
-
-                            if (aNextShape.areEqualValues(eachProperty,aNextShape[mapper[eachProperty]],aNewShape[mapper[eachProperty]])) {
+                        for (let eachProperty of ['color','position','size']) {
+                            if (aNextShape.areEqualValues(eachProperty,aNextShape[eachProperty],aNewShape[eachProperty])) {
                                 aNextShape.followMaster(eachProperty)
                             }
                         }
@@ -167,10 +191,10 @@ class TranslationDiff extends PropertyDiff {
         return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
     }
     applyDelta(visualState,shapeModel) {
-        visualState.changeProperty(shapeModel,'translation',shapeModel.position,{x:shapeModel.left+this.delta.x,y:shapeModel.top+this.delta.y})
+        visualState.changeProperty(shapeModel,'position',shapeModel.position,{x:shapeModel.left+this.delta.x,y:shapeModel.top+this.delta.y})
     }
     get name() {
-        return "translation"
+        return "position"
     }
 }
 
@@ -179,10 +203,10 @@ class ScalingDiff extends PropertyDiff {
         return {w: this.after.w - this.before.w , h: this.after.h - this.before.h }
     }
     applyDelta(visualState,shapeModel) {
-        visualState.changeProperty(shapeModel,'scaling',shapeModel.scale,{w:shapeModel.width+this.delta.w,h:shapeModel.height+this.delta.h})
+        visualState.changeProperty(shapeModel,'size',shapeModel.size,{w:shapeModel.width+this.delta.w,h:shapeModel.height+this.delta.h})
     }
     get name() {
-        return "scaling"
+        return "size"
     }
 }
 
@@ -209,10 +233,10 @@ class BackgroundColorDiff extends PropertyDiff {
         // console.log("delta: " + JSON.stringify(deltaColorRgb));
         // console.log("original: " + JSON.stringify(originalColorRgb));
         // console.log("new: " + JSON.stringify(newColorRgb));
-        visualState.changeProperty(shapeModel,'backgroundColor',shapeModel.color, tinyColor(newColorRgb).toHexString())
+        visualState.changeProperty(shapeModel,'color',shapeModel.color, tinyColor(newColorRgb).toHexString())
     }
     get name() {
-        return "backgroundColor"
+        return "color"
     }
 }
 
@@ -237,15 +261,15 @@ class DiffModel {
         this.name = name
         this.type = type //For example, output
         switch (property.name) {
-            case "translation": {
+            case "position": {
                 this.property = new TranslationDiff(property.before,property.after)
                 break;
             }
-            case "scaling": {
+            case "size": {
                 this.property = new ScalingDiff(property.before,property.after)
                 break;
             }
-            case "backgroundColor": {
+            case "color": {
                 this.property = new BackgroundColorDiff(property.before,property.after)
                 break;
             }
@@ -387,13 +411,13 @@ class MeasureModel {
                 if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
                     //No diff in starting point
                 } else {
-                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "translation", before: myOnlyPoint, after: hisOnlyPoint } })
+                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "position", before: myOnlyPoint, after: hisOnlyPoint } })
                 }
 
                 break;
             case "distance": //I'm interested in scaling
                 if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "scaling", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
+                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "size", before: { w: this.width, h: this.height }, after: { w: nextMeasureWithTheSameModel.width, h: nextMeasureWithTheSameModel.height } } })
                 }
                 break;
         }
@@ -451,17 +475,17 @@ class VisualStateModel {
             //Don't do anything, keep following master and do not propagate
         } else {
             switch (propertyName) {
-                case 'translation': {
+                case 'position': {
                     shapeModel.left = newValue.x
                     shapeModel.top = newValue.y
                     break;
                 }
-                case 'scaling': {
+                case 'size': {
                     shapeModel.width = newValue.w
                     shapeModel.height = newValue.h
                     break;
                 }
-                case 'backgroundColor': {
+                case 'color': {
                     shapeModel.color = newValue
                     break;
                 }
@@ -538,18 +562,18 @@ class VisualStateModel {
         }
         return result
     }
-    addNewShape(shapeId,protoShape) {
+    addNewShape(shapeType,shapeId,protoShape) {
         let correspondingVersion
 
         if (protoShape) {
             //Cheap way of cloning the version, and setting the masterVersion!
-            correspondingVersion = new ShapeModel(shapeId, protoShape);
+            correspondingVersion = ShapeModel.createShape(shapeType, shapeId, protoShape);
         } else {
             if (shapeId) {
-                correspondingVersion = new ShapeModel(shapeId, undefined, '#ffffff', 0, 0, 0, 0);
+                correspondingVersion = ShapeModel.createShape(shapeType,shapeId);
             } else {
                 let newShapeCount = globalStore.shapeCounter++;
-                correspondingVersion = new ShapeModel('R' + newShapeCount, undefined, '#ffffff', 0, 0, 0, 0);
+                correspondingVersion = ShapeModel.createShape(shapeType,'S' + newShapeCount);
             }
         }
 
@@ -570,7 +594,7 @@ class VisualStateModel {
             console.log("WARNING: THIS SHOULDN'T HAPPEN");
         }
 
-        let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape.id,newlyCreatedShape);
+        let ourNewlyCreatedShape = this.addNewShape(newlyCreatedShape.type,newlyCreatedShape.id,newlyCreatedShape);
         if (this.nextState) {
             this.nextState.didCreateShape(ourNewlyCreatedShape, this);
         }
@@ -607,7 +631,7 @@ class VisualStateModel {
 
             //Shape is getting it s own value, so its not following the materVersion anymore
             if (relatedShape.isFollowingMaster(changedPropertyName)) {
-                relatedShape[changedPropertyName].value = changedValue
+                relatedShape.changeOwnProperty(changedPropertyName,changedValue)
             }
         }
     }
@@ -690,7 +714,7 @@ class VisualStateModel {
     moveSelectedShapes(deltaX,deltaY) {
         for (let eachSelectedShape of this.selectedShapes()) {
             eachSelectedShape.isMoving = true
-            this.changeProperty(eachSelectedShape,'translation',eachSelectedShape.position,{x:eachSelectedShape.left+deltaX,y:eachSelectedShape.top+deltaY})
+            this.changeProperty(eachSelectedShape,'position',eachSelectedShape.position,{x:eachSelectedShape.left+deltaX,y:eachSelectedShape.top+deltaY})
         }
 
         if (this.timeoutForStopMovingSelectedShapes) {
@@ -788,10 +812,10 @@ class InputEventTouch {
         let changes = []
 
         if (this.x != comparingTouch.x || this.y != comparingTouch.y) {
-            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "translation" , before: { x: this.x, y: this.y }, after: { x: comparingTouch.x, y: comparingTouch.y } } })
+            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "position" , before: { x: this.x, y: this.y }, after: { x: comparingTouch.x, y: comparingTouch.y } } })
         }
         if (this.radiusX != comparingTouch.radiusX || this.radiusY != comparingTouch.radiusY) {
-            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "scaling" , before: { w: this.radiusX, h: this.radiusY }, after: { w: comparingTouch.radiusX, h: comparingTouch.radiusY } } })
+            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "size" , before: { w: this.radiusX, h: this.radiusY }, after: { w: comparingTouch.radiusX, h: comparingTouch.radiusY } } })
         }
         return changes
     }
@@ -804,28 +828,40 @@ class ShapeModel {
 
         this.opacity = 1
 
-        this.backgroundColor = {
-            value: aColor
+        this._color = aColor
+        this._position = {
+            x: left,
+            y: top
         };
-        this.translation = {
-            value: {
-                x: left,
-                y: top
-            }
-        };
-        this.scaling = {
-            value: {
-                w: width,
-                h: height
-            }
+        this._size = {
+            w: width,
+            h: height
         };
         this.masterVersion = aMasterVersion;
         this.highlight = false
         this.isSelected = false
         this.isResizing = false
         this.isMoving = false
+    }
 
-        this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
+    static createShape(shapeType,shapeId,protoShape) {
+        switch (shapeType) {
+            case 'rectangle': {
+                if (protoShape) {
+                    return new RectangleModel(shapeId, protoShape)
+                }
+                return new RectangleModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+            }
+            case 'polygon': {
+                if (protoShape) {
+                    return new PolygonModel(shapeId, protoShape)
+                }
+                return new PolygonModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+            }
+            default: {
+                console.log("Unrecognized shapeType in static ShapeModel.createShape :" + shapeType)
+            }
+        }
     }
 
     get propertyObject() {
@@ -848,6 +884,7 @@ class ShapeModel {
     get handlers() {
         return this.relevantPoints.filter(eachPoint => eachPoint.isHandler)
     }
+
     cssText(opacityValue = 1) {
         return 'background-color:' + this.color + ";" +
             'position:' + 'absolute' + ";" +
@@ -866,135 +903,120 @@ class ShapeModel {
     get deltaY() {
         return this.height
     }
+
     get left() {
-        if (this.translation.value.x == null) {
-            return this.masterVersion.left;
-        }
-        return this.translation.value.x;
+        return this.position.x
     }
     get top() {
-        if (this.translation.value.y == null) {
-            return this.masterVersion.top;
-        }
-        return this.translation.value.y;
+        return this.position.y
     }
     get width() {
-        if (this.scaling.value.w == null) {
-            return this.masterVersion.width;
-        }
-        return this.scaling.value.w;
+        return this.size.w
     }
     get height() {
-        if (this.scaling.value.h == null) {
-            return this.masterVersion.height;
-        }
-        return this.scaling.value.h;
+        return this.size.h
     }
     get color() {
-        if (this.backgroundColor.value == '') {
-            return this.masterVersion.color;
+        if (this.isFollowingMaster('color')) {
+            return this.masterVersion.color
         }
-        return this.backgroundColor.value;
-    }
-    set top(value) {
-        this.translation.value.y = value;
-    }
-    set left(value) {
-        this.translation.value.x = value;
-    }
-    set width(value) {
-        this.scaling.value.w = value;
-    }
-    set height(value) {
-        this.scaling.value.h = value;
-    }
-    set color(value) {
-        this.backgroundColor.value = value;
+        return this._color
     }
     get position() {
-        if (this.isFollowingMaster('translation')) {
+        if (this.isFollowingMaster('position')) {
             return this.masterVersion.position;
         }
-        return this.translation.value;
+        return this._position;
     }
-    get scale() {
-        if (this.isFollowingMaster('scaling')) {
-            return this.masterVersion.scale;
+    get size() {
+        if (this.isFollowingMaster('size')) {
+            return this.masterVersion.size;
         }
-        return this.scaling.value;
+        return this._size;
+    }
+    set top(value) {
+        this._position.y = value;
+    }
+    set left(value) {
+        this._position.x = value;
+    }
+    set width(value) {
+        this._size.w = value;
+    }
+    set height(value) {
+        this._size.h = value;
+    }
+    set color(value) {
+        this._color = value;
     }
     followMaster(property) {
         switch (property) {
-            case 'backgroundColor':
-                this.backgroundColor.value = '';
+            case 'color':
+                this._color = '';
                 break;
-            case 'translation':
-                this.translation.value.x = null;
-                this.translation.value.y = null;
+            case 'position':
+                this._position.x = null;
+                this._position.y = null;
                 break;
-            case 'scaling':
-                this.scaling.value.w = null;
-                this.scaling.value.h = null;
+            case 'size':
+                this._size.w = null;
+                this._size.h = null;
                 break;
         }
     }
     setOwnPropertiesFromMaster(property) {
         switch (property) {
-            case 'backgroundColor':
+            case 'color':
                 this.color = this.color
                 break;
-            case 'translation':
+            case 'position':
                 this.left = this.left
                 this.top = this.top
                 break;
-            case 'scaling':
+            case 'size':
                 this.width = this.width
                 this.height = this.height
                 break;
             case '':
             default:
-                this.setOwnPropertiesFromMaster('backgroundColor')
-                this.setOwnPropertiesFromMaster('translation')
-                this.setOwnPropertiesFromMaster('scaling')
+                for (let eachProperty of this.allProperties) {
+                    this.setOwnPropertiesFromMaster(eachProperty)
+                }
                 break;
         }
+    }
+    get allProperties() {
+        return ['color','position','size']
     }
     unfollowMaster(property) {
         this.setOwnPropertiesFromMaster(property)
         this.masterVersion = undefined
     }
+    changeOwnProperty(changedPropertyName,changedValue) {
+        this[changePropertyName] = changedValue
+    }
     isFollowingMaster(property) {
         switch (property) {
-            case 'backgroundColor':
-                return this.backgroundColor.value == '';
-            case 'translation':
-                return this.translation.value.x == null && this.translation.value.y == null;
-            case 'scaling':
-                return this.scaling.value.w == null && this.scaling.value.h == null;
+            case 'color':
+                return this._color == '';
+            case 'position':
+                return this._position.x == null && this._position.y == null;
+            case 'size':
+                return this._size.w == null && this._size.h == null;
         }
-        // "check all properties"
-        return this.isFollowingMaster('backgroundColor') && this.isFollowingMaster('translation') && this.isFollowingMaster('scaling')
-    }
-    nonZeroValue(property) {
-        switch (property) {
-            case 'backgroundColor':
-                return this.color;
-            case 'translation':
-                return this.position;
-            case 'scaling':
-                return this.scale;
-        }
+        // "check all properties" //TODO what about vertices???
+        return this.isFollowingMaster('color') && this.isFollowingMaster('position') && this.isFollowingMaster('size')
     }
     valueForProperty(property) {
-        return this[property].value;
+        return this[property];
     }
     areEqualValues(property, value1, value2) {
         switch (property) {
-            case 'backgroundColor':
+            case 'color':
                 return value1 == value2;
-            case 'translation':
+            case 'position':
                 return value1.x == value2.x && value1.y == value2.y;
-            case 'scaling':
+            case 'size':
                 return value1.w == value2.w && value1.h == value2.h;
         }
     }
@@ -1003,17 +1025,17 @@ class ShapeModel {
     }
     diffArray(nextShapeWithTheSameModel) {
         let changes = []
-        if (!nextShapeWithTheSameModel.isFollowingMaster('backgroundColor') && !this.areEqualValues('backgroundColor', this.backgroundColor.value, nextShapeWithTheSameModel.backgroundColor.value)) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('color') && !this.areEqualValues('color', this.color, nextShapeWithTheSameModel.color)) {
             // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
-            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "backgroundColor", before: this.color, after: nextShapeWithTheSameModel.color } })
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "color", before: this.color, after: nextShapeWithTheSameModel.color } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('translation') && !this.areEqualValues('translation', this.translation.value, nextShapeWithTheSameModel.translation.value)) {
+        if (!nextShapeWithTheSameModel.isFollowingMaster('position') && !this.areEqualValues('position', this.position, nextShapeWithTheSameModel.position)) {
             // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
-            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "translation", before: this.position, after: nextShapeWithTheSameModel.position } })
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "position", before: this.position, after: nextShapeWithTheSameModel.position } })
         }
-        if (!nextShapeWithTheSameModel.isFollowingMaster('scaling') && !this.areEqualValues('scaling', this.scaling.value, nextShapeWithTheSameModel.scaling.value)) {
-            // changes.push('Changed size from ' + JSON.stringify(this.scale) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.scale))
-            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "scaling", before: this.scale, after: nextShapeWithTheSameModel.scale } })
+        if (!nextShapeWithTheSameModel.isFollowingMaster('size') && !this.areEqualValues('size', this.size, nextShapeWithTheSameModel.size)) {
+            // changes.push('Changed size from ' + JSON.stringify(this.size) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.size))
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "size", before: this.size, after: nextShapeWithTheSameModel.size } })
         }
         return changes
     }
@@ -1043,6 +1065,145 @@ class ShapeModel {
     deselect() {
         this.isSelected = false
     }
+}
+
+class RectangleModel extends ShapeModel {
+    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
+        super(id, aMasterVersion, aColor, left, top, width, height)
+        this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
+    }
+    get type() {
+        return "rectangle"
+    }
+}
+
+class PolygonModel extends ShapeModel {
+    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
+        super(id, aMasterVersion, aColor, left, top, width, height)
+        this._vertices = []
+        if (aMasterVersion) {
+            for (let i=0;i<aMasterVersion.amountOfVertices;i++) {
+                Vue.set(this._vertices,i,undefined)
+            }
+        }
+        // this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
+    }
+    get handlers() {
+        return this.vertices
+    }
+    get vertices() {
+        return [...Array(this.amountOfVertices).keys()].map(i => this.vertexFor(i))
+    }
+    get amountOfVertices() {
+        return this._vertices.length
+    }
+    get type() {
+        return "polygon"
+    }
+    vertexFor(vertexIndex) {
+        let myVertex = this._vertices[vertexIndex]
+        if (myVertex) {
+            return myVertex
+        }
+        return this.masterVersion.vertexFor(vertexIndex)
+    }
+    addVertex(canvasPosition) {
+        this._vertices.push(new Vertex(this._vertices.length,canvasPosition))
+    }
+    // get isClosed() {
+    //     if (this._vertices.length < 2) {
+    //         return false
+    //     }
+    //     let firstVertex = this._vertices[0]
+    //     let lastVertex = this._vertices[this._vertices.length - 1]
+    //     return firstVertex.x == lastVertex.x && firstVertex.y == lastVertex.y
+    // }
+    isVertexProperty(propertyName) {
+        return !isNaN(propertyName)
+    }
+
+    followMaster(property) {
+        if (this.isVertexProperty(property)) {
+            // this._vertices[property] = undefined
+            Vue.set(this._vertices,property,undefined)
+        } else {
+            super.followMaster(property)
+        }
+    }
+    setOwnPropertiesFromMaster(property) {
+        if (this.isVertexProperty(property)) {
+            // Vue.set(target,key,value)
+            Vue.set(this._vertices,property,new Vertex(property,this.vertexFor(property)))
+            // this._vertices[property] = new Vertex(this,this.vertexFor(property))
+        } else {
+            super.setOwnPropertiesFromMaster(property)
+        }
+    }
+    get allProperties() {
+        let previousProperties = [...super.allProperties]
+        for (let i=0;i<this._vertices.length;i++) {
+            previousProperties.push(i)
+        }
+        return previousProperties
+    }
+    isFollowingMaster(property) {
+        if (this.isVertexProperty(property)) {
+            return this._vertices[property] == undefined
+        }
+        return super.isFollowingMaster(property)
+    }
+    changeOwnProperty(changedPropertyName,changedValue) {
+        if (this.isVertexProperty(changedPropertyName)) {
+            //It's a number => It's a vertex
+            let correspondingVertex = this._vertices[changedPropertyName]
+            if (!correspondingVertex) {
+                // Vue.set(target,key,value)
+                Vue.set(this._vertices,changedPropertyName,new Vertex(changedPropertyName,changedValue))
+                // this._vertices[changedPropertyName] = new Vertex(this,changedValue)
+            } else {
+                correspondingVertex.x = changedValue.x
+                correspondingVertex.y = changedValue.y
+            }
+        } else {
+            super.changeOwnProperty(changedPropertyName,changedValue)
+        }
+    }
+    valueForProperty(property) {
+        if (this.isVertexProperty(property)) {
+            return this.vertexFor(property)
+        } else {
+            return super.valueForProperty(property)
+        }
+    }
+    areEqualValues(property, value1, value2) {
+        if (this.isVertexProperty(property)) {
+            return value1.x == value2.x && value1.y == value2.y
+        } else {
+            return super.areEqualValues(property, value1, value2)
+        }
+    }
+
+}
+
+class Vertex {
+    constructor(id,{x:canvasX,y:canvasY}) {
+        this.id = id
+        this.x = canvasX
+        this.y = canvasY
+    }
+    top(aShape) {
+        return this.y + aShape.position.y
+    }
+    left(aShape) {
+        return this.x + aShape.position.x
+    }
+    get namePrefix() {
+        return this.id
+    }
+}
+
+class LineModel extends ShapeModel {
+
 }
 
 class RulePlaceholderModel {
@@ -1109,7 +1270,7 @@ class RuleSidePlaceholder {
         return { type: this.type, id: this.id, property: this.property, axiss: this.axiss, min: {x:this.axisX.min,y:this.axisY.min}, max: {x:this.axisX.max,y:this.axisY.max} }
     }
     getValue(element,axisName) {
-        return element[this.property].value[axisName]
+        return element[this.property][axisName]
     }
 }
 
@@ -1218,7 +1379,6 @@ class RuleModel {
         // let touch = event.touches[0]
         this.input.applyNewInput(this, newEvent, globalShapeDictionary)
         this.currentEvent = newEvent
-
     }
     shouldKeepApplying(oldOutputValue, newOutputValue, anAxis, globalShapeDictionary) {
         return newOutputValue >= this.output['min' +  anAxis.toUpperCase()] && newOutputValue <= this.output['max' +  anAxis.toUpperCase()]
@@ -1244,11 +1404,11 @@ class RuleModel {
                             outputProperty = 'centerX';
                             break;
                         }
-                        case 'translation': {
+                        case 'position': {
                             outputProperty = 'left';
                             break;
                         }
-                        case 'scaling': {
+                        case 'size': {
                             outputProperty = 'width';
                             // complementaryProperty = 'left';
                             break;
@@ -1265,11 +1425,11 @@ class RuleModel {
                             outputProperty = 'centerY';
                             break;
                         }
-                        case 'translation': {
+                        case 'position': {
                             outputProperty = 'top';
                             break;
                         }
-                        case 'scaling': {
+                        case 'size': {
                             outputProperty = 'height';
                             // complementaryProperty = 'top'
                             break;
@@ -1320,19 +1480,20 @@ class TouchInput extends InputRule {
         return event.touches[this.touchId]
     }
     applyNewInput(aRule, newEvent, globalShapeDictionary) {
-        let previousTouch = aRule.currentEvent.touches[this.touchId]
 
         let touch = newEvent.touches[this.touchId]
 
         if (!touch) {
-            console.log("TouchInput >> applyNewInput: there isn't a touch = " + touch)
+            console.log("TouchInput >> applyNewInput: input type " + newEvent.type +  " there isn't a touch = " + touch)
+            return
         }
         if (this.axis.length > aRule.output.axis.length) {
             console.log("Fatal error TouchInput: there are more input axis than output axis on this rule: " + aRule)
         }
+        let previousTouch = aRule.currentEvent.touches[this.touchId]
 
         let delta = { x: 0, y: 0 }
-        if (this.property == 'translation') {
+        if (this.property == 'position') {
             for (let eachInputAxis of this.axis) {
                 delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
             }
@@ -1397,10 +1558,10 @@ class MeasureInput extends InputRule {
     }
     currentMeasuredValue() {
         switch(this.property) {
-            case 'translation': {
+            case 'position': {
                 return this.measureObject.initialPoint
             }
-            case 'scaling': {
+            case 'size': {
                 return {x:this.measureObject.width,y:this.measureObject.height}
             }
             default: {

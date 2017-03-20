@@ -80,10 +80,10 @@ export default {
     globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
         // console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
-        let deviceEditedShapeId = data.id
+        let deviceEditedShapeId = data.message.id
         if (!this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
-            let myEditedShape = this.deviceVisualState.addNewShape(deviceEditedShapeId)
-            loadShapeFromStyleObject(myEditedShape,data.style)
+            let myEditedShape = this.deviceVisualState.addNewShape(data.message.shapeType,deviceEditedShapeId)
+            loadShapeFromStyleObject(myEditedShape,data.message.style)
         } else {
             console.log("We already have that SHAPE? WEIRD")
         }

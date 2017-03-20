@@ -15,8 +15,7 @@ export default {
     name: 'output-area',
     data: function() {
         return {
-            cursorType: globalStore.cursorType,
-            shapeCounter: globalStore.shapeCounter
+
         }
     },
     components: {
@@ -35,6 +34,9 @@ export default {
         }
     },
     computed: {
+        cursorType() {
+            return globalStore.cursorType
+        },
         visualStates: function() {
             return globalStore.visualStates
         }

@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
@@ -141,7 +141,7 @@ let ShapeVM = Vue.extend({
         }
     },
     created: function() {
-        socket.emit('message-from-device', { type:"SHAPE_CREATED", id: this.id, style: this.styleObject });
+        socket.emit('message-from-device', { type:"SHAPE_CREATED", message: { id: this.id, shapeType: this.shapeModel.type, style: this.styleObject }});
     },
     watch: {
         "styleObject": {
@@ -172,7 +172,7 @@ function createShapeVM(id, message) {
         return existingShape
     }
 
-    let newShapeModel = new ShapeModel(id,undefined,message.color,message.left,message.top,message.width,message.height)
+    let newShapeModel = new RectangleModel(id,undefined,message.color,message.left,message.top,message.width,message.height)
     newShapeModel.opacity = message.opacity;
 
     var newShapeVM = new ShapeVM({propsData: {shapeModel: newShapeModel }});

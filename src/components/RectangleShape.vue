@@ -2,7 +2,7 @@
     <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult">
         <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
         </div>
-        <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
+        <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
         </div>
         <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
         </div>
@@ -50,12 +50,11 @@ import {globalStore,globalBus,logger, MeasureModel, DiffModel} from '../store.js
 // }
 
 export default {
-    name: 'shape',
+    name: 'rectangle-shape',
     props: ['shapeModel', 'parentVisualState','isTestShape'],
     data: function() {
         return {
             visualState: this.parentVisualState,
-            handlers: this.shapeModel.handlers,
             isHovered: false,
             isMoving: false
         }
@@ -155,6 +154,9 @@ export default {
         }
     },
     methods: {
+        isPointInside(x,y) {
+            return this.shapeModel.isPointInside(x,y);
+        },
         handlerStyleObject: function(aHandler) {
             const size = 10
             return {
@@ -206,8 +208,8 @@ export default {
 
             let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft();
             let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop();
-            let startingShapeWidth = this.shapeModel.scale.w
-            let startingShapeHeight = this.shapeModel.scale.h
+            let startingShapeWidth = this.shapeModel.size.w
+            let startingShapeHeight = this.shapeModel.size.h
 
             var mouseMoveHandler
 
@@ -338,7 +340,7 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            this.visualState.changeProperty(this.shapeModel,'translation',previousValue,newValue);
+            this.visualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
         },
         toggleSelection(notify = true) {
             this.shapeModel.isSelected = !this.shapeModel.isSelected;
@@ -351,7 +353,7 @@ export default {
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = { w: this.shapeModel.scale.w, h: this.shapeModel.scale.h };
+            let previousValue = { w: this.shapeModel.size.w, h: this.shapeModel.size.h };
 
             let currentWindowMousePositionX = e.pageX;
             let currentWindowMousePositionY = e.pageY;
@@ -436,13 +438,13 @@ export default {
                     break;
             }
 
-            if (this.shapeModel.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
+            if (this.shapeModel.isFollowingMaster('size') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
                 //Don't do anything, keep following master and do not propagate
             } else {
                 this.shapeModel.width = newValue.w;
                 this.shapeModel.height = newValue.h;
                 if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'scaling');
+                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'size');
                 }
             }
         },

@@ -24,13 +24,13 @@ export default {
                 let before = this.diffData.property.before
                 let after = this.diffData.property.after
                 return {
-                    'fa-arrows-h': propertyName == 'translation' && (before.x != after.x) && (before.y == after.y),
-                    'fa-arrows-v': propertyName == 'translation' && (before.x == after.x) && (before.y != after.y),
-                    'fa-arrows': propertyName == 'translation' && (before.x != after.x) && (before.y != after.y),
-                    'fa-expand fa-rotate-135': propertyName == 'scaling' && (before.w == after.w) && (before.h != after.h),
-                    'fa-expand fa-rotate-45': propertyName == 'scaling' && (before.w != after.w) && (before.h == after.h),
-                    'fa-arrows-alt': propertyName == 'scaling' && (before.w != after.w) && (before.h != after.h),
-                    'fa-tint': propertyName == 'backgroundColor',
+                    'fa-arrows-h': propertyName == 'position' && (before.x != after.x) && (before.y == after.y),
+                    'fa-arrows-v': propertyName == 'position' && (before.x == after.x) && (before.y != after.y),
+                    'fa-arrows': propertyName == 'position' && (before.x != after.x) && (before.y != after.y),
+                    'fa-expand fa-rotate-135': propertyName == 'size' && (before.w == after.w) && (before.h != after.h),
+                    'fa-expand fa-rotate-45': propertyName == 'size' && (before.w != after.w) && (before.h == after.h),
+                    'fa-arrows-alt': propertyName == 'size' && (before.w != after.w) && (before.h != after.h),
+                    'fa-tint': propertyName == 'color',
                     'fa-plus': propertyName == 'added',
                     'fa-minus': propertyName == 'removed',
                 }
