@@ -1,9 +1,9 @@
 <template>
     <div v-on:mousedown='actionStarted' :draggable="isMirror" v-on:dragstart="mirrorDragged" class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
-        <shape ref="shapes" v-for="aShapeModel in shapeModels" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="false"></shape>
+        <component ref="shapes" v-for="aShapeModel in shapeModels" :is="aShapeModel.type + '-shape'" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="false"></component>
         <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
-        <shape v-for="aShapeModel in visualStateModel.testShapes" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="true"></shape>
+        <component v-for="aShapeModel in visualStateModel.testShapes" :is="aShapeModel.type + '-shape'" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="true"></component>
         <input-event-mark ref="currentInputEventMarkVM" :visual-state="visualStateModel"></input-event-mark>
     </div>
 </template>
@@ -13,7 +13,8 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore, globalBus, VisualStateModel} from '../store.js'
-import Shape from './Shape.vue'
+import RectangleShape from './RectangleShape.vue'
+import PolygonShape from './PolygonShape.vue'
 import Distance from './Distance.vue'
 import Point from './Point.vue'
 import InputEventMark from './InputEventMark.vue'
@@ -24,10 +25,12 @@ export default {
     props: ['visualStateModel','isMirror'],
     data: function() {
         return {
+            currentPolygon: undefined
         }
     },
     components: {
-        Shape,
+        RectangleShape,
+        PolygonShape,
         Distance,
         Point,
         InputEventMark,
@@ -51,18 +54,21 @@ export default {
                 let newValue = selectedColor;
 
                 //First we need to check if we are followingMaster in that property
-                if (aShapeModel.isFollowingMaster('backgroundColor') && previousValue == newValue) {
+                if (aShapeModel.isFollowingMaster('color') && previousValue == newValue) {
                     //Don't do anything, keep following master and do not propagate
                 } else {
 
                     aShapeModel.color = newValue;
 
                     if (this.nextState) {
-                        this.nextState.somethingChangedPreviousState(aShapeModel.id, previousValue, newValue, 'backgroundColor');
+                        this.nextState.somethingChangedPreviousState(aShapeModel.id, previousValue, newValue, 'color');
                     }
                 }
             };
         });
+        globalBus.$on('polygonModeOff', function() {
+            this.currentPolygon = undefined
+        }.bind(this));
     },
     computed: {
         shapeModels: function() {
@@ -199,18 +205,17 @@ export default {
                 return
             }
             e.preventDefault()
-            if (globalStore.toolbarState.drawMode) {
+            if (globalStore.isDrawMode) {
                 this.drawingStarted(e);
-            } else if (globalStore.toolbarState.selectionMode) {
+            } /*else if (globalStore.toolbarState.selectionMode) {
                 let selectedShape = null;
-
                 //We traverse the shapes in backward order
                 let allShapes = this.shapesVM()
                 for (var i = allShapes.length - 1; i >= 0; i--) {
                     var each = allShapes[i];
                     let x = e.x - this.canvasElement().offsetLeft;
                     let y = e.y - this.canvasElement().offsetTop;
-                    if (each.shapeModel.isPointInside(x, y)) {
+                    if (each.isPointInside(x, y)) {
                         each.toggleSelection();
 
                         if (each.isSelected) {
@@ -228,53 +233,75 @@ export default {
                     };
                 }
 
-            }
+            }*/
         },
 
         //DRAWING METHODS
-        drawingStarted: function(e) {
+        drawingStarted: function(e,shapeType) {
             globalStore.deselectAllShapes()
 
-            var newShapeModel = this.visualStateModel.addNewShape();
-            if (this.nextState) {
-                this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
-            }
-            let startingWindowMousePosition = {
-                x: e.pageX + document.getElementById('outputArea').scrollLeft,
-                y: e.pageY + document.getElementById('outputArea').scrollTop
+            let startingCanvasMousePosition = {
+                x: e.pageX + document.getElementById('outputArea').scrollLeft - this.canvasOffsetLeft(),
+                y: e.pageY + document.getElementById('outputArea').scrollTop - this.canvasOffsetTop()
             };
 
-            this.updateShapeProperties(e,newShapeModel,startingWindowMousePosition)
+            if (globalStore.toolbarState.polygonMode) {
+                if (this.currentPolygon == undefined) {
+                    let newShapeModel = this.visualStateModel.addNewShape('polygon')
 
-            var mouseMoveHandler
+                    if (this.nextState) {
+                        this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
+                    }
+                    this.currentPolygon = newShapeModel
 
-            mouseMoveHandler = function(e) {
-                e.preventDefault()
-                newShapeModel.isResizing = true;
-                this.drawingChanged(e, newShapeModel, startingWindowMousePosition)
-            }.bind(this)
+                    if (globalStore.visualStates[0] === this.visualStateModel) {
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: this.currentPolygon.toJSON() })
+                    }
+                }
 
-            var mouseUpHandler
-            mouseUpHandler = function(e) {
-                e.preventDefault()
-                newShapeModel.isResizing = false;
-                this.drawingEnded(e, newShapeModel)
-                window.removeEventListener('mousemove', mouseMoveHandler, false);
-                window.removeEventListener('mouseup', mouseUpHandler, false);
-            }.bind(this)
+                this.visualStateModel.addVertex(this.currentPolygon.id,startingCanvasMousePosition)
 
-            window.addEventListener('mousemove', mouseMoveHandler, false);
-            window.addEventListener('mouseup', mouseUpHandler, false);
+            } else if (globalStore.toolbarState.rectangleMode) {
+                let newShapeModel = this.visualStateModel.addNewShape('rectangle');
 
-            if (globalStore.visualStates[0] === this.visualStateModel) {
-                // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
-                // globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
-                globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
+                if (this.nextState) {
+                    this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
+                }
+
+                this.updateShapeProperties(startingCanvasMousePosition,newShapeModel,startingCanvasMousePosition)
+
+                let mouseMoveHandler
+
+                mouseMoveHandler = function(e) {
+                    e.preventDefault()
+                    newShapeModel.isResizing = true;
+                    this.drawingChanged(e, newShapeModel, startingCanvasMousePosition)
+                }.bind(this)
+
+                let mouseUpHandler
+                mouseUpHandler = function(e) {
+                    e.preventDefault()
+                    newShapeModel.isResizing = false;
+                    this.drawingEnded(e, newShapeModel)
+                    window.removeEventListener('mousemove', mouseMoveHandler, false);
+                    window.removeEventListener('mouseup', mouseUpHandler, false);
+                }.bind(this)
+
+                window.addEventListener('mousemove', mouseMoveHandler, false);
+                window.addEventListener('mouseup', mouseUpHandler, false);
+
+                if (globalStore.visualStates[0] === this.visualStateModel) {
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
+                }
             }
         },
 
-        drawingChanged: function(e, newShapeModel, startingWindowMousePosition) {
-            this.updateShapeProperties(e, newShapeModel, startingWindowMousePosition);
+        drawingChanged: function(e, newShapeModel, startingCanvasMousePosition) {
+            let currentCanvasMousePosition = {
+                x: e.pageX + document.getElementById('outputArea').scrollLeft  - this.canvasOffsetLeft(),
+                y: e.pageY + document.getElementById('outputArea').scrollTop  - this.canvasOffsetTop()
+            }
+            this.updateShapeProperties(currentCanvasMousePosition, newShapeModel, startingCanvasMousePosition);
         },
 
         drawingEnded: function(e, newShapeModel) {
@@ -282,31 +309,29 @@ export default {
             //     this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
             // }
             //TODO repeated code with Toolbar >> selectionSelected, we should use globalBus
-            globalStore.toolbarState.drawMode = false;
-            globalStore.toolbarState.selectionMode = true;
-            globalStore.toolbarState.measureMode = false;
+            globalStore.setSelectionMode()
 
             newShapeModel.isSelected = true;
         },
 
-        updateShapeProperties: function(e, newShapeModel, startingWindowMousePosition) {
+        updateShapeProperties: function(currentCanvasMousePosition, newShapeModel, startingCanvasMousePosition) {
             //Maybe this should go in Shape
-            let currentWindowMousePositionX = e.pageX + document.getElementById('outputArea').scrollLeft;
-            let currentWindowMousePositionY = e.pageY + document.getElementById('outputArea').scrollTop;
-            var topValue = startingWindowMousePosition.y
-            if (currentWindowMousePositionY < startingWindowMousePosition.y) {
-                topValue = currentWindowMousePositionY;
+
+            var topValue = startingCanvasMousePosition.y
+            if (currentCanvasMousePosition.y < startingCanvasMousePosition.y) {
+                topValue = currentCanvasMousePosition.y;
             }
 
-            var leftValue = startingWindowMousePosition.x
-            if (currentWindowMousePositionX < startingWindowMousePosition.x) {
-                leftValue = currentWindowMousePositionX;
+            var leftValue = startingCanvasMousePosition.x
+            if (currentCanvasMousePosition.x < startingCanvasMousePosition.x) {
+                leftValue = currentCanvasMousePosition.x;
             }
-            var widthValue = Math.abs(currentWindowMousePositionX - startingWindowMousePosition.x);
-            var heightValue = Math.abs(currentWindowMousePositionY - startingWindowMousePosition.y)
+            var widthValue = Math.abs(currentCanvasMousePosition.x - startingCanvasMousePosition.x);
+            var heightValue = Math.abs(currentCanvasMousePosition.y - startingCanvasMousePosition.y)
 
-            newShapeModel.top = topValue - this.canvasOffsetTop();
-            newShapeModel.left = leftValue - this.canvasOffsetLeft();
+//This only applies to Rectangles what about Polygons?
+            newShapeModel.top = topValue;
+            newShapeModel.left = leftValue;
             newShapeModel.width = widthValue;
             newShapeModel.height = heightValue;
         },

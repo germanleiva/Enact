@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
@@ -91,7 +91,7 @@ let mobileCanvasVM = new Vue({
     }
 })
 
-let ShapeVM = Vue.extend({
+let RectangleVM = Vue.extend({
     template: `<div :id="id" class="shape" v-bind:style="styleObject"></div>`,
     props: ['shapeModel'],
     data: function() {
@@ -127,7 +127,7 @@ let ShapeVM = Vue.extend({
             get: function() {
                 return {
                     'backgroundColor': this.shapeModel.color,
-                    'translation': 'absolute',
+                    // 'translation': 'absolute',
                     'left': this.shapeModel.left + 'px',
                     'top': this.shapeModel.top + 'px',
                     'width': this.shapeModel.width + 'px',
@@ -141,28 +141,90 @@ let ShapeVM = Vue.extend({
         }
     },
     created: function() {
-        socket.emit('message-from-device', { type:"SHAPE_CREATED", id: this.id, style: this.styleObject });
+        console.log("Rectangle created");
+        socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
-        "styleObject": {
-            deep: false,
+        shapeModel: {
+            deep: true,
             handler: function(newValue,oldValue) {
-                let changes = {}
-                for (let eachKey in newValue) {
-                    if (newValue[eachKey] != oldValue[eachKey]) {
-                        changes[eachKey] = newValue[eachKey]
-                    }
-                }
-                socket.emit('message-from-device', { type:"SHAPE_CHANGED", id: this.id, style: changes });
+                socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
+    },
+    destroyed: function() {
+        socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
     }
 })
 
-function deleteShapeVM(id) {
-    let shapeVMToDelete = mobileCanvasVM.interactiveShapes[id]
-    document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
-    shapeVMToDelete.$destroy()
+let PolygonVM = Vue.extend({
+    template: `<svg :style="svgStyle" width="1" height="1">
+    <path ref="svgPolygonPath" :id="shapeModel.id" v-bind:style="styleObject" :d="pathData" :transform="pathTransform"/>
+    </svg>`,
+    props: ['shapeModel'],
+    data: function() {
+        return {
+            id: this.shapeModel.id
+        }
+    },
+    computed: {
+        pathData: function() {
+            let dataString = ""
+            if (this.shapeModel.amountOfVertices > 0) {
+                dataString += `M${this.shapeModel.vertexFor(0).x} ${this.shapeModel.vertexFor(0).y} `
+                for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
+                    let otherVertex = this.shapeModel.vertexFor(i)
+                    dataString += `L ${otherVertex.x} ${otherVertex.y} `
+                }
+                dataString += "Z"
+            }
+            console.log("pathData: "+dataString + " shapeModel? : " + JSON.stringify(this.shapeModel.vertices))
+            return dataString
+        },
+        pathTransform: function() {
+            return 'translate('+this.shapeModel.position.x+','+this.shapeModel.position.y+')'
+        },
+        svgStyle: function() {
+            return {
+                'position' : 'absolute',
+                'left': '0px',
+                'top': '0px',
+                'overflow': 'visible'
+            }
+        },
+        styleObject: function() {
+            return {
+                'fill': this.shapeModel.color,
+                'stroke': 'gray',
+                'stroke-width' : "1",
+                'stroke-dasharray' : "none",
+                'fill-opacity': '1',
+                // 'pointer-events': this.isTestShape?'none':'auto'
+            }
+        }
+    },
+    created: function() {
+        console.log("Polygon created");
+        socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
+    },
+    watch: {
+        shapeModel: {
+            deep: true,
+            handler: function(newValue,oldValue) {
+                console.log("Polygon, shapeModel watcher: " + newValue)
+                socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
+            }
+        }
+    },
+    destroyed: function() {
+        socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
+    }
+})
+
+function deleteRectangleVM(id) {
+    let RectangleVMToDelete = mobileCanvasVM.interactiveShapes[id]
+    document.getElementById("shapeContainer").removeChild(RectangleVMToDelete.$el)
+    RectangleVMToDelete.$destroy()
     delete mobileCanvasVM.interactiveShapes[id]
 }
 
@@ -172,16 +234,24 @@ function createShapeVM(id, message) {
         return existingShape
     }
 
-    let newShapeModel = new ShapeModel(id,undefined,message.color,message.left,message.top,message.width,message.height)
-    newShapeModel.opacity = message.opacity;
+    let newShapeModel = ShapeModel.createShape(message.type,id)
+    newShapeModel.fromJSON(message)
 
-    var newShapeVM = new ShapeVM({propsData: {shapeModel: newShapeModel }});
+    let newShapeVM
+
+    if (message.type == 'rectangle') {
+        newShapeVM = new RectangleVM({propsData: {shapeModel: newShapeModel }});
+    }
+    if (message.type == 'polygon') {
+        newShapeVM = new PolygonVM({propsData: {shapeModel: newShapeModel }});
+    }
 
     newShapeVM.$mount();
     document.getElementById("shapeContainer").appendChild(newShapeVM.$el);
 
     mobileCanvasVM.interactiveShapes[id] = newShapeVM
     return newShapeVM
+
 }
 
 socket.on('message-from-server', function(data) {
@@ -193,7 +263,7 @@ socket.on('message-from-server', function(data) {
                 allKeys.push(eachShapeKey)
             }
             for (let shapeId of allKeys) {
-                deleteShapeVM(shapeId)
+                deleteRectangleVM(shapeId)
             }
 
             mobileCanvasVM.rules = {}
@@ -213,20 +283,19 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_SHAPE":{
+            console.log("NEW_SHAPE: id: " + data.message.id +  " " + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             createShapeVM(data.message.id, data.message)
             break;
         }
         case "EDIT_SHAPE":{
-            // console.log(data.message);
+            console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             let editedShapeVM = mobileCanvasVM.interactiveShapes[data.id]
             if (editedShapeVM) {
-                for (let eachKey in data.message) {
-                    editedShapeVM.shapeModel[eachKey] = data.message[eachKey]
-                }
+                editedShapeVM.shapeModel.fromJSON(data.message)
             } else {
                 console.log("Are we editing a shape that was not created????? WERID!" + data.message.id)
             }
@@ -236,7 +305,7 @@ socket.on('message-from-server', function(data) {
             // console.log(data.message);
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
-            deleteShapeVM(data.message.id)
+            deleteRectangleVM(data.message.id)
             break;
         }
         case "NEW_RULE":{
@@ -340,8 +409,8 @@ socket.on('message-from-server', function(data) {
                         // if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
                             let shapeStates = {}
                             for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
-                                let eachShapeVM = mobileCanvasVM.interactiveShapes[eachShapeKey]
-                                shapeStates[eachShapeKey] = {id: eachShapeKey, left: eachShapeVM.shapeModel.left, top: eachShapeVM.shapeModel.top, width: eachShapeVM.shapeModel.width, height: eachShapeVM.shapeModel.height, color: eachShapeVM.shapeModel.color }
+                                let eachRectangleVM = mobileCanvasVM.interactiveShapes[eachShapeKey]
+                                shapeStates[eachShapeKey] = {id: eachShapeKey, left: eachRectangleVM.shapeModel.left, top: eachRectangleVM.shapeModel.top, width: eachRectangleVM.shapeModel.width, height: eachRectangleVM.shapeModel.height, color: eachRectangleVM.shapeModel.color }
                             }
                             savedShapesStatesPerEvent[currentEventIndex] = shapeStates
                         // }

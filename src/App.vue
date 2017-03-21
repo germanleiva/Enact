@@ -18,6 +18,7 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import {extendArray} from './collections.js'
 extendArray(Array);
 
@@ -45,27 +46,6 @@ export default {
     VisualStateCanvas
   },
   mounted: function() {
-
-    function loadShapeFromStyleObject(aShape,aStyleObject) {
-        if (aStyleObject.hasOwnProperty('top')) {
-            aShape.top = parseInt(aStyleObject.top);
-        }
-        if (aStyleObject.hasOwnProperty('left')) {
-            aShape.left = parseInt(aStyleObject.left);
-        }
-        if (aStyleObject.hasOwnProperty('width')) {
-            aShape.width = parseInt(aStyleObject.width);
-        }
-        if (aStyleObject.hasOwnProperty('height')) {
-            aShape.height = parseInt(aStyleObject.height);
-        }
-        if (aStyleObject.hasOwnProperty('backgroundColor')) {
-            aShape.color = aStyleObject.backgroundColor;
-        }
-        if (aStyleObject.hasOwnProperty('opacity')) {
-            aShape.opacity = parseInt(aStyleObject.opacity);
-        }
-    }
     globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
         // console.log("TYPE OF EVENT " + data.message.type)
         this.deviceVisualState.currentInputEvent = new InputEvent(data.message)
@@ -79,11 +59,11 @@ export default {
 
     globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
-        // console.log("SHAPE_CREATED style: " + JSON.stringify(data.style))
-        let deviceEditedShapeId = data.id
+        console.log("SHAPE_CREATED json: " + JSON.stringify(data.shapeJSON))
+        let deviceEditedShapeId = data.shapeJSON.id
         if (!this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
-            let myEditedShape = this.deviceVisualState.addNewShape(deviceEditedShapeId)
-            loadShapeFromStyleObject(myEditedShape,data.style)
+            let myEditedShape = this.deviceVisualState.addNewShape(data.shapeType,deviceEditedShapeId)
+            myEditedShape.fromJSON(data.shapeJSON)
         } else {
             console.log("We already have that SHAPE? WEIRD")
         }
@@ -91,15 +71,27 @@ export default {
 
     globalBus.$on('message-from-device-SHAPE_CHANGED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
-        // console.log("SHAPE_CHANGED style: " + JSON.stringify(data.style))
-        let deviceEditedShapeId = data.id
+        console.log("SHAPE_CHANGED json: " + JSON.stringify(data.shapeJSON))
+        let deviceEditedShapeId = data.shapeJSON.id
 
         if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
             let myEditedShape = this.deviceVisualState.shapesDictionary[deviceEditedShapeId]
 
-            loadShapeFromStyleObject(myEditedShape,data.style)
+            myEditedShape.fromJSON(data.shapeJSON)
         } else {
             console.log("We are editing a shape that we don't have. WEIRD")
+        }
+    }.bind(this))
+
+    globalBus.$on('message-from-device-SHAPE_DELETED',function(data) {
+        //If the deviceVisualState has the shape then we edit else we create
+        console.log("SHAPE_DELETED json: " + JSON.stringify(data))
+        let deviceEditedShapeId = data.id
+
+        if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {
+            Vue.delete(this.deviceVisualState.shapesDictionary, deviceEditedShapeId)
+        } else {
+            console.log("We are deleting a shape that we don't have. WEIRD")
         }
     }.bind(this))
 

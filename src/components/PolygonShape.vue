@@ -1,18 +1,13 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult">
-        <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
-        </div>
-        <div ref="handlerElements" v-for="eachHandler in handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
-        </div>
-        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
-        </div>
-        <div :style="positionStyleObject" v-show="shapeModel.isMoving">
-            <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
-            <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
-        </div>
-        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999" v-show="shapeModel.isResizing">{{shapeModel.width}}px</div>
-        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999" v-show="shapeModel.isResizing">{{shapeModel.height}}px</div>
+    <div>
+        <svg ref="parentSVG" :style="svgStyle" width="1" height="1">
+            <path ref="svgPolygonPath" :id="shapeModel.id" v-bind:style="styleObject" :d="pathData" :transform="pathTransform" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult"/>
+            <path :d="pathData" :transform="pathTransform" v-show="shapeModel.highlight" v-bind:style="overlayStyleObject"/>
+        </svg>
+        <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
     </div>
+<!--           <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
+          </div> -->
 
 </template>
 <script>
@@ -50,17 +45,39 @@ import {globalStore,globalBus,logger, MeasureModel, DiffModel} from '../store.js
 // }
 
 export default {
-    name: 'shape',
+    name: 'polygon-shape',
     props: ['shapeModel', 'parentVisualState','isTestShape'],
     data: function() {
         return {
             visualState: this.parentVisualState,
-            handlers: this.shapeModel.handlers,
             isHovered: false,
             isMoving: false
         }
     },
     computed: {
+        pathData: function() {
+            let dataString = ""
+            if (this.shapeModel.amountOfVertices > 0) {
+                dataString += `M${this.shapeModel.vertexFor(0).x} ${this.shapeModel.vertexFor(0).y} `
+                for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
+                    let otherVertex = this.shapeModel.vertexFor(i)
+                    dataString += `L ${otherVertex.x} ${otherVertex.y} `
+                }
+                dataString += "Z"
+            }
+            return dataString
+        },
+        pathTransform: function() {
+            return 'translate('+this.shapeModel.position.x+','+this.shapeModel.position.y+')'
+        },
+        svgStyle: function() {
+            return {
+                'position' : 'absolute',
+                'left': '0px',
+                'top': '0px',
+                'overflow': 'visible'
+            }
+        },
         shouldShowHandlers: function() {
             return !this.isTestShape && this.shapeModel.isSelected
         },
@@ -68,19 +85,14 @@ export default {
             return !this.isTestShape && globalStore.toolbarState.measureMode
         },
         styleObject: function() {
-                return {
-                    'backgroundColor': this.isTestShape? 'rgba(0,0,0,0)': this.shapeModel.color,
-                    'position': 'absolute',
-                    'left': this.shapeModel.left + 'px',
-                    'top': this.shapeModel.top + 'px',
-                    'width': this.shapeModel.width /*+ border*/ + 'px',
-                    'height': this.shapeModel.height /*+ border*/ + 'px',
-                    'border': this.isTestShape? '2px dashed #ffa500':'1px solid gray',
-                    'overflow': 'visible',
-                    'opacity': '1',
-                    'pointer-events': this.isTestShape?'none':'auto'
-                    // 'box-sizing': 'border-box' //To ignore the border size?
-                }
+            return {
+                'fill': this.isTestShape? 'rgba(0,0,0,0)': this.shapeModel.color,
+                'stroke': this.isTestShape? '#ffa500':'gray',
+                'stroke-width' : this.isTestShape ? "2" : "1",
+                'stroke-dasharray' : this.isTestShape? "5,5":"none",
+                'fill-opacity': '1',
+                'pointer-events': this.isTestShape?'none':'auto'
+            }
         },
         positionStyleObject: function() {
             return {
@@ -115,8 +127,6 @@ export default {
             return {
                 'backgroundColor':'gray',
                 'opacity':0.3,
-                'width': this.shapeModel.width + 'px',
-                'height': this.shapeModel.height + 'px',
                 'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the shape overlay
             }
         },
@@ -129,37 +139,46 @@ export default {
         console.log("WE DESTROYED SHAPE (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
-        styleObject: function(newVal,oldVal) {
-            if (!this.isTestShape && this.shapeModel) {
+        shapeModel: {
+            deep:true,
+            handler: function(newVal,oldVal) {
+                                console.log("shapeModel watcher @ PolygonShape.vue")
+
+            if (!this.isTestShape) {
 
 
                 if (globalStore.visualStates[0] === this.visualState) {
 
-                    let changes = {}
-                    for (let eachKey in newVal) {
-                        if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
-                            if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
-                                changes['color'] = newVal[eachKey]
-                            } else {
-                                changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
-                            }
-                        }
-                    }
-                    // console.log("message-from-desktop EDIT_SHAPE")
-                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
+        //             let changes = {}
+        //             for (let eachKey in newVal) {
+        //                 if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
+        //                     if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
+        //                         changes['color'] = newVal[eachKey]
+        //                     } else {
+        //                         changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
+        //                     }
+        //                 }
+        //             }
+                    console.log("message-from-desktop EDIT_SHAPE")
+                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: newVal.id, message: newVal.toJSON() })
                }
             } else {
                 //I WAS DELETED
-                console.log("Should i worry? " + this.shapeModel)
+                console.log("Should i worry? Polygon shapeModel watcher")
             }
         }
+    }
     },
     methods: {
+        isPointInside(x,y) {
+            let element = document.elementFromPoint(x,y)
+            debugger;
+        },
         handlerStyleObject: function(aHandler) {
             const size = 10
             return {
-                'left': aHandler.left(size) + 'px',
-                'top': aHandler.top(size) + 'px',
+                'left': aHandler.left(this.shapeModel) - size / 2 +  'px',
+                'top': aHandler.top(this.shapeModel) - size / 2 + 'px',
                 'width': size + 'px',
                 'height': size + 'px',
                 'background-color': '#ffffff',
@@ -202,23 +221,30 @@ export default {
             e.preventDefault();
             e.stopPropagation();
 
-            let handlerType = e.target.id.split('-')[0];
+            let vertexIndex = parseInt(e.target.id.split('-')[0]);
 
-            let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft();
-            let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop();
-            let startingShapeWidth = this.shapeModel.scale.w
-            let startingShapeHeight = this.shapeModel.scale.h
+            let previousMousePosition = {x: e.pageX, y: e.pageY}
 
-            var mouseMoveHandler
+            let mouseMoveHandler
 
             mouseMoveHandler = function(e) {
                 this.shapeModel.isResizing = true;
-                this.scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight);
+                let deltaX = e.pageX - previousMousePosition.x
+                let deltaY = e.pageY - previousMousePosition.y
+
+                let movedVertex = this.shapeModel.vertexFor(vertexIndex)
+                let previousValue = {x: movedVertex.x, y: movedVertex.y}
+                let newValue = {x: previousValue.x + deltaX, y: previousValue.y + deltaY}
+                previousMousePosition.x = e.pageX
+                previousMousePosition.y = e.pageY
+
+                this.visualState.changeProperty(this.shapeModel,vertexIndex,previousValue,newValue)
+
             }.bind(this)
             let visualStateElement = this.$parent.canvasElement();
             visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
 
-            var mouseUpHandler
+            let mouseUpHandler
             mouseUpHandler = function(e) {
                 this.shapeModel.isResizing = false;
                 this.shapeModel.isMoving = false;
@@ -248,13 +274,13 @@ export default {
 
                 globalStore.toolbarState.linkingObject = this.shapeModel;
 
-                var moveHandler = function(e) {
+                let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY
                 }.bind(this);
                 window.addEventListener('mousemove', moveHandler, false);
 
-                var upHandler
+                let upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
                     globalStore.toolbarState.linkingObject = undefined;
@@ -269,7 +295,7 @@ export default {
                 return
             }
 
-            if (globalStore.toolbarState.drawMode || globalStore.toolbarState.measureMode) {
+            if (globalStore.isDrawMode || globalStore.toolbarState.measureMode) {
                 return
             }
 
@@ -279,24 +305,21 @@ export default {
             if (!this.shapeModel.isSelected) {
                 this.toggleSelection();
             }
-
             //Starting to move a shape
-            let currentWindowMousePositionX = e.pageX;
-            let currentWindowMousePositionY = e.pageY;
-            var offsetX = currentWindowMousePositionX - this.shapeModel.left;
-            var offsetY = currentWindowMousePositionY - this.shapeModel.top;
+            let previousPosition = {x:e.pageX,y:e.pageY}
 
-            // var parentElement = this.$el.parentNode;
-            //When the second parameter is null in insertBefore the element is added as the last child
-            // parentElement.insertBefore(this.$el, null);
+            // let boundingBox = this.$refs.parentSVG.getBBox()
 
-            var moveHandler = function(e) {
+            let moveHandler = function(e) {
                 this.shapeModel.isMoving = true;
-                this.moveChanged(e, offsetX, offsetY);
+                this.moveChanged(e, previousPosition);
+                previousPosition.x = e.pageX
+                previousPosition.y = e.pageY;
+
             }.bind(this);
             window.addEventListener('mousemove', moveHandler, false);
 
-            var upHandler
+            let upHandler
             upHandler = function(e) {
                 this.shapeModel.isMoving = false;
                 window.removeEventListener('mousemove', moveHandler, false);
@@ -305,14 +328,14 @@ export default {
             window.addEventListener('mouseup', upHandler, false);
         },
 
-        moveChanged: function(e, initialOffsetX, initialOffsetY) {
-            let currentWindowMousePositionX = e.x;
-            let currentWindowMousePositionY = e.y;
+        moveChanged: function(e, aPreviousPosition) {
+            let currentWindowMousePositionX = e.pageX;
+            let currentWindowMousePositionY = e.pageY;
 
             let previousValue = { x: this.shapeModel.position.x, y: this.shapeModel.position.y };
             let newValue = {
-                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.maxWidth),
-                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.maxHeight)
+                x: previousValue.x + (e.pageX - aPreviousPosition.x),
+                y: previousValue.y + (e.pageY - aPreviousPosition.y)
             }
 
             //Snap to testShapes or previous state value
@@ -338,7 +361,7 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            this.visualState.changeProperty(this.shapeModel,'translation',previousValue,newValue);
+            this.visualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
         },
         toggleSelection(notify = true) {
             this.shapeModel.isSelected = !this.shapeModel.isSelected;
@@ -348,103 +371,6 @@ export default {
         },
         deselect() {
             this.shapeModel.deselect()
-        },
-
-        scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = { w: this.shapeModel.scale.w, h: this.shapeModel.scale.h };
-
-            let currentWindowMousePositionX = e.pageX;
-            let currentWindowMousePositionY = e.pageY;
-
-            // let currentShapePositionXInWindowCoordinates = this.shapeModel.left + this.visualState.canvasOffsetLeft();
-            // let currentShapePositionYInWindowCoordinates = this.shapeModel.top + this.visualState.canvasOffsetTop();
-
-            let newValue = {
-                w: previousValue.w,
-                h: previousValue.h,
-            }
-            this.shapeModel.isMoving = false;
-            switch (handlerType) {
-                case 'southEast':
-                    if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                        //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft()
-                    }
-                    if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
-                        //The currentWindowMousePositionX controls the startingShapePositionX
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop()
-                    }
-                    newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
-                    newValue.h = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
-                    break;
-                case 'southWest':
-                    if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
-                        let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
-
-                        let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.$parent.canvasOffsetLeft();
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.left = startingShapePositionX - offsetX;
-
-                        newValue.w = startingShapeWidth + offsetX;
-                    } else {
-                        newValue.w = currentWindowMousePositionX - (this.shapeModel.left + this.$parent.canvasOffsetLeft());
-                    }
-
-                    if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
-                        let offsetY = startingShapePositionYInWindowCoordinates - currentWindowMousePositionY;
-                        let startingShapePositionY = startingShapePositionYInWindowCoordinates - this.$parent.canvasOffsetTop();
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.top = startingShapePositionY - offsetY;
-
-                        newValue.h = offsetY;
-
-                    } else {
-                        newValue.h = currentWindowMousePositionY - (this.shapeModel.top + this.$parent.canvasOffsetTop());
-                    }
-
-                    break;
-                case 'northWest':
-                    if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
-                    }
-                    newValue.w = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
-
-                    if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
-                    }
-
-                    newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
-
-                    break;
-                case 'northEast':
-                    if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
-                    }
-                    newValue.w = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
-
-                    if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
-                        this.shapeModel.isMoving = true;
-                        this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
-                    }
-                    newValue.h = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
-
-                    break;
-            }
-
-            if (this.shapeModel.isFollowingMaster('scaling') && previousValue.w == newValue.w && previousValue.h == newValue.h) {
-                //Don't do anything, keep following master and do not propagate
-            } else {
-                this.shapeModel.width = newValue.w;
-                this.shapeModel.height = newValue.h;
-                if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'scaling');
-                }
-            }
         },
         draggedTypeFor(dataTransfer) {
             const acceptedTypes = ["text/diff-shape","text/diff-touch"];

@@ -4,9 +4,11 @@
             <a class="button is-primary is-alone is-disabled" title="A Tool to Create Interaction" id="title">ENACT</a>
             <p class="control has-addons">
                 <a class="button" title="Selection" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
-                <a class="button" title="Create Rectangle" :class="{'is-active':toolbarState.drawMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
+                <a class="button" title="Create Rectangle" :class="{'is-active':toolbarState.rectangleMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
+                <a class="button" title="Create Polygon" v-on:click="polygonSelected" :class="{'is-active':toolbarState.polygonMode}"><span class="icon is-small"><i class="fa fa-star-o"></i></span> </a>
             </p>
             <a class="button" title="Create Measure" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
+
             <input type="color" title="Color Picker" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
             <a class="button is-alone" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
             <a class="button is-alone" title="Add new Rule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
@@ -30,23 +32,17 @@ export default {
   },
     methods: {
         drawSelected() {
-            this.toolbarState.drawMode = true;
-            this.toolbarState.selectionMode = false;
-            this.toolbarState.measureMode = false;
-            this.toolbarState.cursorType = "crosshair";
+            globalStore.setRectangleMode()
+        },
+        polygonSelected() {
+            globalStore.setPolygonMode()
         },
         selectionSelected() {
-            this.toolbarState.drawMode = false;
-            this.toolbarState.selectionMode = true;
-            this.toolbarState.measureMode = false;
-            this.toolbarState.cursorType = "default";
+            globalStore.setSelectionMode()
         },
         measureSelected() {
-            this.toolbarState.drawMode = false;
-            this.toolbarState.selectionMode = false;
-            this.toolbarState.measureMode = true;
+            globalStore.setMeasureMode()
             globalStore.deselectAllShapes()
-            this.toolbarState.cursorType = "default";
         },
         changeColor(e) {
             globalBus.$emit('changeColorOfSelectedShapes',this.currentColor)
@@ -58,7 +54,8 @@ export default {
                 let previousVisualState = globalStore.visualStates.last();
 
                 for (let shapeKey in previousVisualState.shapesDictionary) {
-                    newVisualState.addNewShape(shapeKey,previousVisualState.shapesDictionary[shapeKey]);
+                    let shape = previousVisualState.shapesDictionary[shapeKey]
+                    newVisualState.addNewShape(shape.type,shapeKey,previousVisualState.shapesDictionary[shapeKey]);
                 }
 
                 newVisualState.importMeasuresFrom(previousVisualState);

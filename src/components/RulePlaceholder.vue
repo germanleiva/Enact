@@ -40,6 +40,7 @@
  -->
             <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min"> -->
             <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max"> -->
+
         </div>
         <div class="addOutput" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">+</div>
     </div>
@@ -49,7 +50,7 @@
 import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,ShapeModel,InputEventTouch, DiffModel} from '../store.js'
+import {globalStore,ShapeModel,RectangleModel,InputEventTouch, DiffModel} from '../store.js'
 
 let ContextMenu = Vue.extend({
     template: `<div :style="styleObject">
@@ -65,7 +66,7 @@ let ContextMenu = Vue.extend({
             startingX: 0,
             startingY: 0,
             onSelectedProperty: undefined,
-            properties: ['translation','scaling','color']
+            properties: ['position','size','color']
         }
       },
       computed: {
@@ -110,15 +111,17 @@ export default {
     },
     methods: {
         classAxisX: function(propertyName) {
+            console.log("classAxisX: "+propertyName)
             return {
-                'fa-arrows-h': propertyName == 'translation',
-                'fa-expand fa-rotate-45': propertyName == 'scaling',
+                'fa-arrows-h': propertyName == 'position',
+                'fa-expand fa-rotate-45': propertyName == 'size',
             }
         },
         classAxisY: function(propertyName) {
+            console.log("classAxisY: "+propertyName)
             return {
-                'fa-arrows-v': propertyName == 'translation',
-                'fa-expand fa-rotate-135': propertyName == 'scaling',
+                'fa-arrows-v': propertyName == 'position',
+                'fa-expand fa-rotate-135': propertyName == 'size',
             }
         },
         clickedOnAxis: function(side,axisName) {
@@ -162,7 +165,7 @@ export default {
                 let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id]
                 let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id]
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property].value,outputAfter[this.rulePlaceholderModel.output.property].value)
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property],outputAfter[this.rulePlaceholderModel.output.property])
             }
 
         },
@@ -259,7 +262,7 @@ export default {
                         //If we have data in the input/output (type,id,property,axiss) later we infer the min/max axis
                         // for (let eachAxis of aRuleSide.axiss) {
                             //TODO binding is not working here
-                            aRuleSide[ruleSection] = linkingObject[aRuleSide.property].value
+                            aRuleSide[ruleSection] = linkingObject[aRuleSide.property]
                         // }
                     } else {
                         let newContextMenu = new ContextMenu()
@@ -271,7 +274,7 @@ export default {
                             //     value[eachAxis] = linkingObject[property].value[eachAxis]
                             // }
                             // this[ruleSectionToFill] = value
-                            aRuleSide[ruleSection] = linkingObject[property].value
+                            aRuleSide[ruleSection] = linkingObject[property]
                             newContextMenu.$el.remove()
                             newContextMenu.$destroy()
                         }.bind(this)
@@ -288,7 +291,7 @@ export default {
             let deltaInput = {x:1,y:1}
 
             switch (inputProperty) {
-                case 'translation': {
+                case 'position': {
                     if (inputAfter.x) {
                         deltaInput.x = inputAfter.x - inputBefore.x
                         deltaInput.y = inputAfter.y - inputBefore.y
@@ -298,7 +301,7 @@ export default {
                     }
                     break;
                 }
-                case 'scaling': {
+                case 'size': {
                     if (inputAfter.radiusX) {
                         deltaInput.x = inputAfter.radiusX - inputBefore.radiusX
                         deltaInput.y = inputAfter.radiusY - inputBefore.radiusY
@@ -312,12 +315,12 @@ export default {
                 }
             }
             switch (outputProperty) {
-                case 'translation': {
+                case 'position': {
                     deltaOutput.x = outputAfter.x - outputBefore.x
                     deltaOutput.y = outputAfter.y - outputBefore.y
                     break;
                 }
-                case 'scaling': {
+                case 'size': {
                     deltaOutput.x = outputAfter.w - outputBefore.w
                     deltaOutput.y = outputAfter.h - outputBefore.h
                     break;
@@ -458,7 +461,7 @@ export default {
 }
 
 .factorContainer {
-    
+
     height: 35px;
     padding-left: 56px;
 }

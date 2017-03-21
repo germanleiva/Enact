@@ -6,7 +6,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus, ShapeModel} from '../store.js'
+import {globalStore, globalBus, ShapeModel, RectangleModel} from '../store.js'
 
 export default {
     name: 'visual-state-mark',
@@ -92,7 +92,7 @@ export default {
                 let createdShapeModels = []
                 for (let eachShapeObjectId in savedShapeStatesPerEvent[eventIndex]) {
                     let shapeObjectData = savedShapeStatesPerEvent[eventIndex][eachShapeObjectId]
-                    createdShapeModels.push(new ShapeModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
+                    createdShapeModels.push(new RectangleModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
                 }
 
                 correspondingInputEvent.testShapes = createdShapeModels
