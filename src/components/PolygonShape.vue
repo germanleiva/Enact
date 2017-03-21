@@ -4,7 +4,7 @@
             <path ref="svgPolygonPath" :id="shapeModel.id" v-bind:style="styleObject" :d="pathData" :transform="pathTransform" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult"/>
             <path :d="pathData" :transform="pathTransform" v-show="shapeModel.highlight" v-bind:style="overlayStyleObject"/>
         </svg>
-        <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
+        <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers || eachHandler.highlight" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
     </div>
 <!--           <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
           </div> -->
