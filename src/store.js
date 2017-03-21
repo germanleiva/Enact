@@ -1300,13 +1300,17 @@ class PolygonModel extends ShapeModel {
         for (let eachVertex of this.vertices) {
             verticesJSON.push(eachVertex.toJSON())
         }
-        return {id:this.id,type: this.type, color:this.color,vertices:verticesJSON}
+        return {id:this.id,type: this.type, color:this.color,position:this.position,vertices:verticesJSON}
     }
     fromJSON(json) {
         // this.id = json.id
         // this.type = json.type
         if (json.color) {
             this.color = json.color
+        }
+        if (json.position) {
+            this.left = json.position.x
+            this.top = json.position.y
         }
         if (json.vertices) {
             for (let i=0;i<json.vertices.length;i++) {
