@@ -53,16 +53,17 @@ export default {
             }
 
             e.dataTransfer.setData(dataType, JSON.stringify(diffDataObject));
-            this.$parent.didMouseOut(this)
+            this.mouseOut()
 
         },
         mouseOver(e) {
             // console.log("mouseOver")
-            this.$parent.didMouseOver(this)
+            this.visualStateModel.toggleHighlightForInvolvedElement(this.diffData,true)
         },
         mouseOut(e) {
             // console.log("mouseOut")
-            this.$parent.didMouseOut(this)
+            this.visualStateModel.toggleHighlightForInvolvedElement(this.diffData,false)
+
         }
     }
 }

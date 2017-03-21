@@ -181,7 +181,7 @@ export default {
                 'top': aHandler.top(this.shapeModel) - size / 2 + 'px',
                 'width': size + 'px',
                 'height': size + 'px',
-                'background-color': '#ffffff',
+                'background-color': aHandler.highlight?'#ff0000':'#ffffff',
                 'border': '1px solid #000000',
                 'position':'absolute',
             }

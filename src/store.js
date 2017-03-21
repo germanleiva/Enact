@@ -692,28 +692,43 @@ class VisualStateModel {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
         }
     }
-    toggleHighlightForInvolvedElement(shapeOrMeasureOrInputId, aBoolean) {
+    toggleHighlightForInvolvedElement(diffData, aBoolean) {
+        //diffData.type == shape,measure(distance&point),touch
         function togglingHelper(aVisualState) {
-            let involvedShape = aVisualState.shapesDictionary[shapeOrMeasureOrInputId]
-            if (involvedShape) {
-                //We need to hightlighted and also the nextShape with the same id
-                involvedShape.highlight = aBoolean
-            } else {
-                //Maybe the diff was talking about a measure
-                let involvedMeasure = aVisualState.measures.find(aMeasure => aMeasure.id == shapeOrMeasureOrInputId)
-                if (involvedMeasure) {
-                    involvedMeasure.highlight = aBoolean
-                } else {
-                    //Maybe the diff was talking about an input
+            switch (diffData.type) {
+                case 'shape': {
+                    let involvedShape = aVisualState.shapesDictionary[diffData.id]
+                    if (involvedShape) {
+                        if (diffData.property.name == "vertex") {
+                            let vertex = involvedShape.vertexFor(diffData.property.after.id)
+                            vertex.highlight = aBoolean
+                        } else {
+                            involvedShape.highlight = aBoolean
+                        }
+                    }
+                    break;
+                }
+                case 'measure': {
+                    let involvedMeasure = aVisualState.measures.find(aMeasure => aMeasure.id == diffData.id)
+                    if (involvedMeasure) {
+                        involvedMeasure.highlight = aBoolean
+                    }
+                    break;
+                }
+                case 'touch': {
                     let involvedInputEvent = aVisualState.currentInputEvent
 
                     if (involvedInputEvent) {
                         for(let eachTouch of involvedInputEvent.touches) {
-                            if (eachTouch.id == shapeOrMeasureOrInputId) {
+                            if (eachTouch.id == diffData.id) {
                                 eachTouch.highlight = aBoolean
                             }
                         }
                     }
+                    break;
+                }
+                default: {
+                    console.log("Unrecognized diffData type: " + diffData.type)
                 }
             }
         }
@@ -1332,6 +1347,7 @@ class Vertex {
         this.id = id
         this.x = canvasX
         this.y = canvasY
+        this.highlight = false
     }
     top(aShape) {
         return this.y + aShape.position.y
