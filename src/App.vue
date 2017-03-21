@@ -4,7 +4,7 @@
     <output-area ref="outputArea"></output-area>
     <input-area></input-area>
     <div id="lowerArea" style="display:flex">
-        <visual-state-canvas :visual-state-model="deviceVisualState" style="position:relative" draggable="true" :is-mirror="true">
+        <visual-state-canvas :visual-state-model="deviceVisualState" class="mirror" style="position:relative" draggable="true" :is-mirror="true">
         </visual-state-canvas>
             <!-- <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas> -->
 
@@ -253,6 +253,11 @@ export default {
     position: relative;
 }
 
+.mirror:hover{
+    border-color: #aaaaaa;
+    cursor: move;
+}
+
 .visualStateContainer {
     display: flex; /*This will make the diff container change the width (maybe this is not desired)*/
 }
@@ -346,5 +351,9 @@ export default {
     display: flex;
     justify-content:center;
     padding: 8px;
+}
+
+#lowerArea{
+    background-color: #eeeeee;
 }
 </style>

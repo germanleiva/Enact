@@ -1127,6 +1127,10 @@ class RuleAxis {
     loadMax(element) {
         this.max = this.ruleSide.getValue(element,this.name)
     }
+    toggleActive(){
+        console.log(this.isActive)
+        this.isActive=!this.isActive
+    }
 }
 
 class MinMaxRule {

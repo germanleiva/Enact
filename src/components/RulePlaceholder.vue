@@ -1,32 +1,47 @@
 <template>
-    <div class='box rule-placeholder'>
+    <div class='box rule-placeholder' v-bind:class="ruleComplete()" :style="{ backgroundColor: activeColor}">
         <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
-        <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput" v-on:mouseup="mouseUpFor($event,'input')" :style="{ backgroundColor: activeColor }">
-            <input class="input" v-model="rulePlaceholderModel.input.type" placeholder="Type">
-            <input class="input" v-model="rulePlaceholderModel.input.id" placeholder="Id">
-            <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="m"> -->
-            <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="M"> -->
-            <input class="input" v-model="rulePlaceholderModel.input.property" placeholder="Property">
+        <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
+            <!--<div class="input" v-model="rulePlaceholderModel.input.id"></div>-->
+            <div class="inputId button is-disabled">{{rulePlaceholderModel.input.name}}</div>
+            <div class="iconAxis button" v-on:click="clickedOnAxis('input','axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisX.isActive, inactiveAxis:!rulePlaceholderModel.input.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.input.property)"></i></div>
+            <div class="iconAxis button" v-on:mouseup="clickedOnAxis('input','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisY.isActive, inactiveAxis:!rulePlaceholderModel.input.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.input.property)"></i></div>
+
+
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="+">
+
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="+">
+
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
-            <select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
+            <!--<select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
               <option>x</option>
               <option>y</option>
-            </select>
+            </select>-->
+             <input class="input factor factorX" v-bind:class="activeFactor('axisX')" v-model="rulePlaceholderModel.factor.x" placeholder="1">
+            <input class="input factor factorY" v-bind:class="activeFactor('axisY')" v-model="rulePlaceholderModel.factor.y" placeholder="1">
         </div>
-        <div class="factor">{{rulePlaceholderModel.factor}}</div>
-        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput" v-on:mouseup="mouseUpFor($event,'output')" :style="{ backgroundColor: activeColor }">
-            <input class="input" v-model="rulePlaceholderModel.output.type" placeholder="Output Type">
-            <input class="input" v-model="rulePlaceholderModel.output.id" placeholder="Output Id">
-            <input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
-<!--             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
+
+        <!--<div class="factorY">{{rulePlaceholderModel.factor}}</div>-->
+        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">
+            <!--<div class="input" v-model="rulePlaceholderModel.output.id"></div>-->
+            <div class="inputId button is-disabled">{{rulePlaceholderModel.output.name}}</div>
+
+            <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisX.isActive, inactiveAxis:!rulePlaceholderModel.output.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.output.property)"></i></div>
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="+">
+
+            <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisY.isActive, inactiveAxis:!rulePlaceholderModel.output.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.output.property)"></i></div>
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="+">
+            <!--<input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
+             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
  -->
-            <select v-model="rulePlaceholderModel.output.axiss" style="height:35px; width:50px" placeholder="Output Axis" multiple>
-              <option>x</option>
-              <option>y</option>
-            </select>
             <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min"> -->
             <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max"> -->
         </div>
+        <div class="addOutput" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">+</div>
     </div>
 </template>
 <script>
@@ -90,7 +105,42 @@ export default {
             deep: true
         }
     },
+    computed: {
+
+    },
     methods: {
+        classAxisX: function(propertyName) {
+            return {
+                'fa-arrows-h': propertyName == 'translation',
+                'fa-expand fa-rotate-45': propertyName == 'scaling',
+            }
+        },
+        classAxisY: function(propertyName) {
+            return {
+                'fa-arrows-v': propertyName == 'translation',
+                'fa-expand fa-rotate-135': propertyName == 'scaling',
+            }
+        },
+        clickedOnAxis: function(side,axisName) {
+            this.rulePlaceholderModel[side][axisName].toggleActive()
+        },
+        activeFactor: function(axisName){
+            if (this.rulePlaceholderModel.input[axisName].isActive){
+                return
+            }
+            else{
+                return "inactive";
+            }
+        },
+        ruleComplete: function(){
+
+            if ((this.rulePlaceholderModel.input.axisX.isActive || this.rulePlaceholderModel.input.axisY.isActive) && (this.rulePlaceholderModel.output.axisX.isActive || this.rulePlaceholderModel.output.axisY.isActive)) {
+                return
+            }
+            else{
+                return "inactive";
+            }
+        },
         dropForInput(event) {
             event.preventDefault();
 
@@ -279,62 +329,104 @@ export default {
     },
     computed: {
         activeColor: function() {
-            return this.isActive ? 'gray' : 'white'
+            return this.isActive ? '#00d1b2' : 'white'
         }
     }
 }
 </script>
 <style scoped>
-input {
+.input {
     font-size:1.1em;
     font-family: futura;
     padding: 2px;
     width: 30%;
 }
 
+.inputId{
+    font-size:1.1em;
+    font-family: futura;
+    padding: 2px;
+    width: 45px;
+    height: 40px;
+    opacity: 1 !important;
+    margin-left: 8px;
+}
+
+.iconAxis{
+    width: 40px;
+    height: 40px;
+    margin-left: 10px;
+    margin-right: 10px;
+}
+
 .rule-placeholder {
-     display: flex;
-     flex-basis: auto;
-     flex-direction: column;
-     margin: 10px;
-     overflow: visible; /* Or flex might break */
-     font-size: 1em;
-     padding: 5px !important;
-     width: 250px;
-     margin-bottom: 5px !important;
-     height: 150px;
+    background-color: #ffffff;
+    display: flex;
+    flex-direction: column;
+    flex-basis: auto;
+    margin: 10px;
+    overflow: visible; /* Or flex might break */
+    font-size: 1em;
+    padding: 5px !important;
+    width: 196px;
+    margin-bottom: 5px !important;
+    height: 200px;
+    border: 1px solid #00d1b2;
 }
 .leftSide {
-    /*height: 50px;*/
+    height: 65px;
     position: relative;
-    display:flex;
-    flex-direction: row;
+    padding-top: 4px;
+    background-color: #eeeeee;
+    margin-bottom: 3px;
 }
 .rightSide {
-    /*height: 50px;*/
+    height: 65px;
     position: relative;
-    display: flex;
-    flex-direction: row;
+    padding-top: 18px;
+    background-color: #eeeeee;
 }
 .condition {
     width: 100%;
+    height: 30px;
+    border: none;
+    color: #333333;
+    margin-bottom: 3px;
+    font-size: 1em;
+    text-align: center;
+    box-shadow: none !important;
+    background-color: #eeeeee;
     /*height: 50px;*/
+}
+.condition:placeholder-shown {
+    font-size: 0.9em;
+    /*height: 50px;*/
+}
+.condition::-webkit-input-placeholder{
+    color: #eeeeee;
+}
+.condition:hover::-webkit-input-placeholder{
+    color: #aaaaaa;
 }
 .MinMax {
     position:absolute;
     border-radius: 20px;
-    width: 30%;
-    height: 25px;
-    border: 1px solid #ffffff;
+    width: 15px;
+    height: 15px;
+    border: 1px solid #eeeeee;
     background-color: #333333;
     color: #ffffff;
     text-align: center;
-    font-size: 0.8em;
+    font-size: 0.6em;
+    top:16px;
+}
+.rightSide > .MinMax{
+    top: 30px;
 }
 .MinMax:placeholder-shown{
-    background-color: rgba(255,255,255,1);
-    border: 1px solid #333333;
-    color: #ffffff;
+    background-color: #eeeeee;
+    border: 1px solid #cccccc;
+    color: #cccccc !important;
     border-radius: 10px;
     width: 15px;
     height: 15px;
@@ -349,18 +441,68 @@ input {
     color: #eeeeee;
     text-align: center;
     font-size: 0.8em;
+    z-index: 200;
+    top:12px;
 }
-.MinMax.min {
-    top:-10px;
-    left:0px;
+.MinMax.min.yAxis {
+    left:125px;
 }
-.MinMax.max {
-    top:20px;
-    left:0px;
+.MinMax.max.yAxis {
+    left:164px;
+}
+.MinMax.min.xAxis {
+    left:61px;
+}
+.MinMax.max.xAxis {
+    left:100px;
+}
+
+.factorContainer {
+    
+    height: 35px;
+    padding-left: 56px;
 }
 .factor {
-    font-size:1.1em;
-    font-family: futura;
+    position: absolute;
+    top: 50px;
     text-align: center;
+    width: 40px;
+    height: 30px;
+    margin-left: 10px;
+    margin-right: 10px;
+    font-size:0.9em;
+    font-family: futura;
+    z-index: 20;
+}
+.factorX {
+    left: 58px;
+}
+.factorY {
+    left: 121px;
+}
+
+.activeAxis{
+    background-color: white;
+}
+.inactiveAxis{
+    background-color: #dddddd;
+    color: #aaaaaa;
+}
+
+.inactive{
+    background-color: #dddddd;
+    border: 1px solid #dddddd;
+    color: #aaaaaa;
+    box-shadow: none;
+}
+
+.addOutput{
+    max-height: 20px;
+    margin-top: 3px;
+    background-color: #eeeeee;
+    border: 1px solid #eeeeee;
+    text-align: center;
+    font-family: futura;
+    color: #aaaaaa;
 }
 </style>
