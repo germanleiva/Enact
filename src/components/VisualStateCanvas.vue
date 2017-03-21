@@ -245,14 +245,14 @@ export default {
             if (globalStore.toolbarState.shapeType == 'polygon') {
                 if (this.currentPolygon == undefined) {
                     let newShapeModel = this.visualStateModel.addNewShape('polygon')
-
+                    debugger;
                     if (this.nextState) {
                         this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
                     }
                     this.currentPolygon = newShapeModel
                 }
 
-                this.currentPolygon.addVertex(startingCanvasMousePosition)
+                this.visualStateModel.addVertex(this.currentPolygon.id,startingCanvasMousePosition)
 
                 // if (this.currentPolygon.isClosed) {
                 //     this.currentPolygon = undefined
@@ -278,7 +278,7 @@ export default {
                 // window.addEventListener('click', mouseClickHandler, false);
 
             } else if (globalStore.toolbarState.shapeType == 'rectangle') {
-                var newShapeModel = this.visualStateModel.addNewShape('rectangle');
+                let newShapeModel = this.visualStateModel.addNewShape('rectangle');
 
                 if (this.nextState) {
                     this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
@@ -286,7 +286,7 @@ export default {
 
                 this.updateShapeProperties(startingCanvasMousePosition,newShapeModel,startingCanvasMousePosition)
 
-                var mouseMoveHandler
+                let mouseMoveHandler
 
                 mouseMoveHandler = function(e) {
                     e.preventDefault()
@@ -294,7 +294,7 @@ export default {
                     this.drawingChanged(e, newShapeModel, startingCanvasMousePosition)
                 }.bind(this)
 
-                var mouseUpHandler
+                let mouseUpHandler
                 mouseUpHandler = function(e) {
                     e.preventDefault()
                     newShapeModel.isResizing = false;

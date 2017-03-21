@@ -211,7 +211,7 @@ export default {
             let startingShapeWidth = this.shapeModel.size.w
             let startingShapeHeight = this.shapeModel.size.h
 
-            var mouseMoveHandler
+            let mouseMoveHandler
 
             mouseMoveHandler = function(e) {
                 this.shapeModel.isResizing = true;
@@ -220,7 +220,7 @@ export default {
             let visualStateElement = this.$parent.canvasElement();
             visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
 
-            var mouseUpHandler
+            let mouseUpHandler
             mouseUpHandler = function(e) {
                 this.shapeModel.isResizing = false;
                 this.shapeModel.isMoving = false;
@@ -250,13 +250,13 @@ export default {
 
                 globalStore.toolbarState.linkingObject = this.shapeModel;
 
-                var moveHandler = function(e) {
+                let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY
                 }.bind(this);
                 window.addEventListener('mousemove', moveHandler, false);
 
-                var upHandler
+                let upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
                     globalStore.toolbarState.linkingObject = undefined;
@@ -285,20 +285,20 @@ export default {
             //Starting to move a shape
             let currentWindowMousePositionX = e.pageX;
             let currentWindowMousePositionY = e.pageY;
-            var offsetX = currentWindowMousePositionX - this.shapeModel.left;
-            var offsetY = currentWindowMousePositionY - this.shapeModel.top;
+            let offsetX = currentWindowMousePositionX - this.shapeModel.left;
+            let offsetY = currentWindowMousePositionY - this.shapeModel.top;
 
-            // var parentElement = this.$el.parentNode;
+            // let parentElement = this.$el.parentNode;
             //When the second parameter is null in insertBefore the element is added as the last child
             // parentElement.insertBefore(this.$el, null);
 
-            var moveHandler = function(e) {
+            let moveHandler = function(e) {
                 this.shapeModel.isMoving = true;
                 this.moveChanged(e, offsetX, offsetY);
             }.bind(this);
             window.addEventListener('mousemove', moveHandler, false);
 
-            var upHandler
+            let upHandler
             upHandler = function(e) {
                 this.shapeModel.isMoving = false;
                 window.removeEventListener('mousemove', moveHandler, false);

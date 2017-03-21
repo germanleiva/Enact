@@ -240,6 +240,27 @@ class BackgroundColorDiff extends PropertyDiff {
     }
 }
 
+class VertexDiff extends PropertyDiff {
+    constructor(id,before,after) {
+        super(before,after)
+
+        this.id = id
+    }
+    get delta() {
+        return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
+    }
+    applyDelta(visualState,shapeModel) {
+        let currentVertex = shapeModel.vertexFor(this.id)
+        visualState.changeProperty(shapeModel,this.id,currentVertex,{x:currentVertex.x+this.delta.x,y:currentVertex.y+this.delta.y})
+    }
+    get name() {
+        return "position"
+    }
+    toJSON() {
+        return {id:this.id,before:this.before,after:this.after}
+    }
+}
+
 class AddedDiff extends PropertyDiff {
 
     get name() {
@@ -260,6 +281,7 @@ class DiffModel {
         this.id = id
         this.name = name
         this.type = type //For example, output
+
         switch (property.name) {
             case "position": {
                 this.property = new TranslationDiff(property.before,property.after)
@@ -271,6 +293,10 @@ class DiffModel {
             }
             case "color": {
                 this.property = new BackgroundColorDiff(property.before,property.after)
+                break;
+            }
+            case "vertex": {
+                this.property = new VertexDiff(property.before.id,property.before,property.after)
                 break;
             }
             case "added": {
@@ -474,30 +500,19 @@ class VisualStateModel {
         if (shapeModel.isFollowingMaster(propertyName) && shapeModel.areEqualValues(propertyName, previousValue, newValue)) {
             //Don't do anything, keep following master and do not propagate
         } else {
-            switch (propertyName) {
-                case 'position': {
-                    shapeModel.left = newValue.x
-                    shapeModel.top = newValue.y
-                    break;
-                }
-                case 'size': {
-                    shapeModel.width = newValue.w
-                    shapeModel.height = newValue.h
-                    break;
-                }
-                case 'color': {
-                    shapeModel.color = newValue
-                    break;
-                }
-                default: {
-                    console.log("VisualStateModel >> changeProperty, unrecognized propertyName: " + propertyName)
-                }
-            }
+            shapeModel.changeOwnProperty(propertyName,newValue)
             if (this.nextState) {
                 this.nextState.somethingChangedPreviousState(shapeModel.id, previousValue, newValue, propertyName);
             }
         }
     }
+    addVertex(polygonId,startingCanvasMousePosition) {
+        let newVertex = this.shapeFor(polygonId).addVertex(startingCanvasMousePosition)
+        if (this.nextState) {
+            this.nextState.addVertex(polygonId,startingCanvasMousePosition)
+        }
+    }
+
     get currentInputEventIndex() {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
@@ -966,23 +981,27 @@ class ShapeModel {
     }
     setOwnPropertiesFromMaster(property) {
         switch (property) {
-            case 'color':
+            case 'color': {
                 this.color = this.color
                 break;
-            case 'position':
+            }
+            case 'position': {
                 this.left = this.left
                 this.top = this.top
                 break;
-            case 'size':
+            }
+            case 'size':{
                 this.width = this.width
                 this.height = this.height
                 break;
+            }
             case '':
-            default:
+            default: {
                 for (let eachProperty of this.allProperties) {
                     this.setOwnPropertiesFromMaster(eachProperty)
                 }
                 break;
+            }
         }
     }
     get allProperties() {
@@ -993,7 +1012,26 @@ class ShapeModel {
         this.masterVersion = undefined
     }
     changeOwnProperty(changedPropertyName,changedValue) {
-        this[changePropertyName] = changedValue
+        // this[changePropertyName] = changedValue
+        switch (changedPropertyName) {
+            case 'position': {
+                this.left = changedValue.x
+                this.top = changedValue.y
+                break;
+            }
+            case 'size': {
+                this.width = changedValue.w
+                this.height = changedValue.h
+                break;
+            }
+            case 'color': {
+                this.color = changedValue
+                break;
+            }
+            default: {
+                console.log("VisualStateModel >> changeProperty, unrecognized propertyName: " + propertyName)
+            }
+        }
     }
     isFollowingMaster(property) {
         switch (property) {
@@ -1091,8 +1129,33 @@ class PolygonModel extends ShapeModel {
     get handlers() {
         return this.vertices
     }
+    diffArray(nextShapeWithTheSameModel) {
+        let changes = []
+        if (!nextShapeWithTheSameModel.isFollowingMaster('color') && !this.areEqualValues('color', this.color, nextShapeWithTheSameModel.color)) {
+            // changes.push('Changed color from ' + this.color + ' to ' + nextShapeWithTheSameModel.color)
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "color", before: this.color, after: nextShapeWithTheSameModel.color } })
+        }
+        if (!nextShapeWithTheSameModel.isFollowingMaster('position') && !this.areEqualValues('position', this.position, nextShapeWithTheSameModel.position)) {
+            // changes.push('Changed position from ' + JSON.stringify(this.position) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.position))
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "position", before: this.position, after: nextShapeWithTheSameModel.position } })
+        }
+        if (!nextShapeWithTheSameModel.isFollowingMaster('size') && !this.areEqualValues('size', this.size, nextShapeWithTheSameModel.size)) {
+            // changes.push('Changed size from ' + JSON.stringify(this.size) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.size))
+            changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "size", before: this.size, after: nextShapeWithTheSameModel.size } })
+        }
+        for (let i of this.vertexIndexes) {
+            if (!nextShapeWithTheSameModel.isFollowingMaster(i) && !this.areEqualValues(i, this.vertexFor(i), nextShapeWithTheSameModel.vertexFor(i))) {
+                changes.push({ id: this.id, name: this.name, type: 'shape', property:{ name: "vertex", before: this.vertexFor(i), after: nextShapeWithTheSameModel.vertexFor(i) } })
+            }
+        }
+
+        return changes
+    }
+    get vertexIndexes() {
+        return [...Array(this.amountOfVertices).keys()]
+    }
     get vertices() {
-        return [...Array(this.amountOfVertices).keys()].map(i => this.vertexFor(i))
+        return this.vertexIndexes.map(i => this.vertexFor(i))
     }
     get amountOfVertices() {
         return this._vertices.length

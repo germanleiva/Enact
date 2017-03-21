@@ -220,7 +220,7 @@ export default {
 
             let previousMousePosition = {x: e.pageX, y: e.pageY}
 
-            var mouseMoveHandler
+            let mouseMoveHandler
 
             mouseMoveHandler = function(e) {
                 this.shapeModel.isResizing = true;
@@ -233,20 +233,13 @@ export default {
                 previousMousePosition.x = e.pageX
                 previousMousePosition.y = e.pageY
 
-                if (this.shapeModel.isFollowingMaster(vertexIndex) && previousValue.x == newValue.x && previousValue.y == newValue.y) {
-                    //Don't do anything, keep following master and do not propagate
-                } else {
-                    this.shapeModel.changeOwnProperty(vertexIndex,newValue)
+                this.visualState.changeProperty(this.shapeModel,vertexIndex,previousValue,newValue)
 
-                    if (this.visualState.nextState) {
-                        this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, vertexIndex);
-                    }
-                }
             }.bind(this)
             let visualStateElement = this.$parent.canvasElement();
             visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
 
-            var mouseUpHandler
+            let mouseUpHandler
             mouseUpHandler = function(e) {
                 this.shapeModel.isResizing = false;
                 this.shapeModel.isMoving = false;
@@ -276,13 +269,13 @@ export default {
 
                 globalStore.toolbarState.linkingObject = this.shapeModel;
 
-                var moveHandler = function(e) {
+                let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY
                 }.bind(this);
                 window.addEventListener('mousemove', moveHandler, false);
 
-                var upHandler
+                let upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
                     globalStore.toolbarState.linkingObject = undefined;
@@ -312,7 +305,7 @@ export default {
 
             // let boundingBox = this.$refs.parentSVG.getBBox()
 
-            var moveHandler = function(e) {
+            let moveHandler = function(e) {
                 this.shapeModel.isMoving = true;
                 this.moveChanged(e, previousPosition);
                 previousPosition.x = e.pageX
@@ -321,7 +314,7 @@ export default {
             }.bind(this);
             window.addEventListener('mousemove', moveHandler, false);
 
-            var upHandler
+            let upHandler
             upHandler = function(e) {
                 this.shapeModel.isMoving = false;
                 window.removeEventListener('mousemove', moveHandler, false);
