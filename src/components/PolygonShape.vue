@@ -142,11 +142,7 @@ export default {
         shapeModel: {
             deep:true,
             handler: function(newVal,oldVal) {
-                                console.log("shapeModel watcher @ PolygonShape.vue")
-
             if (!this.isTestShape) {
-
-
                 if (globalStore.visualStates[0] === this.visualState) {
 
         //             let changes = {}

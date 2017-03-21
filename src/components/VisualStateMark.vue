@@ -92,7 +92,10 @@ export default {
                 let createdShapeModels = []
                 for (let eachShapeObjectId in savedShapeStatesPerEvent[eventIndex]) {
                     let shapeObjectData = savedShapeStatesPerEvent[eventIndex][eachShapeObjectId]
-                    createdShapeModels.push(new RectangleModel(shapeObjectData.id, undefined, shapeObjectData.color, shapeObjectData.left, shapeObjectData.top, shapeObjectData.width, shapeObjectData.height))
+
+                    let aShapeModel = ShapeModel.createShape(shapeObjectData.type)
+                    aShapeModel.fromJSON(shapeObjectData)
+                    createdShapeModels.push(aShapeModel)
                 }
 
                 correspondingInputEvent.testShapes = createdShapeModels

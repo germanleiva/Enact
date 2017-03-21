@@ -49,8 +49,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660 //iPhone 667 Nexus 5X 660
+        mobileWidth: 200, //iPhone 375 Nexus 5X 410
+        mobileHeight: 300 //iPhone 667 Nexus 5X 660
     },
     watch: {
         isRecording: function(newValue) {
@@ -1315,7 +1315,7 @@ class PolygonModel extends ShapeModel {
         for (let eachVertex of this.vertices) {
             verticesJSON.push(eachVertex.toJSON())
         }
-        return {id:this.id,type: this.type, color:this.color,position:this.position,vertices:verticesJSON}
+        return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
     }
     fromJSON(json) {
         // this.id = json.id

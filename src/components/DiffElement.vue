@@ -26,7 +26,7 @@ export default {
                 return {
                     'fa-arrows-h': propertyName == 'position' && (before.x != after.x) && (before.y == after.y),
                     'fa-arrows-v': propertyName == 'position' && (before.x == after.x) && (before.y != after.y),
-                    'fa-arrows': propertyName == 'position' && (before.x != after.x) && (before.y != after.y) || propertyName == 'vertex',
+                    'fa-arrows': (propertyName == 'position' && (before.x != after.x) && (before.y != after.y)) || propertyName == 'vertex',
                     'fa-expand fa-rotate-135': propertyName == 'size' && (before.w == after.w) && (before.h != after.h),
                     'fa-expand fa-rotate-45': propertyName == 'size' && (before.w != after.w) && (before.h == after.h),
                     'fa-arrows-alt': propertyName == 'size' && (before.w != after.w) && (before.h != after.h),

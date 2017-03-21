@@ -409,8 +409,7 @@ socket.on('message-from-server', function(data) {
                         // if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
                             let shapeStates = {}
                             for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
-                                let eachRectangleVM = mobileCanvasVM.interactiveShapes[eachShapeKey]
-                                shapeStates[eachShapeKey] = {id: eachShapeKey, left: eachRectangleVM.shapeModel.left, top: eachRectangleVM.shapeModel.top, width: eachRectangleVM.shapeModel.width, height: eachRectangleVM.shapeModel.height, color: eachRectangleVM.shapeModel.color }
+                                shapeStates[eachShapeKey] = mobileCanvasVM.shapeFor(eachShapeKey).toJSON()
                             }
                             savedShapesStatesPerEvent[currentEventIndex] = shapeStates
                         // }
