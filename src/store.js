@@ -49,8 +49,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 200, //iPhone 375 Nexus 5X 410
-        mobileHeight: 300 //iPhone 667 Nexus 5X 660
+        mobileWidth: 410, //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
     watch: {
         isRecording: function(newValue) {
@@ -886,6 +886,9 @@ class ShapeModel {
     }
 
     static createShape(shapeType,shapeId,protoShape) {
+        if (!shapeId) {
+            console.log("ShapeModel class >> createShape, I'm pretty sure that shapeId needs to be defined")
+        }
         switch (shapeType) {
             case 'rectangle': {
                 if (protoShape) {
@@ -906,7 +909,21 @@ class ShapeModel {
     }
 
     testAgainst(testShape) {
-        return this.left == Math.round(testShape.left) && this.top == Math.round(testShape.top) && this.width == Math.round(testShape.width) && this.height == Math.round(testShape.height) && this.color == testShape.color
+
+        return this.allProperties.every(prop => this.areEqualValues(prop,this.valueForProperty(prop),testShape.valueForProperty(prop)))
+        // if (this.left != Math.round(testShape.left)) {
+        //     console.log("LEFT DIFF: " + (this.left - testShape.left))
+        // }
+        // if (this.top != Math.round(testShape.top)) {
+        //     console.log("TOP DIFF: " + (this.top - testShape.top))
+        // }
+        // if (this.width != Math.round(testShape.width)) {
+        //     console.log("WIDTH DIFF: " + (this.width - testShape.width))
+        // }
+        // if (this.height != Math.round(testShape.height)) {
+        //     console.log("HEIGHT DIFF: " + (this.height - testShape.height))
+        // }
+        // return Math.abs(this.left - testShape.left) < 0.3 && Math.abs(this.top,testShape.top) < 0.3 && Math.abs(this.width,testShape.width) < 0.3 && Math.abs(this.height,testShape.height) < 0.3 && this.color == testShape.color
     }
 
     prepareForDeletion() {
@@ -1304,6 +1321,7 @@ class PolygonModel extends ShapeModel {
         }
     }
     areEqualValues(property, value1, value2) {
+        console.log("Checking " + property + " v1: " + JSON.stringify(value1) + " v2:" + JSON.stringify(value2))
         if (this.isVertexProperty(property)) {
             return value1.x == value2.x && value1.y == value2.y
         } else {

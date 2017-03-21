@@ -320,12 +320,12 @@ export default {
             //Snap to testShapes or previous state value
             let shapesToSnap = [...this.visualState.testShapes]
 
-            if (this.visualState.previousState) {
-                let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
-                if (previousShape) {
-                    shapesToSnap.push(previousShape)
-                }
-            }
+            // if (this.visualState.previousState) {
+            //     let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
+            //     if (previousShape) {
+            //         shapesToSnap.push(previousShape)
+            //     }
+            // }
 
             for (let testShape of shapesToSnap) {
                 if (Math.abs(newValue.x - testShape.position.x) < 5) {

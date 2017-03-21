@@ -492,7 +492,7 @@ socket.on('message-from-server', function(data) {
                     }
                 }, waitingTime);
             }
-            console.log("dispathWaiting >> " + JSON.stringify(data.message))
+            // console.log("dispathWaiting >> " + JSON.stringify(data.message))
             testEvents(data.message, data.eventIndexes)
             break;
         }

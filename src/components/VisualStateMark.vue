@@ -93,7 +93,7 @@ export default {
                 for (let eachShapeObjectId in savedShapeStatesPerEvent[eventIndex]) {
                     let shapeObjectData = savedShapeStatesPerEvent[eventIndex][eachShapeObjectId]
 
-                    let aShapeModel = ShapeModel.createShape(shapeObjectData.type)
+                    let aShapeModel = ShapeModel.createShape(shapeObjectData.type,shapeObjectData.id)
                     aShapeModel.fromJSON(shapeObjectData)
                     createdShapeModels.push(aShapeModel)
                 }
