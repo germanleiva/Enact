@@ -180,7 +180,7 @@ export default {
 
             let firstStateShapes = globalStore.visualStates[0].shapesDictionary
             for (let eachShapeId in firstStateShapes) {
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].propertyObject })
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
             }
 
             globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents.map(eachInputEvent => eachInputEvent.leanJSON), eventIndexes: relevantEventsIndex })

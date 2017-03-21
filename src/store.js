@@ -24,7 +24,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, DiffModel, logger }
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, DiffModel, logger }
 
 export const globalBus = new Vue();
 
@@ -37,7 +37,8 @@ export const globalStore = new Vue({
         measureCounter: 0,
         ruleCounter: 0,
         toolbarState: {
-            drawMode: false,
+            rectangleMode: false,
+            polygonMode: false,
             selectionMode: true,
             multiSelectionMode: false,
             measureMode: false,
@@ -57,6 +58,9 @@ export const globalStore = new Vue({
         }
     },
     computed: {
+        isDrawMode() {
+            return this.toolbarState.rectangleMode || this.toolbarState.polygonMode
+        },
         socket() {
             //TODO check if putting this as a computed property is legit
             let newSocket = io.connect('http://localhost:3000')
@@ -68,27 +72,29 @@ export const globalStore = new Vue({
     },
     methods: {
         setSelectionMode() {
-            this.toolbarState.drawMode = false;
+            this.toolbarState.rectangleMode = false;
+            this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = true;
             this.toolbarState.measureMode = false;
             this.cursorType = "default";
         },
-        setDrawMode() {
-            this.toolbarState.drawMode = true;
+        setRectangleMode() {
+            this.toolbarState.rectangleMode = true;
+            this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = false;
             this.cursorType = "crosshair";
         },
-        setRectangleMode() {
-            this.setDrawMode();
-            this.toolbarState.shapeType = 'rectangle';
-        },
         setPolygonMode() {
-            this.setDrawMode();
-            this.toolbarState.shapeType = 'polygon';
+            this.toolbarState.rectangleMode = false;
+            this.toolbarState.polygonMode = true;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = false;
+            this.cursorType = "crosshair";
         },
         setMeasureMode() {
-            this.toolbarState.drawMode = false;
+            this.toolbarState.rectangleMode = false;
+            this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = true;
             this.cursorType = "crosshair";
@@ -107,11 +113,13 @@ export const globalStore = new Vue({
 
                 let clonedShapeModel = newVisualState.addNewShape(referenceShape.type,eachShapeKey)
 
-                clonedShapeModel.color = referenceShape.color
-                clonedShapeModel.left = referenceShape.left
-                clonedShapeModel.top = referenceShape.top
-                clonedShapeModel.width = referenceShape.width
-                clonedShapeModel.height = referenceShape.height
+                // clonedShapeModel.color = referenceShape.color
+                // clonedShapeModel.left = referenceShape.left
+                // clonedShapeModel.top = referenceShape.top
+                // clonedShapeModel.width = referenceShape.width
+                // clonedShapeModel.height = referenceShape.height
+                //Cheating to account for rectangles and polygons
+                clonedShapeModel.fromJSON(referenceShape)
             }
 
             let previousVisualStateIndex = this.visualStates.indexOf(previousVisualState)
@@ -168,12 +176,15 @@ export const globalStore = new Vue({
             }
             this.inputEvents.removeAll()
         }
+    },
+    watch: {
+        'toolbarState.polygonMode': function(newValue,oldValue) {
+            console.log("polygonMode changed!!" + newValue)
+            if (newValue == false) {
+                globalBus.$emit('polygonModeOff')
+            }
+        }
     }
-    // watch: {
-    //     visualStates: function(newValue,oldValue) {
-
-    //     }
-    // }
 })
 
 class PropertyDiff {
@@ -879,21 +890,12 @@ class ShapeModel {
         }
     }
 
-    get propertyObject() {
-        let changes = {}
-        for (let eachKey of ['id','color','top','left','width','height','opacity']) {
-            changes[eachKey] = this[eachKey]
-        }
-        return changes
-    }
-
     testAgainst(testShape) {
         return this.left == Math.round(testShape.left) && this.top == Math.round(testShape.top) && this.width == Math.round(testShape.width) && this.height == Math.round(testShape.height) && this.color == testShape.color
     }
+
     prepareForDeletion() {
-        for (let point of this.relevantPoints) {
-            point.shape = undefined
-        }
+        throw "ShapeModel >> prepareForDeletion: Subclass Responsibility"
     }
 
     get handlers() {
@@ -1008,8 +1010,10 @@ class ShapeModel {
         return ['color','position','size']
     }
     unfollowMaster(property) {
-        this.setOwnPropertiesFromMaster(property)
-        this.masterVersion = undefined
+        if (this.masterVersion) {
+            this.setOwnPropertiesFromMaster(property)
+            this.masterVersion = undefined
+        }
     }
     changeOwnProperty(changedPropertyName,changedValue) {
         // this[changePropertyName] = changedValue
@@ -1113,6 +1117,42 @@ class RectangleModel extends ShapeModel {
     get type() {
         return "rectangle"
     }
+    prepareForDeletion() {
+        for (let point of this.relevantPoints) {
+            point.shape = undefined
+        }
+    }
+
+    toJSON() {
+        let json = {}
+        for (let eachKey of ['id','type','color','top','left','width','height','opacity']) {
+            json[eachKey] = this[eachKey]
+        }
+        return json
+    }
+
+    fromJSON(json) {
+        // this.id = json.id
+        // this.type = json.type
+        if (json.color) {
+            this.color = json.color
+        }
+        if (json.top) {
+            this.top = json.top
+        }
+        if (json.left) {
+            this.left = json.left
+        }
+        if (json.width) {
+            this.width = json.width
+        }
+        if (json.height){
+            this.height = json.height
+        }
+        if (json.opacity) {
+            this.opacity = json.opacity
+        }
+    }
 }
 
 class PolygonModel extends ShapeModel {
@@ -1125,6 +1165,13 @@ class PolygonModel extends ShapeModel {
             }
         }
         // this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
+    }
+    prepareForDeletion() {
+        //Nothing to clean, the vertex doesn't know the Polygon
+
+        // for (let vertex of this._vertices) {
+        //     vertex.shape = undefined
+        // }
     }
     get handlers() {
         return this.vertices
@@ -1168,7 +1215,10 @@ class PolygonModel extends ShapeModel {
         if (myVertex) {
             return myVertex
         }
-        return this.masterVersion.vertexFor(vertexIndex)
+        if (this.masterVersion) {
+            return this.masterVersion.vertexFor(vertexIndex)
+        }
+        return undefined
     }
     addVertex(canvasPosition) {
         this._vertices.push(new Vertex(this._vertices.length,canvasPosition))
@@ -1245,7 +1295,32 @@ class PolygonModel extends ShapeModel {
             return super.areEqualValues(property, value1, value2)
         }
     }
-
+    toJSON() {
+        let verticesJSON = []
+        for (let eachVertex of this.vertices) {
+            verticesJSON.push(eachVertex.toJSON())
+        }
+        return {id:this.id,type: this.type, color:this.color,vertices:verticesJSON}
+    }
+    fromJSON(json) {
+        // this.id = json.id
+        // this.type = json.type
+        if (json.color) {
+            this.color = json.color
+        }
+        if (json.vertices) {
+            for (let i=0;i<json.vertices.length;i++) {
+                let eachJSONVertex = json.vertices[i]
+                let vertex = this.vertexFor(eachJSONVertex.id)
+                if (vertex) {
+                    vertex.x = eachJSONVertex.x
+                    vertex.y = eachJSONVertex.y
+                } else {
+                    Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
+                }
+            }
+        }
+    }
 }
 
 class Vertex {
@@ -1262,6 +1337,9 @@ class Vertex {
     }
     get namePrefix() {
         return this.id
+    }
+    toJSON() {
+        return {id:this.id,x:this.x,y:this.y}
     }
 }
 

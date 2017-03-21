@@ -1,7 +1,7 @@
 <template>
     <div>
         <svg ref="parentSVG" :style="svgStyle" width="1" height="1">
-            <path ref="svgPolygonPath" :id="shapeModel.id"  v-bind:style="styleObject" :d="pathData" :transform="pathTransform" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult"/>
+            <path ref="svgPolygonPath" :id="shapeModel.id" v-bind:style="styleObject" :d="pathData" :transform="pathTransform" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult"/>
             <path :d="pathData" :transform="pathTransform" v-show="shapeModel.highlight" v-bind:style="overlayStyleObject"/>
         </svg>
         <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
@@ -139,11 +139,15 @@ export default {
         console.log("WE DESTROYED SHAPE (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
-        // styleObject: function(newVal,oldVal) {
-        //     if (!this.isTestShape && this.shapeModel) {
+        shapeModel: {
+            deep:true,
+            handler: function(newVal,oldVal) {
+                                console.log("shapeModel watcher @ PolygonShape.vue")
+
+            if (!this.isTestShape) {
 
 
-        //         if (globalStore.visualStates[0] === this.visualState) {
+                if (globalStore.visualStates[0] === this.visualState) {
 
         //             let changes = {}
         //             for (let eachKey in newVal) {
@@ -155,14 +159,15 @@ export default {
         //                     }
         //                 }
         //             }
-        //             // console.log("message-from-desktop EDIT_SHAPE")
-        //             globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
-        //        }
-        //     } else {
-        //         //I WAS DELETED
-        //         console.log("Should i worry? " + this.shapeModel)
-        //     }
-        // }
+                    console.log("message-from-desktop EDIT_SHAPE")
+                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: newVal.id, message: newVal.toJSON() })
+               }
+            } else {
+                //I WAS DELETED
+                console.log("Should i worry? Polygon shapeModel watcher")
+            }
+        }
+    }
     },
     methods: {
         isPointInside(x,y) {
@@ -290,7 +295,7 @@ export default {
                 return
             }
 
-            if (globalStore.toolbarState.drawMode || globalStore.toolbarState.measureMode) {
+            if (globalStore.isDrawMode || globalStore.toolbarState.measureMode) {
                 return
             }
 

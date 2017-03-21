@@ -66,6 +66,9 @@ export default {
                 }
             };
         });
+        globalBus.$on('polygonModeOff', function() {
+            this.currentPolygon = undefined
+        }.bind(this));
     },
     computed: {
         shapeModels: function() {
@@ -202,7 +205,7 @@ export default {
                 return
             }
             e.preventDefault()
-            if (globalStore.toolbarState.drawMode) {
+            if (globalStore.isDrawMode) {
                 this.drawingStarted(e);
             } /*else if (globalStore.toolbarState.selectionMode) {
                 let selectedShape = null;
@@ -242,42 +245,23 @@ export default {
                 y: e.pageY + document.getElementById('outputArea').scrollTop - this.canvasOffsetTop()
             };
 
-            if (globalStore.toolbarState.shapeType == 'polygon') {
+            if (globalStore.toolbarState.polygonMode) {
                 if (this.currentPolygon == undefined) {
                     let newShapeModel = this.visualStateModel.addNewShape('polygon')
-                    debugger;
+
                     if (this.nextState) {
                         this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
                     }
                     this.currentPolygon = newShapeModel
+
+                    if (globalStore.visualStates[0] === this.visualStateModel) {
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: this.currentPolygon.toJSON() })
+                    }
                 }
 
                 this.visualStateModel.addVertex(this.currentPolygon.id,startingCanvasMousePosition)
 
-                // if (this.currentPolygon.isClosed) {
-                //     this.currentPolygon = undefined
-                // }
-                // var mouseMoveHandler
-
-                // mouseMoveHandler = function(e) {
-                //     e.preventDefault()
-                //     newShapeModel.isResizing = true;
-                //     this.drawingChanged(e, newShapeModel, startingCanvasMousePosition)
-                // }.bind(this)
-
-                // var mouseClickHandler
-                // mouseClickHandler = function(e) {
-                //     e.preventDefault()
-                //     let currentCanvasMousePosition = {
-                //         x: e.pageX + document.getElementById('outputArea').scrollLeft  - this.canvasOffsetLeft(),
-                //         y: e.pageY + document.getElementById('outputArea').scrollTop  - this.canvasOffsetTop()
-                //     }
-                //     newPolygonModel.addVertex(currentCanvasMousePosition)
-                // }.bind(this)
-
-                // window.addEventListener('click', mouseClickHandler, false);
-
-            } else if (globalStore.toolbarState.shapeType == 'rectangle') {
+            } else if (globalStore.toolbarState.rectangleMode) {
                 let newShapeModel = this.visualStateModel.addNewShape('rectangle');
 
                 if (this.nextState) {
@@ -307,9 +291,7 @@ export default {
                 window.addEventListener('mouseup', mouseUpHandler, false);
 
                 if (globalStore.visualStates[0] === this.visualStateModel) {
-                    // let visualStateCanvasHTML = this.$el.getElementsByClassName("visualStateCanvas")[0].innerHTML;
-                    // globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: visualStateCanvasHTML })
-                    globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: { id: newShapeModel.id, color: newShapeModel.color, width: newShapeModel.width, height: newShapeModel.height, top: newShapeModel.top, left: newShapeModel.left, opacity: newShapeModel.opacity } })
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
                 }
             }
         },

@@ -271,7 +271,7 @@ export default {
                 return
             }
 
-            if (globalStore.toolbarState.drawMode || globalStore.toolbarState.measureMode) {
+            if (globalStore.isDrawMode || globalStore.toolbarState.measureMode) {
                 return
             }
 
