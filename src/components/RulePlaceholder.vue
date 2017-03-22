@@ -8,11 +8,11 @@
             <div class="iconAxis button" v-on:mouseup="clickedOnAxis('input','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisY.isActive, inactiveAxis:!rulePlaceholderModel.input.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.input.property)"></i></div>
 
 
-            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="-">
-            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="+">
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.min" v-on:mouseup="mouseUpFor($event,'input','min','x')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.max" v-on:mouseup="mouseUpFor($event,'input','max','x')" placeholder="+">
 
-            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'input','min')" placeholder="-">
-            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'input','max')" placeholder="+">
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.min" v-on:mouseup="mouseUpFor($event,'input','min','y')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.max" v-on:mouseup="mouseUpFor($event,'input','max','y')" placeholder="+">
 
             <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
             <!--<select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
@@ -29,12 +29,12 @@
             <div class="inputId button is-disabled">{{rulePlaceholderModel.output.name}}</div>
 
             <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisX.isActive, inactiveAxis:!rulePlaceholderModel.output.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.output.property)"></i></div>
-            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="-">
-            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="+">
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.output.axisX.min" v-on:mouseup="mouseUpFor($event,'output','min','x')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.output.axisX.max" v-on:mouseup="mouseUpFor($event,'output','max','x')" placeholder="+">
 
             <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisY.isActive, inactiveAxis:!rulePlaceholderModel.output.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.output.property)"></i></div>
-            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.input.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="-">
-            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.input.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="+">
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.output.axisY.min" v-on:mouseup="mouseUpFor($event,'output','min','y')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.output.axisY.max" v-on:mouseup="mouseUpFor($event,'output','max','y')" placeholder="+">
             <!--<input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
              <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
  -->
@@ -233,10 +233,13 @@ export default {
                 event.preventDefault()
             }
         },
-        mouseUpFor(event,ruleSide,ruleSection) {
+        mouseUpFor(event,ruleSide,maxOrMin,axis) {
             // event.preventDefault()
             // event.stopPropagation()
-            console.log("rulePlaceholderModel >> mouseUpFor ruleSide: " + ruleSide + " ruleSection: " + ruleSection)
+            console.log("rulePlaceholderModel >> mouseUpFor ruleSide: " + ruleSide + " axis: " + axis + " maxOrMin: " + maxOrMin)
+
+            let axisName = axis=='x'?'axisX':'axisY'
+
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
                 switch(ruleSide) {
@@ -263,25 +266,26 @@ export default {
                         console.log("Unrecognized rule side: " + ruleSide)
                 }
 
-                if (ruleSection == 'min' || ruleSection == 'max') {
+                if (maxOrMin == 'min' || maxOrMin == 'max') {
                     let aRuleSide = this.rulePlaceholderModel[ruleSide]
+
                     if (aRuleSide.type && aRuleSide.id && aRuleSide.property && aRuleSide.axiss.length > 0) {
                         //If we have data in the input/output (type,id,property,axiss) later we infer the min/max axis
                         // for (let eachAxis of aRuleSide.axiss) {
                             //TODO binding is not working here
-                            aRuleSide[ruleSection] = linkingObject[aRuleSide.property]
+                            aRuleSide[axisName][maxOrMin] = linkingObject.valueForProperty(aRuleSide.property.name)[axis]
                         // }
                     } else {
                         let newContextMenu = new ContextMenu()
                         newContextMenu.startingX = event.pageX;
                         newContextMenu.startingY = event.pageY;
 
-                        newContextMenu.onSelectedProperty = function(property,axis) {
+                        newContextMenu.onSelectedProperty = function(propertyName,axis) {
                             // for (let eachAxis of axis) {
                             //     value[eachAxis] = linkingObject[property].value[eachAxis]
                             // }
                             // this[ruleSectionToFill] = value
-                            aRuleSide[ruleSection] = linkingObject[property]
+                            aRuleSide[ruleSection][axisName] = linkingObject.valueForProperty(propertyName)[axis]
                             newContextMenu.$el.remove()
                             newContextMenu.$destroy()
                         }.bind(this)

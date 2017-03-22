@@ -331,11 +331,11 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.property = receivedRule.input.property
                         editedRule.input.axis = receivedRule.input.axiss
 
-                        editedRule.input.minX = receivedRule.output.min.x
-                        editedRule.input.minY = receivedRule.output.min.y
+                        editedRule.input.minX = receivedRule.input.min.x
+                        editedRule.input.minY = receivedRule.input.min.y
 
-                        editedRule.input.maxX = receivedRule.output.max.x
-                        editedRule.input.maxY = receivedRule.output.max.y
+                        editedRule.input.maxX = receivedRule.input.max.x
+                        editedRule.input.maxY = receivedRule.input.max.y
                         break;
                     case 'measure':
                         if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {

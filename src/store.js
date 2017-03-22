@@ -856,6 +856,19 @@ class InputEventTouch {
         }
         return changes
     }
+    valueForProperty(propertyName) {
+        switch (propertyName) {
+            case 'position': {
+                return {x:this.x, y:this.y}
+            }
+            case 'size': {
+                return {x: this.radiusX, y: this.radiusX}
+            }
+            default: {
+                console.log("InputEventTouch >> valueForProperty, Unrecognized property name: " + propertyName)
+            }
+        }
+    }
 }
 
 class ShapeModel {
@@ -1564,10 +1577,15 @@ class RuleModel {
         this.currentEvent = newEvent
     }
     shouldKeepApplying(oldOutputValue, newOutputValue, anAxis, globalShapeDictionary) {
-        return newOutputValue >= this.output['min' +  anAxis.toUpperCase()] && newOutputValue <= this.output['max' +  anAxis.toUpperCase()]
+        // console.log("newOutputValue: " + newOutputValue)
+        // console.log(`outputMin ${anAxis.toUpperCase()}: ${this.output['min' +  anAxis.toUpperCase()]}`)
+        // console.log(`outputMax ${anAxis.toUpperCase()}: ${this.output['max' +  anAxis.toUpperCase()]}`)
+        // console.log("-----")
+        return newOutputValue > this.output['min' +  anAxis.toUpperCase()] && newOutputValue < this.output['max' +  anAxis.toUpperCase()]
     }
     actuallyApply(delta, newEvent, globalShapeDictionary) {
         if (!this.input.condition(newEvent, this.currentOutput, globalShapeDictionary)) {
+            console.log("We are not passing the input condition")
             return
         }
         for (let i=0;i<this.output.axis.length;i++) {
@@ -1684,7 +1702,12 @@ class TouchInput extends InputRule {
     }
     condition(event, aShape) {
         let touch = this.touchFor(event)
-        return this.axis.every(eachAxis => touch['page' + eachAxis.toUpperCase()] >= this['min' + eachAxis.toUpperCase()] && touch['page' + eachAxis.toUpperCase()] <= this['max' + eachAxis.toUpperCase()])
+
+        return this.axis.every(function(eachAxis) {
+            let result = touch['page' + eachAxis.toUpperCase()] > this['min' + eachAxis.toUpperCase()] && touch['page' + eachAxis.toUpperCase()] < this['max' + eachAxis.toUpperCase()]
+            console.log(`TouchInput >> condition: min ${this['min' + eachAxis.toUpperCase()]} max ${this['max' + eachAxis.toUpperCase()]} => RESULT: ${result}`)
+            return result
+        }.bind(this))
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
@@ -1753,7 +1776,7 @@ class MeasureInput extends InputRule {
         return true;
     }
     applyNewInput(aRule, newEvent, globalShapeDictionary) {
-
+        debugger;
         let newValue = this.currentMeasuredValue()
 
         if (this.axis.length > aRule.output.axis.length) {
