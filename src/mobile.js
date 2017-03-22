@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
@@ -344,6 +344,27 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.measureObject = mobileCanvasVM.measures.find(aMeasure => aMeasure.id == receivedRule.input.id)
                         editedRule.input.property = receivedRule.input.property
                         editedRule.input.axis = receivedRule.input.axiss
+
+                        editedRule.input.minX = receivedRule.input.min.x
+                        editedRule.input.minY = receivedRule.input.min.y
+
+                        editedRule.input.maxX = receivedRule.input.max.x
+                        editedRule.input.maxY = receivedRule.input.max.y
+
+                        break;
+                    case 'shape':
+                        if (editedRule.input == undefined || !editedRule.input instanceof ShapeInput) {
+                            editedRule.input = new ShapeInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
+                        }
+                        editedRule.input.shapeObject = mobileCanvasVM.shapeFor(receivedRule.input.id)
+                        editedRule.input.property = receivedRule.input.property
+                        editedRule.input.axis = receivedRule.input.axiss
+
+                        editedRule.input.minX = receivedRule.input.min.x
+                        editedRule.input.minY = receivedRule.input.min.y
+
+                        editedRule.input.maxX = receivedRule.input.max.x
+                        editedRule.input.maxY = receivedRule.input.max.y
 
                         break;
                     default:

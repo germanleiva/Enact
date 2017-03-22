@@ -24,7 +24,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeOutputRule, DiffModel, logger }
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger }
 
 export const globalBus = new Vue();
 
@@ -1585,13 +1585,12 @@ class RuleModel {
     }
     applyNewInput(newEvent, globalShapeDictionary) {
         // let touch = event.touches[0]
-        debugger;
         this.input.applyNewInput(this, newEvent, globalShapeDictionary)
         this.currentEvent = newEvent
     }
     actuallyApply(delta, newEvent, globalShapeDictionary) {
         for (let eachOutputRule of this.outputs) {
-            if (!this.input.condition(newEvent, eachOutputRule, globalShapeDictionary)) {
+            if (!this.input.condition(newEvent, eachOutputRule)) {
                 console.log("We are not passing the input condition")
                 continue;
             }
@@ -1636,10 +1635,10 @@ class RuleModel {
                 //Checking the min/max of the output
                 if (newValue > eachOutputRule['min' + eachOutputAxis.toUpperCase()] && newValue < eachOutputRule['max' + eachOutputAxis.toUpperCase()]) {
                     currentOutputValue[eachOutputAxis] = newValue
-                    if (complementaryProperty) {
-                        let currentComplementaryValue = eachOutputRule.currentOutput.valueForProperty(complementaryProperty)
-                        currentComplementaryValue[eachOutputAxis] = currentComplementaryValue[eachOutputAxis] - delta[correspondingInputAxis] / 2
-                    }
+                    // if (complementaryProperty) {
+                    //     let currentComplementaryValue = eachOutputRule.currentOutput.valueForProperty(complementaryProperty)
+                    //     currentComplementaryValue[eachOutputAxis] = currentComplementaryValue[eachOutputAxis] + (delta[correspondingInputAxis] / 2) * this.factor[correspondingInputAxis]
+                    // }
                 }
             }
         }
@@ -1659,7 +1658,7 @@ class TouchInput extends InputRule {
         this.property = property
         this.axis = listOfAxis
     }
-    condition(event, aShape) {
+    condition(event, anOutputRule) {
         let touch = this.touchFor(event)
 
         return this.axis.every(function(eachAxis) {
@@ -1716,10 +1715,10 @@ class TouchInput extends InputRule {
 
 class MeasureInput extends InputRule {
     constructor(measureObject, property, listOfAxis, previousValue) {
+        //TODO do we really need a previous value parameter? Should we initialize it as {x:undefined,y:undefined}?
         super()
         this.measureObject = measureObject
         this.property = property
-            // this.previousValue = {x:undefined,y:undefined}
         this.previousValue = previousValue
         this.axis = listOfAxis;
     }
@@ -1729,16 +1728,15 @@ class MeasureInput extends InputRule {
 
         return this.measureObject != undefined && this.property != undefined && this.axis.length > 0;
     }
-    condition(event, aShape) {
-        return true;
+    condition(event, anOutputRule) {
+        let currentValue = this.currentMeasuredValue()
+        let result = this.axis.every(eachAxis => currentValue[eachAxis] > this['min' + eachAxis.toUpperCase()] && currentValue[eachAxis] < this['max' + eachAxis.toUpperCase()])
+        console.log("MeasureInput >> condition = " + result)
+        return result
     }
-    applyNewInput(aRule, newEvent, globalShapeDictionary) {
-        debugger;
-        let newValue = this.currentMeasuredValue()
 
-        if (this.axis.length > aRule.output.axis.length) {
-            console.log("Fatal error MeasureInput: there are more input axis than output axis on this rule: " + aRule)
-        }
+    applyNewInput(aRule, newEvent, globalShapeDictionary) {
+        let newValue = this.currentMeasuredValue()
 
         let delta = { x: 0, y: 0 }
         for (let eachInputAxis of this.axis) {
@@ -1746,24 +1744,6 @@ class MeasureInput extends InputRule {
             this.previousValue[eachInputAxis] = newValue[eachInputAxis]
         }
 
-        // if (aRule.shouldKeepApplying(previousValue, newValue)) {
-        //     switch(this.propertyToChange) {
-        //         case 'height':
-        //             target.height = newValue
-        //             target.top -= (newValue - previousValue) / 2
-
-        //             break;
-        //         case 'width':
-        //             target.width = newValue
-        //             target.left -= (newValue - previousValue) / 2
-
-        //             break;
-        //         case 'center':
-        //             target.center = newValue
-
-        //             break;
-        //     }
-        // }
         aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
     currentMeasuredValue() {
@@ -1781,5 +1761,46 @@ class MeasureInput extends InputRule {
     }
     activate() {
         this.previousValue = this.currentMeasuredValue()
+    }
+}
+
+class ShapeInput extends InputRule {
+    constructor(shapeObject, property, listOfAxis, previousValue) {
+        //TODO do we really need a previous value parameter? Should we initialize it as {x:undefined,y:undefined}?
+        super()
+        this.shapeObject = shapeObject
+        this.property = property
+        this.previousValue = previousValue
+        this.axis = listOfAxis;
+    }
+    shouldActivate(aRule, anEvent) {
+        //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
+                console.log("ShapeInput >> shouldActivate, this.property != undefined, property = " + JSON.stringify(this.property))
+
+        return this.shapeObject != undefined && this.property != undefined && this.axis.length > 0;
+    }
+    condition(event, anOutputRule) {
+        let currentValue = this.currentShapeValue()
+        let result = this.axis.every(eachAxis => currentValue[eachAxis] > this['min' + eachAxis.toUpperCase()] && currentValue[eachAxis] < this['max' + eachAxis.toUpperCase()])
+        console.log("ShapeInput >> condition = " + result)
+        return result
+
+    }
+    applyNewInput(aRule, newEvent, globalShapeDictionary) {
+        let newValue = this.currentShapeValue()
+
+        let delta = { x: 0, y: 0 }
+        for (let eachInputAxis of this.axis) {
+            delta[eachInputAxis] = newValue[eachInputAxis] - this.previousValue[eachInputAxis]
+            this.previousValue[eachInputAxis] = newValue[eachInputAxis]
+        }
+
+        aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
+    }
+    currentShapeValue() {
+        return this.shapeObject.valueForProperty(this.property.name)
+    }
+    activate() {
+        this.previousValue = {x: this.currentShapeValue().x ,y: this.currentShapeValue().y}
     }
 }

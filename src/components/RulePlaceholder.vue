@@ -73,7 +73,7 @@ let ContextMenu = Vue.extend({
       }
 });
 
-const acceptedInputTypes = ["text/diff-touch","text/diff-measure"]
+const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
 export default {
@@ -98,8 +98,6 @@ export default {
     },
     methods: {
         classAxisX: function(property) {
-
-            console.log("classAxisX: "+JSON.stringify(property))
             if (property) {
                 return {
                     'fa-arrows-h': property.name == 'position',
@@ -109,7 +107,6 @@ export default {
             return {}
         },
         classAxisY: function(property) {
-            console.log("classAxisY: "+JSON.stringify(property))
             if (property) {
                 return {
                     'fa-arrows-v': property.name == 'position',
@@ -150,14 +147,14 @@ export default {
 
             this.rulePlaceholderModel.dropForInput(diffModel)
 
-            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.outputs[0].id != undefined) {
-                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
+            // if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.outputs[0].id != undefined) {
+            //     let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-                let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
-                let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
+            //     let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
+            //     let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.outputs[0].property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.outputs[0].property.name],outputAfter[this.rulePlaceholderModel.outputs[0].property.name])
-            }
+            //     this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.outputs[0].property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.outputs[0].property.name],outputAfter[this.rulePlaceholderModel.outputs[0].property.name])
+            // }
 
         },
         dropForOutput(event,outputRule) {
@@ -178,22 +175,28 @@ export default {
             }
             this.rulePlaceholderModel.dropForOutput(outputRule,diffModel)
 
-            if (this.rulePlaceholderModel.input.id != undefined && outputRule.id != undefined) {
-                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
+            // if (this.rulePlaceholderModel.input.id != undefined && outputRule.id != undefined) {
+            //     let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-                let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
-                let inputPositionAfter
-                if (inputPositionBefore) {
-                    //Ok we found an touch with that id
-                    inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
-                } else {
-                    //Let's try a measure
-                    inputPositionBefore = visualState.measureFor(this.rulePlaceholderModel.input.id)
-                    inputPositionAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
-                }
+            //     let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+            //     let inputPositionAfter
+            //     if (inputPositionBefore) {
+            //         //Ok we found an touch with that id
+            //         inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+            //     } else {
+            //         //Let's try a measure
+            //         inputPositionBefore = visualState.measureFor(this.rulePlaceholderModel.input.id)
+            //         if (inputPositionBefore) {
+            //             inputPositionAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
+            //         } else {
+            //             //Let's try an output ...
+            //             inputPositionBefore = visualState.shapeFor(this.rulePlaceholderModel.input.id)
+            //             inputPositionAfter = visualState.nextState.shapeFor(this.rulePlaceholderModel.input.id)
+            //         }
+            //     }
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,outputRule.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
-            }
+            //     this.calculateFactor(this.rulePlaceholderModel.input.property,outputRule.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
+            // }
         },
         draggedTypeFor(dataTransfer,acceptedTypes) {
             let receivedTypes = [...dataTransfer.types]
