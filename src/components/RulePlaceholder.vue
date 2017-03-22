@@ -4,45 +4,32 @@
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
             <!--<div class="input" v-model="rulePlaceholderModel.input.id"></div>-->
             <div class="inputId button is-disabled">{{rulePlaceholderModel.input.name}}</div>
-            <div class="iconAxis button" v-on:click="clickedOnAxis('input','axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisX.isActive, inactiveAxis:!rulePlaceholderModel.input.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.input.property)"></i></div>
-            <div class="iconAxis button" v-on:mouseup="clickedOnAxis('input','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisY.isActive, inactiveAxis:!rulePlaceholderModel.input.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.input.property)"></i></div>
+            <div class="iconAxis button" v-on:click="clickedOnAxis(rulePlaceholderModel.input,'axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisX.isActive, inactiveAxis:!rulePlaceholderModel.input.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.input.property)"></i></div>
+            <div class="iconAxis button" v-on:mouseup="clickedOnAxis(rulePlaceholderModel.input,'axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisY.isActive, inactiveAxis:!rulePlaceholderModel.input.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.input.property)"></i></div>
 
 
-            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.min" v-on:mouseup="mouseUpFor($event,'input','min','x')" placeholder="-">
-            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.max" v-on:mouseup="mouseUpFor($event,'input','max','x')" placeholder="+">
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.min" v-on:mouseup="mouseUpFor($event,rulePlaceholderModel.input,'min','x')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisX.isActive}" v-model="rulePlaceholderModel.input.axisX.max" v-on:mouseup="mouseUpFor($event,rulePlaceholderModel.input,'max','x')" placeholder="+">
 
-            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.min" v-on:mouseup="mouseUpFor($event,'input','min','y')" placeholder="-">
-            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.max" v-on:mouseup="mouseUpFor($event,'input','max','y')" placeholder="+">
-
-            <!-- <input v-model="rulePlaceholderModel.input.axiss" style="width: 25%" placeholder="Input Axis"> -->
-            <!--<select v-model="rulePlaceholderModel.input.axiss" style="height:35px; width:50px" placeholder="Axis" multiple>
-              <option>x</option>
-              <option>y</option>
-            </select>-->
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.min" v-on:mouseup="mouseUpFor($event,rulePlaceholderModel.input,'min','y')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.input.axisY.isActive}" v-model="rulePlaceholderModel.input.axisY.max" v-on:mouseup="mouseUpFor($event,rulePlaceholderModel.input,'max','y')" placeholder="+">
              <input class="input factor factorX" v-bind:class="activeFactor('axisX')" v-model="rulePlaceholderModel.factor.x" placeholder="1">
             <input class="input factor factorY" v-bind:class="activeFactor('axisY')" v-model="rulePlaceholderModel.factor.y" placeholder="1">
         </div>
 
-        <!--<div class="factorY">{{rulePlaceholderModel.factor}}</div>-->
-        <div class="rightSide" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">
-            <!--<div class="input" v-model="rulePlaceholderModel.output.id"></div>-->
-            <div class="inputId button is-disabled">{{rulePlaceholderModel.output.name}}</div>
+        <div v-for="eachOutput in rulePlaceholderModel.outputs" class="rightSide" v-on:drop="dropForOutput($event,eachOutput)" v-on:dragover="dragOverForOutput">
+            <div class="inputId button is-disabled">{{eachOutput.name}}</div>
 
-            <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisX.isActive, inactiveAxis:!rulePlaceholderModel.output.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.output.property)"></i></div>
-            <input class="MinMax min input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.output.axisX.min" v-on:mouseup="mouseUpFor($event,'output','min','x')" placeholder="-">
-            <input class="MinMax max input xAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisX.isActive}" v-model="rulePlaceholderModel.output.axisX.max" v-on:mouseup="mouseUpFor($event,'output','max','x')" placeholder="+">
+            <div class="iconAxis button" v-on:click="clickedOnAxis(eachOutput,'axisX')" v-bind:class="{activeAxis:eachOutput.axisX.isActive, inactiveAxis:!eachOutput.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(eachOutput.property)"></i></div>
+            <input class="MinMax min input xAxis" v-bind:class="{inactive:!eachOutput.axisX.isActive}" v-model="eachOutput.axisX.min" v-on:mouseup="mouseUpFor($event,eachOutput,'min','x')" placeholder="-">
+            <input class="MinMax max input xAxis" v-bind:class="{inactive:!eachOutput.axisX.isActive}" v-model="eachOutput.axisX.max" v-on:mouseup="mouseUpFor($event,eachOutput,'max','x')" placeholder="+">
 
-            <div class="iconAxis button" v-on:click="clickedOnAxis('output','axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.output.axisY.isActive, inactiveAxis:!rulePlaceholderModel.output.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.output.property)"></i></div>
-            <input class="MinMax min input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.output.axisY.min" v-on:mouseup="mouseUpFor($event,'output','min','y')" placeholder="-">
-            <input class="MinMax max input yAxis" v-bind:class="{inactive:!rulePlaceholderModel.output.axisY.isActive}" v-model="rulePlaceholderModel.output.axisY.max" v-on:mouseup="mouseUpFor($event,'output','max','y')" placeholder="+">
-            <!--<input class="input" v-model="rulePlaceholderModel.output.property" placeholder="Output Property">
-             <input v-model="rulePlaceholderModel.output.axiss" style="width: 25%" placeholder="Output Axis">
- -->
-            <!-- <input class="MinMax min input" v-model="rulePlaceholderModel.output.min" v-on:mouseup="mouseUpFor($event,'output','min')" placeholder="Min"> -->
-            <!-- <input class="MinMax max input" v-model="rulePlaceholderModel.output.max" v-on:mouseup="mouseUpFor($event,'output','max')" placeholder="Max"> -->
+            <div class="iconAxis button" v-on:click="clickedOnAxis(eachOutput,'axisY')" v-bind:class="{activeAxis:eachOutput.axisY.isActive, inactiveAxis:!eachOutput.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(eachOutput.property)"></i></div>
+            <input class="MinMax min input yAxis" v-bind:class="{inactive:!eachOutput.axisY.isActive}" v-model="eachOutput.axisY.min" v-on:mouseup="mouseUpFor($event,eachOutput,'min','y')" placeholder="-">
+            <input class="MinMax max input yAxis" v-bind:class="{inactive:!eachOutput.axisY.isActive}" v-model="eachOutput.axisY.max" v-on:mouseup="mouseUpFor($event,eachOutput,'max','y')" placeholder="+">
 
         </div>
-        <div class="addOutput" v-on:drop="dropForOutput" v-on:dragover="dragOverForOutput">+</div>
+        <div class="addOutput" v-on:drop="dropForOutput($event,undefined)" v-on:dragover="dragOverForOutput">+</div>
     </div>
 </template>
 <script>
@@ -50,7 +37,7 @@
 import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,ShapeModel,RectangleModel,InputEventTouch, DiffModel} from '../store.js'
+import {globalStore,ShapeModel,RectangleModel,InputEventTouch, DiffModel, RuleSidePlaceholder} from '../store.js'
 
 let ContextMenu = Vue.extend({
     template: `<div :style="styleObject">
@@ -131,8 +118,8 @@ export default {
             }
             return {}
         },
-        clickedOnAxis: function(side,axisName) {
-            this.rulePlaceholderModel[side][axisName].toggleActive()
+        clickedOnAxis: function(sideRule,axisName) {
+            sideRule[axisName].toggleActive()
         },
         activeFactor: function(axisName){
             if (this.rulePlaceholderModel.input[axisName].isActive){
@@ -143,13 +130,10 @@ export default {
             }
         },
         ruleComplete: function(){
-
-            if ((this.rulePlaceholderModel.input.axisX.isActive || this.rulePlaceholderModel.input.axisY.isActive) && (this.rulePlaceholderModel.output.axisX.isActive || this.rulePlaceholderModel.output.axisY.isActive)) {
-                return
+            if (!this.rulePlaceholderModel.isComplete) {
+                return "inactive"
             }
-            else{
-                return "inactive";
-            }
+            return
         },
         dropForInput(event) {
             event.preventDefault();
@@ -166,17 +150,17 @@ export default {
 
             this.rulePlaceholderModel.dropForInput(diffModel)
 
-            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
+            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.outputs[0].id != undefined) {
                 let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-                let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id]
-                let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id]
+                let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
+                let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property.name],outputAfter[this.rulePlaceholderModel.output.property.name])
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.outputs[0].property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.outputs[0].property.name],outputAfter[this.rulePlaceholderModel.outputs[0].property.name])
             }
 
         },
-        dropForOutput(event) {
+        dropForOutput(event,outputRule) {
             event.preventDefault();
 
             var dataType = this.draggedTypeFor(event.dataTransfer,acceptedOutputTypes)
@@ -188,9 +172,13 @@ export default {
 
             let diffModel = new DiffModel(JSON.parse(data))
 
-            this.rulePlaceholderModel.dropForOutput(diffModel)
+            if (outputRule == undefined) {
+                outputRule = new RuleSidePlaceholder({type:undefined,id:undefined,property:undefined})
+                this.rulePlaceholderModel.outputs.push(outputRule)
+            }
+            this.rulePlaceholderModel.dropForOutput(outputRule,diffModel)
 
-            if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.output.id != undefined) {
+            if (this.rulePlaceholderModel.input.id != undefined && outputRule.id != undefined) {
                 let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
                 let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
@@ -204,7 +192,7 @@ export default {
                     inputPositionAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
                 }
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
+                this.calculateFactor(this.rulePlaceholderModel.input.property,outputRule.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
             }
         },
         draggedTypeFor(dataTransfer,acceptedTypes) {
@@ -233,16 +221,16 @@ export default {
                 event.preventDefault()
             }
         },
-        mouseUpFor(event,ruleSide,maxOrMin,axis) {
+        mouseUpFor(event,aRuleSide,maxOrMin,axis) {
             // event.preventDefault()
             // event.stopPropagation()
-            console.log("rulePlaceholderModel >> mouseUpFor ruleSide: " + ruleSide + " axis: " + axis + " maxOrMin: " + maxOrMin)
+            console.log("rulePlaceholderModel >> mouseUpFor ruleSide: " + aRuleSide + " axis: " + axis + " maxOrMin: " + maxOrMin)
 
             let axisName = axis=='x'?'axisX':'axisY'
 
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
-                switch(ruleSide) {
+                switch(aRuleSide) {
                     case 'mainCondition':
                         //This should only work if the linkingObject can act as an input
                         console.log("Ignoring link in mainCondition")
@@ -263,12 +251,10 @@ export default {
                         }
                         break;
                     default:
-                        console.log("Unrecognized rule side: " + ruleSide)
+                        console.log("Unrecognized rule side: " + aRuleSide)
                 }
 
                 if (maxOrMin == 'min' || maxOrMin == 'max') {
-                    let aRuleSide = this.rulePlaceholderModel[ruleSide]
-
                     if (aRuleSide.type && aRuleSide.id && aRuleSide.property && aRuleSide.axiss.length > 0) {
                         //If we have data in the input/output (type,id,property,axiss) later we infer the min/max axis
                         // for (let eachAxis of aRuleSide.axiss) {
@@ -332,8 +318,8 @@ export default {
                     break;
                 }
                 case 'size': {
-                    deltaOutput.x = outputAfter.w - outputBefore.w
-                    deltaOutput.y = outputAfter.h - outputBefore.h
+                    deltaOutput.x = outputAfter.x - outputBefore.x
+                    deltaOutput.y = outputAfter.y - outputBefore.y
                     break;
                 }
             }

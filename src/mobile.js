@@ -306,7 +306,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_RULE":{
-            // console.log("NEW_RULE => " + JSON.stringify(data.message))
+            console.log("NEW_RULE => " + JSON.stringify(data.message))
             let newRule = new RuleModel(data.message.id)
             // Vue.set(object, key, value)
             Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
@@ -314,7 +314,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_RULE":{
-            // console.log("EDIT_RULE => " + JSON.stringify(data.message))
+            console.log("EDIT_RULE => " + JSON.stringify(data.message))
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
@@ -349,24 +349,30 @@ socket.on('message-from-server', function(data) {
                     default:
                         console.log("EDIT_RULE >> unrecognized input type: " + receivedRule.input.type)
                 }
-                if (receivedRule.output.id) {
-                    switch (receivedRule.output.type) {
-                        case 'shape':
-                            if (editedRule.output == undefined || !editedRule.output instanceof ShapeOutputRule) {
-                                editedRule.output = new ShapeOutputRule(receivedRule.output.id,receivedRule.output.property,receivedRule.output.axiss)
+                for (let i=0; i<receivedRule.outputs.length;i++) {
+                    let eachOutputRule = receivedRule.outputs[i];
+                    let correspondingOutputRule = editedRule.outputs[i]
+
+                    switch (eachOutputRule.type) {
+                        case 'shape':{
+                            if (!correspondingOutputRule) {
+                                correspondingOutputRule = new ShapeOutputRule(eachOutputRule.id,eachOutputRule.property,eachOutputRule.axiss)
+                                editedRule.outputs.push(correspondingOutputRule)
                             }
-                            editedRule.output.id = receivedRule.output.id
-                            editedRule.output.property = receivedRule.output.property
-                            editedRule.output.axis = receivedRule.output.axiss
+                            correspondingOutputRule.id = eachOutputRule.id
+                            correspondingOutputRule.property = eachOutputRule.property
+                            correspondingOutputRule.axis = eachOutputRule.axiss
 
-                            editedRule.output.minX = receivedRule.output.min.x
-                            editedRule.output.minY = receivedRule.output.min.y
+                            correspondingOutputRule.minX = eachOutputRule.min.x
+                            correspondingOutputRule.minY = eachOutputRule.min.y
 
-                            editedRule.output.maxX = receivedRule.output.max.x
-                            editedRule.output.maxY = receivedRule.output.max.y
+                            correspondingOutputRule.maxX = eachOutputRule.max.x
+                            correspondingOutputRule.maxY = eachOutputRule.max.y
                             break;
-                        default:
-                            console.log("EDIT_RULE >> unrecognized output type: "+receivedRule.output.type)
+                        }
+                        default:{
+                            console.log("EDIT_RULE >> unrecognized output type: "+eachOutputRule.type)
+                        }
                     }
                 }
             } else {
