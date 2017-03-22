@@ -188,7 +188,8 @@ export const globalStore = new Vue({
 })
 
 class PropertyDiff {
-    constructor(before,after) {
+    constructor(id,before,after) {
+        this.id = id
         this.before = before
         this.after = after
     }
@@ -252,11 +253,6 @@ class BackgroundColorDiff extends PropertyDiff {
 }
 
 class VertexDiff extends PropertyDiff {
-    constructor(id,before,after) {
-        super(before,after)
-
-        this.id = id
-    }
     get delta() {
         return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
     }
@@ -295,15 +291,15 @@ class DiffModel {
 
         switch (property.name) {
             case "position": {
-                this.property = new TranslationDiff(property.before,property.after)
+                this.property = new TranslationDiff(undefined,property.before,property.after)
                 break;
             }
             case "size": {
-                this.property = new ScalingDiff(property.before,property.after)
+                this.property = new ScalingDiff(undefined,property.before,property.after)
                 break;
             }
             case "color": {
-                this.property = new BackgroundColorDiff(property.before,property.after)
+                this.property = new BackgroundColorDiff(undefined,property.before,property.after)
                 break;
             }
             case "vertex": {
@@ -311,11 +307,11 @@ class DiffModel {
                 break;
             }
             case "added": {
-                this.property = new AddedDiff(property.before,property.after)
+                this.property = new AddedDiff(undefined,property.before,property.after)
                 break;
             }
             case "removed": {
-                this.property = new RemovedDiff(property.before,property.after)
+                this.property = new RemovedDiff(undefined,property.before,property.after)
                 break;
             }
             default: {
@@ -1321,7 +1317,7 @@ class PolygonModel extends ShapeModel {
         }
     }
     areEqualValues(property, value1, value2) {
-        console.log("Checking " + property + " v1: " + JSON.stringify(value1) + " v2:" + JSON.stringify(value2))
+        // console.log("Checking " + property + " v1: " + JSON.stringify(value1) + " v2:" + JSON.stringify(value2))
         if (this.isVertexProperty(property)) {
             return value1.x == value2.x && value1.y == value2.y
         } else {
@@ -1407,6 +1403,9 @@ class RulePlaceholderModel {
 
 class RuleSidePlaceholder {
     constructor({type,id,property}) {
+        if (property) {
+            debugger;
+        }
         this.type = type
         this.id = id
         this.name = name
@@ -1418,7 +1417,7 @@ class RuleSidePlaceholder {
         this.type = diffModel.type
         this.id = diffModel.id
         this.name = diffModel.name
-        this.property = diffModel.property.name
+        this.property = {id: diffModel.property.id, name: diffModel.property.name}
         this.axisX.isActive = diffModel.delta.x != 0
         this.axisY.isActive = diffModel.delta.y != 0
     }
@@ -1449,7 +1448,7 @@ class RuleSidePlaceholder {
         return { type: this.type, id: this.id, property: this.property, axiss: this.axiss, min: {x:this.axisX.min,y:this.axisY.min}, max: {x:this.axisX.max,y:this.axisY.max} }
     }
     getValue(element,axisName) {
-        return element[this.property][axisName]
+        return element[this.property.name][axisName]
     }
 }
 
@@ -1526,6 +1525,7 @@ class ShapeOutputRule extends MinMaxRule {
         this.axis = axis;
     }
     shouldActivate() {
+        console.log("ShapeOutputRule >> shouldActivate, this.property != undefined, property = " + JSON.stringify(this.property))
         return this.id != undefined && this.property != undefined && this.axis.length > 0
     }
 }
@@ -1577,62 +1577,93 @@ class RuleModel {
                 console.log("the rule does not have an input axis defined for that output axis, but we assume that the first will be used")
                 correspondingInputAxis = this.input.axis[0];
             }
-            let outputProperty = ''
-            let complementaryProperty = undefined
+            // let outputProperty = ''
+            // let complementaryProperty = undefined
 
-            switch (eachOutputAxis) {
-                case 'x': {
-                    switch (this.output.property) {
-                        case 'center': {
-                            outputProperty = 'centerX';
-                            break;
-                        }
-                        case 'position': {
-                            outputProperty = 'left';
-                            break;
-                        }
-                        case 'size': {
-                            outputProperty = 'width';
-                            // complementaryProperty = 'left';
-                            break;
-                        }
-                        default: {
-                            console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property)
-                        }
+            // switch (eachOutputAxis) {
+            //     case 'x': {
+            //         switch (this.output.property.name) {
+            //             case 'center': {
+            //                 outputProperty = 'centerX';
+            //                 break;
+            //             }
+            //             case 'position': {
+            //                 outputProperty = 'left';
+            //                 break;
+            //             }
+            //             case 'size': {
+            //                 outputProperty = 'width';
+            //                 // complementaryProperty = 'left';
+            //                 break;
+            //             }
+            //             default: {
+            //                 console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property.name)
+            //             }
+            //         }
+            //         break;
+            //     }
+            //     case 'y': {
+            //         switch (this.output.property.name) {
+            //             case 'center': {
+            //                 outputProperty = 'centerY';
+            //                 break;
+            //             }
+            //             case 'position': {
+            //                 outputProperty = 'top';
+            //                 break;
+            //             }
+            //             case 'size': {
+            //                 outputProperty = 'height';
+            //                 // complementaryProperty = 'top'
+            //                 break;
+            //             }
+            //             default: {
+            //                 console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property.name)
+            //             }
+            //         }
+            //         break;
+            //     }
+            //     default: {
+            //         console.log("RuleModel >> actuallyApply: Unrecognized axis " + eachOutputAxis)
+            //     }
+            // }
+
+            // let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis] * this.factor[correspondingInputAxis]
+            // if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, eachOutputAxis, globalShapeDictionary)) {
+            //     this.currentOutput[outputProperty] = newValue
+            //     if (complementaryProperty) {
+            //         this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
+            //     }
+            // }
+
+            let outputProperty = undefined
+            switch (this.output.property.name) {
+                case 'center': {
+                    outputProperty = 'center'
+                    break;
+                }
+                case 'position': {
+                    if (this.output.property.id == undefined) {
+                        outputProperty = 'position'
+                    } else {
+                        //It's a vertex
+                        outputProperty = this.output.property.id
                     }
                     break;
                 }
-                case 'y': {
-                    switch (this.output.property) {
-                        case 'center': {
-                            outputProperty = 'centerY';
-                            break;
-                        }
-                        case 'position': {
-                            outputProperty = 'top';
-                            break;
-                        }
-                        case 'size': {
-                            outputProperty = 'height';
-                            // complementaryProperty = 'top'
-                            break;
-                        }
-                        default: {
-                            console.log("RuleModel >> actuallyApply: Axis " + eachOutputAxis + " | Unrecognized output property " + this.output.property)
-                        }
-                    }
+                case 'size': {
+                    outputProperty = 'size'
                     break;
                 }
                 default: {
-                    console.log("RuleModel >> actuallyApply: Unrecognized axis " + eachOutputAxis)
+                    console.log("RuleModel >> actuallyApply: Unrecognized output property " + this.output.property.name)
                 }
             }
-            let newValue = this.currentOutput[outputProperty] + delta[correspondingInputAxis] * this.factor[correspondingInputAxis]
-            if (this.shouldKeepApplying(this.currentOutput[outputProperty], newValue, eachOutputAxis, globalShapeDictionary)) {
-                this.currentOutput[outputProperty] = newValue
-                if (complementaryProperty) {
-                    this.currentOutput[complementaryProperty] = this.currentOutput[complementaryProperty] + delta[correspondingInputAxis] / 2
-                }
+
+            let currentOutputValue = this.currentOutput.valueForProperty(outputProperty)
+            let newValue = currentOutputValue[eachOutputAxis] + delta[correspondingInputAxis] * this.factor[correspondingInputAxis]
+            if (this.shouldKeepApplying(currentOutputValue[eachOutputAxis],newValue, eachOutputAxis, globalShapeDictionary)) {
+                currentOutputValue[eachOutputAxis] = newValue
             }
         }
     }
@@ -1657,6 +1688,8 @@ class TouchInput extends InputRule {
     }
     shouldActivate(aRule, anEvent) {
         //The event has the corresponding touch
+        console.log("TouchInput >> shouldActivate, this.property != undefined, property = " + JSON.stringify(this.property))
+
         return this.touchId != undefined && anEvent.touches[this.touchId] != undefined && this.property != undefined && this.axis.length > 0
     }
     touchFor(event) {
@@ -1676,9 +1709,21 @@ class TouchInput extends InputRule {
         let previousTouch = aRule.currentEvent.touches[this.touchId]
 
         let delta = { x: 0, y: 0 }
-        if (this.property == 'position') {
-            for (let eachInputAxis of this.axis) {
-                delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
+        switch (this.property.name) {
+            case 'position': {
+                for (let eachInputAxis of this.axis) {
+                    delta[eachInputAxis] = touch['page' + eachInputAxis.toUpperCase()] - previousTouch['page' + eachInputAxis.toUpperCase()]
+                }
+                break;
+            }
+            case 'size': {
+                for (let eachInputAxis of this.axis) {
+                    delta[eachInputAxis] = touch['radius' + eachInputAxis.toUpperCase()] - previousTouch['radius' + eachInputAxis.toUpperCase()]
+                }
+                break;
+            }
+            default: {
+                console.log("Unrecognized property name in TouchInput >> applyNewInput: " + this.property.name)
             }
         }
 
@@ -1700,6 +1745,8 @@ class MeasureInput extends InputRule {
     }
     shouldActivate(aRule, anEvent) {
         //For now, the measure rules should be always active (maybe if the related shaped are not present this should be false)
+                console.log("MeasureInput >> shouldActivate, this.property != undefined, property = " + JSON.stringify(this.property))
+
         return this.measureObject != undefined && this.property != undefined && this.axis.length > 0;
     }
     condition(event, aShape) {
@@ -1740,7 +1787,7 @@ class MeasureInput extends InputRule {
         aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
     currentMeasuredValue() {
-        switch(this.property) {
+        switch(this.property.name) {
             case 'position': {
                 return this.measureObject.initialPoint
             }
@@ -1748,7 +1795,7 @@ class MeasureInput extends InputRule {
                 return {x:this.measureObject.width,y:this.measureObject.height}
             }
             default: {
-                console.log("MeasureInput >> currentMeasuredValue, unrecognized property: "+this.property)
+                console.log("MeasureInput >> currentMeasuredValue, unrecognized property: "+this.property.name)
             }
         }
     }

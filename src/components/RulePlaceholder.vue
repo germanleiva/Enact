@@ -110,19 +110,26 @@ export default {
 
     },
     methods: {
-        classAxisX: function(propertyName) {
-            console.log("classAxisX: "+propertyName)
-            return {
-                'fa-arrows-h': propertyName == 'position',
-                'fa-expand fa-rotate-45': propertyName == 'size',
+        classAxisX: function(property) {
+
+            console.log("classAxisX: "+JSON.stringify(property))
+            if (property) {
+                return {
+                    'fa-arrows-h': property.name == 'position',
+                    'fa-sort fa-rotate-90': property.name == 'size',
+                }
             }
+            return {}
         },
-        classAxisY: function(propertyName) {
-            console.log("classAxisY: "+propertyName)
-            return {
-                'fa-arrows-v': propertyName == 'position',
-                'fa-expand fa-rotate-135': propertyName == 'size',
+        classAxisY: function(property) {
+            console.log("classAxisY: "+JSON.stringify(property))
+            if (property) {
+                return {
+                    'fa-arrows-v': property.name == 'position',
+                    'fa-sort': property.name == 'size',
+                }
             }
+            return {}
         },
         clickedOnAxis: function(side,axisName) {
             this.rulePlaceholderModel[side][axisName].toggleActive()
@@ -165,7 +172,7 @@ export default {
                 let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.output.id]
                 let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.output.id]
 
-                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property],outputAfter[this.rulePlaceholderModel.output.property])
+                this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.output.property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.output.property.name],outputAfter[this.rulePlaceholderModel.output.property.name])
             }
 
         },
@@ -290,7 +297,7 @@ export default {
             let deltaOutput = {x:1,y:1}
             let deltaInput = {x:1,y:1}
 
-            switch (inputProperty) {
+            switch (inputProperty.name) {
                 case 'position': {
                     if (inputAfter.x) {
                         deltaInput.x = inputAfter.x - inputBefore.x
@@ -314,7 +321,7 @@ export default {
                     break;
                 }
             }
-            switch (outputProperty) {
+            switch (outputProperty.name) {
                 case 'position': {
                     deltaOutput.x = outputAfter.x - outputBefore.x
                     deltaOutput.y = outputAfter.y - outputBefore.y

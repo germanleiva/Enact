@@ -178,7 +178,6 @@ let PolygonVM = Vue.extend({
                 }
                 dataString += "Z"
             }
-            console.log("pathData: "+dataString + " shapeModel? : " + JSON.stringify(this.shapeModel.vertices))
             return dataString
         },
         pathTransform: function() {
@@ -204,14 +203,12 @@ let PolygonVM = Vue.extend({
         }
     },
     created: function() {
-        console.log("Polygon created");
         socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
         shapeModel: {
             deep: true,
             handler: function(newValue,oldValue) {
-                console.log("Polygon, shapeModel watcher: " + newValue)
                 socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
@@ -283,14 +280,14 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_SHAPE":{
-            console.log("NEW_SHAPE: id: " + data.message.id +  " " + JSON.stringify(data.message));
+            // console.log("NEW_SHAPE: id: " + data.message.id +  " " + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             createShapeVM(data.message.id, data.message)
             break;
         }
         case "EDIT_SHAPE":{
-            console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
+            // console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             let editedShapeVM = mobileCanvasVM.interactiveShapes[data.id]
@@ -309,7 +306,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_RULE":{
-            console.log("NEW_RULE => " + JSON.stringify(data.message))
+            // console.log("NEW_RULE => " + JSON.stringify(data.message))
             let newRule = new RuleModel(data.message.id)
             // Vue.set(object, key, value)
             Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
@@ -317,7 +314,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_RULE":{
-            console.log("EDIT_RULE => " + JSON.stringify(data.message))
+            // console.log("EDIT_RULE => " + JSON.stringify(data.message))
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
