@@ -1,5 +1,5 @@
 <template>
-    <div class='box rule-placeholder' v-bind:class="ruleComplete()" :style="{ backgroundColor: activeColor}">
+    <div class='box rule-placeholder' v-bind:class="ruleComplete()" :style="{ backgroundColor: activeColor , height: (200 + 65 * (rulePlaceholderModel.outputs.length - 1)) + 'px'}">
         <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
             <!--<div class="input" v-model="rulePlaceholderModel.input.id"></div>-->
@@ -370,7 +370,6 @@ export default {
     padding: 5px !important;
     width: 196px;
     margin-bottom: 5px !important;
-    height: 200px;
     border: 1px solid #00d1b2;
 }
 .leftSide {
@@ -381,11 +380,17 @@ export default {
     margin-bottom: 3px;
 }
 .rightSide {
-    height: 65px;
+    height: 55px;
     position: relative;
-    padding-top: 18px;
+    padding-top: 10px;
     background-color: #eeeeee;
 }
+
+.rule-placeholder .rightSide:nth-of-type(2) {
+    height: 65px;
+    padding-top: 18px;
+}
+
 .condition {
     width: 100%;
     height: 30px;
@@ -420,8 +425,11 @@ export default {
     font-size: 0.6em;
     top:16px;
 }
-.rightSide > .MinMax{
+.rightSide:nth-child(3) > .MinMax {
     top: 30px;
+}
+.rightSide > .MinMax {
+    top: 22px;
 }
 .MinMax:placeholder-shown{
     background-color: #eeeeee;
