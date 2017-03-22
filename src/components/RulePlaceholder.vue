@@ -452,6 +452,20 @@ export default {
     z-index: 200;
     top:12px;
 }
+.MinMax:hover {
+    border-radius: 20px;
+    width: 25%;
+    height: 25px;
+    border: 1px solid #333333;
+    background-color: #333333;
+    color: #eeeeee;
+    text-align: center;
+    font-size: 0.8em;
+    z-index: 200;
+    top:12px;
+    transition: width 0.1s, background-color 0.3s, height 0.3s, top 0.3s ;
+    transition-delay: 0.1s;
+}
 .MinMax.min.yAxis {
     left:125px;
 }
