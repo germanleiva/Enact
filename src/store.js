@@ -52,11 +52,6 @@ export const globalStore = new Vue({
         mobileWidth: 410, //iPhone 375 Nexus 5X 410
         mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
-    watch: {
-        isRecording: function(newValue) {
-            globalBus.$emit('didRecordingChanged',newValue)
-        }
-    },
     computed: {
         isDrawMode() {
             return this.toolbarState.rectangleMode || this.toolbarState.polygonMode
@@ -178,6 +173,10 @@ export const globalStore = new Vue({
         }
     },
     watch: {
+        isRecording: function(newValue,oldValue) {
+            console.log('isRecording watch')
+            globalBus.$emit('didRecordingChanged',newValue)
+        },
         'toolbarState.polygonMode': function(newValue,oldValue) {
             console.log("polygonMode changed!!" + newValue)
             if (newValue == false) {

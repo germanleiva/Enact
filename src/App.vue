@@ -47,11 +47,13 @@ export default {
   },
   mounted: function() {
     globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
-        // console.log("TYPE OF EVENT " + data.message.type)
+        console.log("TYPE OF EVENT " + data.message.type + " data: " + JSON.stringify(data))
         this.deviceVisualState.currentInputEvent = new InputEvent(data.message)
     }.bind(this));
 
     globalBus.$on('didRecordingChanged',function(isRecording) {
+                console.log("didRecordingChanged " + isRecording)
+
         this.deviceVisualState.showAllInputEvents = isRecording
     }.bind(this));
 

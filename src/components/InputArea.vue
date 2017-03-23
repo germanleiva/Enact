@@ -20,6 +20,7 @@ export default {
   name: 'input-area',
   data () {
     return {
+        //TODO deprecated
         toolbarState: globalStore.toolbarState
     }
   },
