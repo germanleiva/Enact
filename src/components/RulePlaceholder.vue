@@ -156,14 +156,15 @@ export default {
 
             this.rulePlaceholderModel.dropForInput(diffModel)
 
-            // if (this.rulePlaceholderModel.input.id != undefined && this.rulePlaceholderModel.outputs[0].id != undefined) {
-            //     let visualState = globalStore.visualStates[diffModel.visualStateIndex]
+            let outputToCheck = this.rulePlaceholderModel.outputs[0]
+            if (this.rulePlaceholderModel.input.id != undefined && outputToCheck.id != undefined) {
+                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-            //     let outputBefore = visualState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
-            //     let outputAfter = visualState.nextState.shapesDictionary[this.rulePlaceholderModel.outputs[0].id]
+                let outputBefore = visualState.shapesDictionary[outputToCheck.id].valueForProperty(outputToCheck.property.name)
+                let outputAfter = visualState.nextState.shapesDictionary[outputToCheck.id].valueForProperty(outputToCheck.property.name)
 
-            //     this.calculateFactor(this.rulePlaceholderModel.input.property,this.rulePlaceholderModel.outputs[0].property,diffModel.property.before,diffModel.property.after,outputBefore[this.rulePlaceholderModel.outputs[0].property.name],outputAfter[this.rulePlaceholderModel.outputs[0].property.name])
-            // }
+                this.calculateFactor(diffModel.property.before,diffModel.property.after,outputBefore,outputAfter)
+            }
 
         },
         dropForOutput(event,outputRule) {
@@ -179,33 +180,41 @@ export default {
             let diffModel = new DiffModel(JSON.parse(data))
 
             if (outputRule == undefined) {
+                //We are dropping in the plus button not in the side
                 outputRule = new RuleSidePlaceholder({type:undefined,id:undefined,property:undefined})
                 this.rulePlaceholderModel.outputs.push(outputRule)
             }
             this.rulePlaceholderModel.dropForOutput(outputRule,diffModel)
 
-            // if (this.rulePlaceholderModel.input.id != undefined && outputRule.id != undefined) {
-            //     let visualState = globalStore.visualStates[diffModel.visualStateIndex]
+            if (this.rulePlaceholderModel.input.id != undefined && outputRule.id != undefined) {
+                let visualState = globalStore.visualStates[diffModel.visualStateIndex]
 
-            //     let inputPositionBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
-            //     let inputPositionAfter
-            //     if (inputPositionBefore) {
-            //         //Ok we found an touch with that id
-            //         inputPositionAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
-            //     } else {
-            //         //Let's try a measure
-            //         inputPositionBefore = visualState.measureFor(this.rulePlaceholderModel.input.id)
-            //         if (inputPositionBefore) {
-            //             inputPositionAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
-            //         } else {
-            //             //Let's try an output ...
-            //             inputPositionBefore = visualState.shapeFor(this.rulePlaceholderModel.input.id)
-            //             inputPositionAfter = visualState.nextState.shapeFor(this.rulePlaceholderModel.input.id)
-            //         }
-            //     }
+                let inputElementBefore
 
-            //     this.calculateFactor(this.rulePlaceholderModel.input.property,outputRule.property,inputPositionBefore,inputPositionAfter,diffModel.property.before,diffModel.property.after)
-            // }
+                if (visualState.currentInputEvent) {
+                    inputElementBefore = visualState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+                }
+                let inputElementAfter
+                if (inputElementBefore) {
+                    //Ok we found an touch with that id
+                    inputElementAfter = visualState.nextState.currentInputEvent.touches.find(aTouch => aTouch.id == this.rulePlaceholderModel.input.id)
+                } else {
+                    //Let's try a measure
+                    inputElementBefore = visualState.measureFor(this.rulePlaceholderModel.input.id)
+                    if (inputElementBefore) {
+                        inputElementAfter = visualState.nextState.measureFor(this.rulePlaceholderModel.input.id)
+                    } else {
+                        //Let's try an output ...
+                        inputElementBefore = visualState.shapeFor(this.rulePlaceholderModel.input.id)
+                        inputElementAfter = visualState.nextState.shapeFor(this.rulePlaceholderModel.input.id)
+                    }
+                }
+
+                let inputBefore = inputElementBefore.valueForProperty(this.rulePlaceholderModel.input.property.name)
+                let inputAfter = inputElementAfter.valueForProperty(this.rulePlaceholderModel.input.property.name)
+
+                this.calculateFactor(inputBefore,inputAfter,diffModel.property.before,diffModel.property.after)
+            }
         },
         draggedTypeFor(dataTransfer,acceptedTypes) {
             let receivedTypes = [...dataTransfer.types]
@@ -298,47 +307,17 @@ export default {
                 }
             }
         },
-        calculateFactor(inputProperty,outputProperty,inputBefore,inputAfter,outputBefore,outputAfter) {
+        calculateFactor(inputBefore,inputAfter,outputBefore,outputAfter) {
             // input * factor = output => factor = output/input
             let deltaOutput = {x:1,y:1}
             let deltaInput = {x:1,y:1}
 
-            switch (inputProperty.name) {
-                case 'position': {
-                    if (inputAfter.x) {
-                        deltaInput.x = inputAfter.x - inputBefore.x
-                        deltaInput.y = inputAfter.y - inputBefore.y
-                    } else {
-                        deltaInput.x = inputAfter.initialPoint.x - inputBefore.initialPoint.x
-                        deltaInput.y = inputAfter.initialPoint.y - inputBefore.initialPoint.y
-                    }
-                    break;
-                }
-                case 'size': {
-                    if (inputAfter.radiusX) {
-                        deltaInput.x = inputAfter.radiusX - inputBefore.radiusX
-                        deltaInput.y = inputAfter.radiusY - inputBefore.radiusY
-                    } else {
-                        //it's a measure?
-                        deltaInput.x = inputAfter.width - inputBefore.width
-                        deltaInput.y = inputAfter.height - inputBefore.height
+            deltaInput.x = inputAfter.x - inputBefore.x
+            deltaInput.y = inputAfter.y - inputBefore.y
 
-                    }
-                    break;
-                }
-            }
-            switch (outputProperty.name) {
-                case 'position': {
-                    deltaOutput.x = outputAfter.x - outputBefore.x
-                    deltaOutput.y = outputAfter.y - outputBefore.y
-                    break;
-                }
-                case 'size': {
-                    deltaOutput.x = outputAfter.x - outputBefore.x
-                    deltaOutput.y = outputAfter.y - outputBefore.y
-                    break;
-                }
-            }
+            deltaOutput.x = outputAfter.x - outputBefore.x
+            deltaOutput.y = outputAfter.y - outputBefore.y
+
             this.rulePlaceholderModel.factor.x = deltaOutput.x / deltaInput.x;
             this.rulePlaceholderModel.factor.y = deltaOutput.y / deltaInput.y;
         }
