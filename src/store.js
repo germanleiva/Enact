@@ -1527,15 +1527,51 @@ class RuleAxis {
     constructor(ruleSide,name) {
         this.ruleSide = ruleSide
         this.name = name
-        this.min = undefined
-        this.max = undefined
+        this._min = undefined
+        this._max = undefined
         this.isActive = false
+        this.minElement = undefined
+        this.maxElement = undefined
     }
-    loadMin(element) {
-        this.min = this.ruleSide.getValue(element,this.name)
+    get min() {
+        if (this._min) {
+            return this._min
+        }
+        if (this.minElement) {
+            return this.ruleSide.getValue(this.minElement,this.name)
+        }
+        return undefined
     }
-    loadMax(element) {
-        this.max = this.ruleSide.getValue(element,this.name)
+    set min(value) {
+        this._min = value
+        this.minElement = undefined
+    }
+    get max() {
+        if (this._max) {
+            return this._max
+        }
+        if (this.maxElement) {
+            return this.ruleSide.getValue(this.maxElement,this.name)
+        }
+        return undefined
+    }
+    set max(value) {
+        this._max = value
+        this.maxElement = undefined
+    }
+    loadElement(maxOrMin,element,propertyName) {
+        if (maxOrMin == 'min') {
+            if (!this.ruleSide.property) {
+                this.ruleSide.property = {id:undefined, name: propertyName}
+            }
+            this.minElement = element
+        }
+        if (maxOrMin == 'max') {
+            if (!this.ruleSide.property) {
+                this.ruleSide.property = {id:undefined, name: propertyName}
+            }
+            this.maxElement = element
+        }
     }
     toggleActive(){
         this.isActive=!this.isActive

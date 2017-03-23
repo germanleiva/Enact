@@ -275,7 +275,7 @@ export default {
                         //If we have data in the input/output (type,id,property,axiss) later we infer the min/max axis
                         // for (let eachAxis of aRuleSide.axiss) {
                             //TODO binding is not working here
-                            aRuleSide[axisName][maxOrMin] = linkingObject.valueForProperty(aRuleSide.property.name)[axis]
+                            aRuleSide[axisName].loadElement(maxOrMin,linkingObject)
                         // }
                     } else {
                         let newContextMenu = new ContextMenu()
@@ -287,7 +287,7 @@ export default {
                             //     value[eachAxis] = linkingObject[property].value[eachAxis]
                             // }
                             // this[ruleSectionToFill] = value
-                            aRuleSide[ruleSection][axisName] = linkingObject.valueForProperty(propertyName)[axis]
+                            aRuleSide[axisName].loadElement(maxOrMin,linkingObject,propertyName)
                             newContextMenu.$el.remove()
                             newContextMenu.$destroy()
                         }.bind(this)
