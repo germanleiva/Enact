@@ -234,27 +234,31 @@ export default {
             let linkingObject = globalStore.toolbarState.linkingObject
             if (linkingObject) {
                 switch(aRuleSide) {
-                    case 'mainCondition':
+                    case 'mainCondition':{
                         //This should only work if the linkingObject can act as an input
                         console.log("Ignoring link in mainCondition")
                         return
                         break;
-                    case 'input':
+                    }
+                    case 'input':{
                         //This should only work if the linkingObject can act as an input
                         if (!linkingObject instanceof InputEventTouch) {
                             console.log("Ignoring link in inputRule")
                             return
                         }
                         break;
-                    case 'output':
+                    }
+                    case 'output':{
                         //This should only work if the linkingObject can act as an output
                         if (!linkingObject instanceof ShapeModel) {
                             console.log("Ignoring link in outputRule")
                             return
                         }
                         break;
-                    default:
+                    }
+                    default:{
                         console.log("Unrecognized rule side: " + aRuleSide)
+                    }
                 }
 
                 if (maxOrMin == 'min' || maxOrMin == 'max') {

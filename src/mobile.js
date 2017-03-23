@@ -6,7 +6,7 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
@@ -323,7 +323,7 @@ socket.on('message-from-server', function(data) {
 
             if (editedRule) {
                 switch (receivedRule.input.type) {
-                    case 'touch':
+                    case 'touch':{
                         if (editedRule.input == undefined || !editedRule.input instanceof TouchInput) {
                             editedRule.input = new TouchInput(receivedRule.input.id,receivedRule.input.property,receivedRule.input.axiss)
                         }
@@ -337,7 +337,8 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.maxX = receivedRule.input.max.x
                         editedRule.input.maxY = receivedRule.input.max.y
                         break;
-                    case 'measure':
+                    }
+                    case 'measure':{
                         if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {
                             editedRule.input = new MeasureInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
                         }
@@ -352,7 +353,8 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.maxY = receivedRule.input.max.y
 
                         break;
-                    case 'shape':
+                    }
+                    case 'shape':{
                         if (editedRule.input == undefined || !editedRule.input instanceof ShapeInput) {
                             editedRule.input = new ShapeInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
                         }
@@ -367,8 +369,10 @@ socket.on('message-from-server', function(data) {
                         editedRule.input.maxY = receivedRule.input.max.y
 
                         break;
-                    default:
+                    }
+                    default:{
                         console.log("EDIT_RULE >> unrecognized input type: " + receivedRule.input.type)
+                    }
                 }
                 for (let i=0; i<receivedRule.outputs.length;i++) {
                     let eachOutputRule = receivedRule.outputs[i];
@@ -712,6 +716,10 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
         sendEvent(event);
     } else {
         // console.log("We are starting interacting")
+
+        //hack
+        mobileCanvasVM.currentInputEvent = new InputEvent(event)
+
         for (let aRuleKey in mobileCanvasVM.rules) {
             //Does the event has a rule that control that touch?
             let aRule = mobileCanvasVM.rules[aRuleKey];
@@ -719,6 +727,7 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
                 mobileCanvasVM.activeRules.push(aRule)
             }
         }
+
         sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
@@ -729,6 +738,9 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
         sendEvent(event);
     } else {
         // console.log("We are interacting")
+
+        //hack
+        mobileCanvasVM.currentInputEvent = new InputEvent(event)
 
         for (let anActiveRule of mobileCanvasVM.activeRules) {
             anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);

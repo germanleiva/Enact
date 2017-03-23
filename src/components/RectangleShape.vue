@@ -367,7 +367,7 @@ export default {
             }
             this.shapeModel.isMoving = false;
             switch (handlerType) {
-                case 'southEast':
+                case 'southEast':{
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
                         //The currentWindowMousePositionX controls the startingShapePositionX
                         this.shapeModel.isMoving = true;
@@ -381,7 +381,8 @@ export default {
                     newValue.x = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
                     newValue.y = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
                     break;
-                case 'southWest':
+                }
+                case 'southWest':{
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
                         let offsetX = startingShapePositionXInWindowCoordinates - currentWindowMousePositionX;
 
@@ -407,7 +408,8 @@ export default {
                     }
 
                     break;
-                case 'northWest':
+                }
+                case 'northWest':{
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates + startingShapeWidth) {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
@@ -422,7 +424,8 @@ export default {
                     newValue.y = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                     break;
-                case 'northEast':
+                }
+                case 'northEast':{
                     if (currentWindowMousePositionX < startingShapePositionXInWindowCoordinates) {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
@@ -436,6 +439,7 @@ export default {
                     newValue.y = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                     break;
+                }
             }
 
             if (this.shapeModel.isFollowingMaster('size') && previousValue.x == newValue.x && previousValue.y == newValue.y) {

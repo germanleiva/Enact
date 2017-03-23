@@ -343,12 +343,15 @@ class MeasureModel {
     }
     get name() {
         switch (this.type) {
-            case "point":
+            case "point":{
                 return "P"+this.nameCount
-            case "distance":
+            }
+            case "distance":{
                 return "D"+this.nameCount
-            default:
+            }
+            default:{
                 console.log("Unrecognized nameCount for measure: "+ this.id);
+            }
         }
     }
     get type() {
@@ -380,12 +383,19 @@ class MeasureModel {
     get fromObject() {
         let fromId = this.from.id;
         switch (this.from.type) {
-            case 'shape':
+            case 'shape':{
                 return this.visualState.shapeFor(fromId)
-            case 'distance':
+            }
+            case 'distance':{
                 return this.visualState.distanceFor(fromId)
-            case 'input':
-                return this.visualState.currentInputEvent.touchFor(fromId)
+            }
+            case 'input':{
+                if (this.visualState.currentInputEvent) {
+                    return this.visualState.currentInputEvent.touchFor(fromId)
+                }
+                console.log("MeasureModel >> fromObject : this.visualState.currentInputEvent = undefined")
+                return undefined
+            }
             default:
                 console.log("Unrecognized 'from' type in MeasureModel: " + this.from.type)
         }
@@ -393,12 +403,19 @@ class MeasureModel {
     get toObject() {
         let toId = this.to.id;
         switch (this.to.type) {
-            case 'shape':
+            case 'shape':{
                 return this.visualState.shapeFor(toId)
-            case 'distance':
+            }
+            case 'distance':{
                 return this.visualState.distanceFor(toId)
-            case 'input':
-                return this.visualState.currentInputEvent.touchFor(toId)
+            }
+            case 'input':{
+                if (this.visualState.currentInputEvent) {
+                    return this.visualState.currentInputEvent.touchFor(toId)
+                }
+                console.log("MeasureModel >> fromObject : this.visualState.currentInputEvent = undefined")
+                return undefined
+            }
             default:
                 console.log("Unrecognized 'to' type in MeasureModel: " + this.to.type)
         }
@@ -431,7 +448,8 @@ class MeasureModel {
         let changes = []
 
         switch (this.type) {
-            case "point": //I'm interested in translation
+            case "point": {
+                //I'm interested in translation
                 if (this.initialPoint.x != this.finalPoint.x || this.initialPoint.y != this.finalPoint.y) {
                     console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure'?")
                 }
@@ -448,18 +466,24 @@ class MeasureModel {
                 }
 
                 break;
-            case "distance": //I'm interested in scaling
+            }
+            case "distance": {
+                //I'm interested in scaling
                 if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
                     changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "size", before: { x: this.width, y: this.height }, after: { x: nextMeasureWithTheSameModel.width, y: nextMeasureWithTheSameModel.height } } })
                 }
                 break;
+            }
         }
 
         return changes
     }
     positionOfHandler(handlerName) {
         if (handlerName == 'center') {
-            return { x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2) }
+            if (this.fromObject) {
+                return { x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2) }
+            }
+            return undefined
         }
         console.log("WERIDDDDDDDDDD")
         abort()
@@ -539,7 +563,7 @@ class VisualStateModel {
     }
     importMeasureUntilLastVisualState(previousMeasure) {
         switch (previousMeasure.from.type) {
-            case "shape":
+            case "shape":{
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
@@ -547,7 +571,8 @@ class VisualStateModel {
                     }
                 }
                 break;
-            case "distance":
+            }
+            case "distance":{
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
@@ -555,7 +580,8 @@ class VisualStateModel {
                     }
                 }
                 break;
-            case "input":
+            }
+            case "input":{
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
@@ -563,6 +589,7 @@ class VisualStateModel {
                     // }
                 // }
                 break;
+            }
         }
 
 
@@ -815,12 +842,18 @@ class InputEvent {
 }
 
 class InputEventTouch {
-    constructor({identifier:identifier,x:x,y:y,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
+    constructor({identifier:identifier,x:x,y:y,pageX:pageX,pageY:pageY,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
         this.identifier = identifier;
         this.id = 'F'+identifier
         this.name = this.id
-        this.x = x
-        this.y = y
+        //hack
+        if (x!=undefined || y != undefined) {
+            this.x = x
+            this.y = y
+        } else if (pageX!=undefined || pageY != undefined) {
+            this.x = pageX
+            this.y = pageY
+        }
         this.radiusX = radiusX
         this.radiusY = radiusY
         this.angularRotation = angularRotation
@@ -1080,12 +1113,15 @@ class ShapeModel {
     }
     isFollowingMaster(property) {
         switch (property) {
-            case 'color':
+            case 'color':{
                 return this._color == '';
-            case 'position':
+            }
+            case 'position':{
                 return this._position.x == null && this._position.y == null;
-            case 'size':
+            }
+            case 'size':{
                 return this._size.x == null && this._size.y == null;
+            }
         }
         // "check all properties" //TODO what about vertices???
         return this.isFollowingMaster('color') && this.isFollowingMaster('position') && this.isFollowingMaster('size')
@@ -1095,12 +1131,15 @@ class ShapeModel {
     }
     areEqualValues(property, value1, value2) {
         switch (property) {
-            case 'color':
+            case 'color':{
                 return value1 == value2;
-            case 'position':
+            }
+            case 'position':{
                 return value1.x == value2.x && value1.y == value2.y;
-            case 'size':
+            }
+            case 'size':{
                 return value1.x == value2.x && value1.y == value2.y;
+            }
         }
     }
     isPointInside(x, y) {
@@ -1124,24 +1163,33 @@ class ShapeModel {
     }
     positionOfHandler(handlerName) {
         switch (handlerName) {
-            case 'northEast':
+            case 'northEast':{
                 return { x: this.left + this.width, y: this.top }
-            case 'northWest':
+            }
+            case 'northWest':{
                 return { x: this.left, y: this.top }
-            case 'southWest':
+            }
+            case 'southWest':{
                 return { x: this.left, y: this.top + this.height }
-            case 'southEast':
+            }
+            case 'southEast':{
                 return { x: this.left + this.width, y: this.top + this.height }
-            case 'middleRight':
+            }
+            case 'middleRight':{
                 return { x: this.left + this.width, y: this.top + this.height / 2 }
-            case 'middleLeft':
+            }
+            case 'middleLeft':{
                 return { x: this.left, y: this.top + this.height / 2 }
-            case 'middleTop':
+            }
+            case 'middleTop':{
                 return { x: this.left + this.width / 2, y: this.top }
-            case 'middleBottom':
+            }
+            case 'middleBottom':{
                 return { x: this.left + this.width / 2, y: this.top + this.height }
-            case 'center':
+            }
+            case 'center':{
                 return { x: this.left + this.width / 2, y: this.top + this.height / 2 }
+            }
         }
         console.log("WERIDDDDDDDDDD")
     }
@@ -1491,7 +1539,6 @@ class RuleAxis {
         this.max = this.ruleSide.getValue(element,this.name)
     }
     toggleActive(){
-        console.log(this.isActive)
         this.isActive=!this.isActive
     }
 }
@@ -1570,6 +1617,7 @@ class RuleModel {
     activate(anEvent, globalShapeDictionary) {
         if (this.input && this.input.shouldActivate(this, anEvent)) {
             this.currentEvent = anEvent
+
             this.input.activate()
 
             for (let eachOutputRule of this.outputs) {
@@ -1730,6 +1778,9 @@ class MeasureInput extends InputRule {
     }
     condition(event, anOutputRule) {
         let currentValue = this.currentMeasuredValue()
+        if (!currentValue) {
+            return false
+        }
         let result = this.axis.every(eachAxis => currentValue[eachAxis] > this['min' + eachAxis.toUpperCase()] && currentValue[eachAxis] < this['max' + eachAxis.toUpperCase()])
         console.log("MeasureInput >> condition = " + result)
         return result
@@ -1739,14 +1790,19 @@ class MeasureInput extends InputRule {
         let newValue = this.currentMeasuredValue()
 
         let delta = { x: 0, y: 0 }
-        for (let eachInputAxis of this.axis) {
-            delta[eachInputAxis] = newValue[eachInputAxis] - this.previousValue[eachInputAxis]
-            this.previousValue[eachInputAxis] = newValue[eachInputAxis]
-        }
 
+        if (newValue) {
+            for (let eachInputAxis of this.axis) {
+                delta[eachInputAxis] = newValue[eachInputAxis] - this.previousValue[eachInputAxis]
+                this.previousValue[eachInputAxis] = newValue[eachInputAxis]
+            }
+        }
         aRule.actuallyApply(delta, newEvent, globalShapeDictionary)
     }
     currentMeasuredValue() {
+        if (!this.measureObject.fromObject || !this.measureObject.toObject) {
+            return undefined
+        }
         switch(this.property.name) {
             case 'position': {
                 return this.measureObject.initialPoint

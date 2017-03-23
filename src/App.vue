@@ -108,40 +108,47 @@ export default {
         console.log("keydown keyCode: " + e.keyCode)
 
         switch(e.keyCode) {
-            case 16:
+            case 16:{
                 //ShiftLeft & ShiftRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = true;
                 break;
-            case 17:
+            }
+            case 17:{
                 //Ctrl
                 e.preventDefault()
                 break;
-            case 18:
+            }
+            case 18:{
                 //AltLeft & AltRight
                 e.preventDefault()
                 break;
-            case 38:
+            }
+            case 38:{
                 // up arrow
                 e.preventDefault()
                 that.$refs.outputArea.moveSelectedShapes(0,-arrowDisplacement)
                 break;
-            case 40:
+            }
+            case 40:{
                 // down arrow
                 e.preventDefault()
                 that.$refs.outputArea.moveSelectedShapes(0,arrowDisplacement)
                 break;
-            case 37:
+            }
+            case 37:{
                // left arrow
                 e.preventDefault()
                 that.$refs.outputArea.moveSelectedShapes(-arrowDisplacement,0)
                break;
-            case 39:
+            }
+            case 39:{
                // right arrow
                 e.preventDefault()
                 that.$refs.outputArea.moveSelectedShapes(arrowDisplacement,0)
                break;
-            case 46:
+            }
+            case 46: {
                 // MAC delete key
                 e.preventDefault()
                 if (!that.$refs.outputArea) {
@@ -149,23 +156,27 @@ export default {
                 }
                 that.$refs.outputArea.deleteSelectedShapes()
                 break;
+            }
         }
     });
     window.addEventListener('keyup', function(e) {
         switch(e.keyCode) {
-            case 16:
+            case 16: {
                 //ShiftLeft & ShiftRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = false;
                 break;
-            case 17:
+            }
+            case 17:{
                 //Ctrl
                 e.preventDefault()
                 break;
-            case 18:
+            }
+            case 18:{
                 //AltLeft & AltRight
                 e.preventDefault()
                 break;
+            }
         }
     });
     window.addEventListener('onContextMenu', function(e) {
