@@ -306,7 +306,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_RULE":{
-            console.log("NEW_RULE => " + JSON.stringify(data.message))
+            // console.log("NEW_RULE => " + JSON.stringify(data.message))
             let newRule = new RuleModel(data.message.id)
             // Vue.set(object, key, value)
             Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
@@ -314,7 +314,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_RULE":{
-            console.log("EDIT_RULE => " + JSON.stringify(data.message))
+            // console.log("EDIT_RULE => " + JSON.stringify(data.message))
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
