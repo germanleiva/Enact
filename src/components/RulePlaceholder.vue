@@ -3,7 +3,7 @@
         <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
             <!--<div class="input" v-model="rulePlaceholderModel.input.id"></div>-->
-            <div class="inputId button is-disabled">{{rulePlaceholderModel.input.name}}</div>
+            <div class="inputId button is-disabled" title="drag an input here" :class="IdStyle(rulePlaceholderModel.input)">{{titleForInput(rulePlaceholderModel.input)}}</div>
             <div class="iconAxis button" v-on:click="clickedOnAxis(rulePlaceholderModel.input,'axisX')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisX.isActive, inactiveAxis:!rulePlaceholderModel.input.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(rulePlaceholderModel.input.property)"></i></div>
             <div class="iconAxis button" v-on:mouseup="clickedOnAxis(rulePlaceholderModel.input,'axisY')" v-bind:class="{activeAxis:rulePlaceholderModel.input.axisY.isActive, inactiveAxis:!rulePlaceholderModel.input.axisY.isActive}"><i class='fa' v-bind:class="classAxisY(rulePlaceholderModel.input.property)"></i></div>
 
@@ -18,7 +18,7 @@
         </div>
 
         <div v-for="eachOutput in rulePlaceholderModel.outputs" class="rightSide" v-on:drop="dropForOutput($event,eachOutput)" v-on:dragover="dragOverForOutput">
-            <div class="inputId button is-disabled">{{eachOutput.name}}</div>
+            <div class="inputId button is-disabled" :class="IdStyle(eachOutput)" >{{titleForOutput(eachOutput)}}</div>
 
             <div class="iconAxis button" v-on:click="clickedOnAxis(eachOutput,'axisX')" v-bind:class="{activeAxis:eachOutput.axisX.isActive, inactiveAxis:!eachOutput.axisX.isActive}"><i class='fa' v-bind:class="classAxisX(eachOutput.property)"></i></div>
             <input class="MinMax min input xAxis" v-bind:class="{inactive:!eachOutput.axisX.isActive}" v-model="eachOutput.axisX.min" v-on:mouseup="mouseUpFor($event,eachOutput,'min','x')" placeholder="-">
@@ -97,6 +97,15 @@ export default {
 
     },
     methods: {
+        IdStyle(input){
+            return input.name ? input.name: 'inputIdPlaceholder'
+        },
+        titleForOutput(eachOutput){
+            return eachOutput.name ? eachOutput.name: 'output'
+        },
+        titleForInput(input){
+            return input.name ? input.name: 'input'
+        },
         classAxisX: function(property) {
             if (property) {
                 return {
@@ -358,6 +367,11 @@ export default {
     opacity: 1 !important;
     margin-left: 8px;
 }
+
+.inputIdPlaceholder {
+    font-size: 0.9em;
+    color: #cccccc;
+    }
 
 .iconAxis{
     width: 40px;
