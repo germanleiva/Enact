@@ -49,8 +49,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660 //iPhone 667 Nexus 5X 660
+        mobileWidth: 410 * 0.8, //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 * 0.8//iPhone 667 Nexus 5X 660
     },
     computed: {
         isDrawMode() {
@@ -388,12 +388,8 @@ class MeasureModel {
             case 'distance':{
                 return this.visualState.distanceFor(fromId)
             }
-            case 'input':{
-                if (this.visualState.currentInputEvent) {
-                    return this.visualState.currentInputEvent.touchFor(fromId)
-                }
-                console.log("MeasureModel >> fromObject : this.visualState.currentInputEvent = undefined")
-                return undefined
+            case 'touch':{
+                return this.visualState.touchFor(fromId)
             }
             default:
                 console.log("Unrecognized 'from' type in MeasureModel: " + this.from.type)
@@ -408,12 +404,8 @@ class MeasureModel {
             case 'distance':{
                 return this.visualState.distanceFor(toId)
             }
-            case 'input':{
-                if (this.visualState.currentInputEvent) {
-                    return this.visualState.currentInputEvent.touchFor(toId)
-                }
-                console.log("MeasureModel >> fromObject : this.visualState.currentInputEvent = undefined")
-                return undefined
+            case 'touch':{
+                return this.visualState.touchFor(toId)
             }
             default:
                 console.log("Unrecognized 'to' type in MeasureModel: " + this.to.type)
@@ -446,32 +438,34 @@ class MeasureModel {
     diffArray(nextMeasureWithTheSameModel) {
         let changes = []
 
-        switch (this.type) {
-            case "point": {
-                //I'm interested in translation
-                if (this.initialPoint.x != this.finalPoint.x || this.initialPoint.y != this.finalPoint.y) {
-                    console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure'?")
-                }
-                if (nextMeasureWithTheSameModel.initialPoint.x != nextMeasureWithTheSameModel.finalPoint.x || nextMeasureWithTheSameModel.initialPoint.y != nextMeasureWithTheSameModel.finalPoint.y) {
-                    console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure' for my nextMeasureWithTheSameModel?")
-                }
-                let myOnlyPoint = this.initialPoint
-                let hisOnlyPoint = nextMeasureWithTheSameModel.initialPoint
+        if (this.isAvailable && nextMeasureWithTheSameModel.isAvailable) {
+            switch (this.type) {
+                case "point": {
+                    //I'm interested in translation
+                    if (this.initialPoint.x != this.finalPoint.x || this.initialPoint.y != this.finalPoint.y) {
+                        console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure'?")
+                    }
+                    if (nextMeasureWithTheSameModel.initialPoint.x != nextMeasureWithTheSameModel.finalPoint.x || nextMeasureWithTheSameModel.initialPoint.y != nextMeasureWithTheSameModel.finalPoint.y) {
+                        console.log("WEIRD @ Point >> diffArray - the initialPoint and the finalPoint are not the same in a 'point measure' for my nextMeasureWithTheSameModel?")
+                    }
+                    let myOnlyPoint = this.initialPoint
+                    let hisOnlyPoint = nextMeasureWithTheSameModel.initialPoint
 
-                if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
-                    //No diff in starting point
-                } else {
-                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "position", before: myOnlyPoint, after: hisOnlyPoint } })
-                }
+                    if (myOnlyPoint.x == hisOnlyPoint.x && myOnlyPoint.y == hisOnlyPoint.y) {
+                        //No diff in starting point
+                    } else {
+                        changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "position", before: myOnlyPoint, after: hisOnlyPoint } })
+                    }
 
-                break;
-            }
-            case "distance": {
-                //I'm interested in scaling
-                if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
-                    changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "size", before: { x: this.width, y: this.height }, after: { x: nextMeasureWithTheSameModel.width, y: nextMeasureWithTheSameModel.height } } })
+                    break;
                 }
-                break;
+                case "distance": {
+                    //I'm interested in scaling
+                    if (this.width != nextMeasureWithTheSameModel.width || this.height != nextMeasureWithTheSameModel.height) {
+                        changes.push({ id: this.id, name: this.name, type: 'measure', property: { name: "size", before: { x: this.width, y: this.height }, after: { x: nextMeasureWithTheSameModel.width, y: nextMeasureWithTheSameModel.height } } })
+                    }
+                    break;
+                }
             }
         }
 
@@ -484,8 +478,7 @@ class MeasureModel {
             }
             return undefined
         }
-        console.log("WERIDDDDDDDDDD")
-        abort()
+        console.log("MeasureModel >> positionOfHandler, WERIDDDDDDDDDD: " + handlerName)
     }
     deleteYourself() {
         let index = this.visualState.measures.indexOf(this)
@@ -493,6 +486,17 @@ class MeasureModel {
             this.visualState.measures.splice(index, 1)
         }
         this.visualState = undefined
+    }
+    get isAvailable() {
+        let measureIsAvailable = (this.cachedInitialPosition != undefined || this.fromObject != undefined) && (this.cachedFinalPosition != undefined || this.toObject != undefined)
+        let myMeasuresAreAvailable = true
+        if (this.fromObject instanceof MeasureModel) {
+            myMeasuresAreAvailable = this.fromObject.isAvailable
+        }
+        if (this.toObject instanceof MeasureModel) {
+            myMeasuresAreAvailable = this.toObject.isAvailable
+        }
+        return measureIsAvailable && myMeasuresAreAvailable
     }
 }
 
@@ -562,7 +566,7 @@ class VisualStateModel {
     }
     importMeasureUntilLastVisualState(previousMeasure) {
         switch (previousMeasure.from.type) {
-            case "shape":{
+            case 'shape':{
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
@@ -571,7 +575,7 @@ class VisualStateModel {
                 }
                 break;
             }
-            case "distance":{
+            case 'distance':{
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
@@ -580,7 +584,7 @@ class VisualStateModel {
                 }
                 break;
             }
-            case "input":{
+            case 'touch':{
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
@@ -597,7 +601,7 @@ class VisualStateModel {
 
     addNewMeasureUntilLastState(fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
         let result = []
-            //TODO check if it is ok to create the 'to' object when the toId and toHandler are undefined
+
         let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
         newMeasure.nameCount = globalStore.measureCounter++;
         result.push(newMeasure)
@@ -655,6 +659,12 @@ class VisualStateModel {
     }
     measureFor(measureId) {
         return this.measures.find(aMeasure => aMeasure.id === measureId)
+    }
+    touchFor(touchId) {
+        if (this.currentInputEvent) {
+            return this.currentInputEvent.touchFor(touchId)
+        }
+        return undefined
     }
     somethingChangedPreviousState(shapeId, previousValue, changedValue, changedPropertyName) {
         let relatedShape = this.shapesDictionary[shapeId]

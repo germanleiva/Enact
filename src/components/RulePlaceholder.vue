@@ -86,11 +86,11 @@ export default {
     },
     watch: {
         rulePlaceholderModel: {
+            deep: true,
             handler: function(newValue,oldValue) {
-                // console.log('rulePlaceholderModel changed from '+ JSON.stringify(oldValue.toJSON())+" to "+JSON.stringify(newValue.toJSON()));
+                console.log('rulePlaceholderModel changed from '+ JSON.stringify(oldValue.toJSON())+" to "+JSON.stringify(newValue.toJSON()));
                 globalStore.socket.emit('message-from-desktop', { type: "EDIT_RULE", message: newValue.toJSON() })
-            },
-            deep: true
+            }
         }
     },
     computed: {

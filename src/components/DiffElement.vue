@@ -1,5 +1,5 @@
 <template>
-    <a draggable="true" v-on:dragstart="dragDiffElement" class="button diff" :style="styleObject" v-on:mouseover.prevent="mouseOver" v-on:mouseout.prevent="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffData.property.before}} -> {{diffData.property.after}}</span>
+    <a draggable="true" v-on:dragstart="dragDiffElement" class="button diff" :style="styleObject" v-on:mouseover.prevent="mouseOver" v-on:mouseout.prevent="mouseOut"><i class='fa' v-bind:class="classObject"><span class="tooltiptext">{{diffTooltipText}}</span>
 </i></a>
 </template>
 
@@ -38,8 +38,27 @@ export default {
         },
         styleObject() {
             /*return {
-                backgroundColor: this.diffData.type == 'input' ? 'PeachPuff' : ''
+                backgroundColor: this.diffData.type == 'touch' ? 'PeachPuff' : ''
             }*/
+        },
+        diffTooltipText() {
+            // console.log("diffTooltipText >> " + JSON.stringify(this.diffData))
+            let prevText = ''
+            let nextText = ''
+
+            if (this.diffData.property.before && this.diffData.property.after) {
+                prevText = `x:${this.diffData.property.after.x - this.diffData.property.before.x}`
+                nextText = `y:${this.diffData.property.after.y - this.diffData.property.before.y}`
+            } else {
+                if (this.diffData.property.before) {
+                    prevText = this.diffData.property.before
+                }
+                if (this.diffData.property.after) {
+                    nextText = this.diffData.property.after
+                }
+            }
+
+            return prevText + " " + nextText
         }
     },
     methods: {

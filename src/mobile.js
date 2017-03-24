@@ -314,7 +314,7 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_RULE":{
-            // console.log("EDIT_RULE => " + JSON.stringify(data.message))
+            console.log("EDIT_RULE => " + JSON.stringify(data.message))
         // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
             let receivedRule = data.message;
             let editedRule = mobileCanvasVM.rules[receivedRule.id]
@@ -324,7 +324,8 @@ socket.on('message-from-server', function(data) {
             if (editedRule) {
                 switch (receivedRule.input.type) {
                     case 'touch':{
-                        if (editedRule.input == undefined || !editedRule.input instanceof TouchInput) {
+                        let isTouchInputInstance = editedRule.input instanceof TouchInput
+                        if (editedRule.input == undefined || !isTouchInputInstance) {
                             editedRule.input = new TouchInput(receivedRule.input.id,receivedRule.input.property,receivedRule.input.axiss)
                         }
                         editedRule.input.touchId = receivedRule.input.id.slice(1,receivedRule.input.id.length) //TODO this removes the first character F of the id
@@ -339,7 +340,8 @@ socket.on('message-from-server', function(data) {
                         break;
                     }
                     case 'measure':{
-                        if (editedRule.input == undefined || !editedRule.input instanceof MeasureInput) {
+                        let isMeasureInputInstance = editedRule.input instanceof MeasureInput
+                        if (editedRule.input == undefined || !isMeasureInputInstance) {
                             editedRule.input = new MeasureInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
                         }
                         editedRule.input.measureObject = mobileCanvasVM.measures.find(aMeasure => aMeasure.id == receivedRule.input.id)
@@ -355,7 +357,8 @@ socket.on('message-from-server', function(data) {
                         break;
                     }
                     case 'shape':{
-                        if (editedRule.input == undefined || !editedRule.input instanceof ShapeInput) {
+                        let isShapeInputInstance = editedRule.input instanceof ShapeInput
+                        if (editedRule.input == undefined || !isShapeInputInstance) {
                             editedRule.input = new ShapeInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
                         }
                         editedRule.input.shapeObject = mobileCanvasVM.shapeFor(receivedRule.input.id)

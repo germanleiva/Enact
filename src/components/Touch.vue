@@ -117,7 +117,7 @@ export default {
             e.preventDefault()
             e.stopPropagation()
 
-            this.$parent.measureStartedOnRelevantPoint(e,this.relevantCenterPoint,'input',this.touch.id)
+            this.$parent.measureStartedOnRelevantPoint(e,this.relevantCenterPoint,'touch',this.touch.id)
             console.log("Touch >> mouseDownStartedOnCenterRelevantPoint")
         },
         draggedInputEventMark(e) {
@@ -127,7 +127,7 @@ export default {
 
             if (e.ctrlKey) {
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
-                let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'input',id:this.touch.id,handler:undefined})
+                let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'touch',id:this.touch.id,handler:undefined})
                 newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
                 newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
 

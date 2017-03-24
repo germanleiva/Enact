@@ -1,5 +1,5 @@
 <template>
-    <svg :style="svgStyle" width="1" height="1">
+    <svg :style="svgStyle" width="1" height="1" v-if="measureModel.isAvailable">
         <defs>
             <marker v-if="!isLink" id="marker-lineStart" markerWidth="10" markerHeight="10" refX="0" refY="5" orient="auto" fill="none">
                 <path d="M 0,0 L 0,10" stroke="black" stroke-width="2"/>

@@ -1,5 +1,5 @@
 <template>
-    <div v-bind:style="styleObject">
+    <div v-bind:style="styleObject" v-if="measureModel.isAvailable">
     </div>
 </template>
 <script>
