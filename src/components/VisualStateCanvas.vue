@@ -111,6 +111,13 @@ export default {
 
             //TODO this is nasty, sorry future Germán
             let presentAndFutureMeasures = this.visualStateModel.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
+
+            //Let's add the measure to the deviceVisualState
+            //TODO AWFUL!!!
+            let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
+            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
+            presentAndFutureMeasures.push(aDeviceMeasure)
+
             let newMeasure = presentAndFutureMeasures[0]
             var mouseMoveHandler
             mouseMoveHandler = function(e) {
@@ -121,6 +128,7 @@ export default {
             let visualStateVM = this;
             let visualStateElement = visualStateVM.canvasElement();
             visualStateElement.addEventListener('mousemove', mouseMoveHandler, false);
+
 
             var mouseUpHandler
             mouseUpHandler = function(e) {
