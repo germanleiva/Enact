@@ -24,9 +24,9 @@ export default {
                 let before = this.diffData.property.before
                 let after = this.diffData.property.after
                 return {
-                    'fa-arrows-h': propertyName == 'position' && (before.x != after.x) && (before.y == after.y),
-                    'fa-arrows-v': propertyName == 'position' && (before.x == after.x) && (before.y != after.y),
-                    'fa-arrows': (propertyName == 'position' && (before.x != after.x) && (before.y != after.y)) || propertyName == 'vertex',
+                    'fa-arrows-h': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x != after.x) && (before.y == after.y),
+                    'fa-arrows-v': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x == after.x) && (before.y != after.y),
+                    'fa-arrows': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x != after.x) && (before.y != after.y),
                     'fa-sort': propertyName == 'size' && (before.x == after.x) && (before.y != after.y),
                     'fa-sort fa-rotate-90': propertyName == 'size' && (before.x != after.x) && (before.y == after.y),
                     'fa-arrows-alt': propertyName == 'size' && (before.x != after.x) && (before.y != after.y),
