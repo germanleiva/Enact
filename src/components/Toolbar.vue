@@ -6,6 +6,7 @@
                 <a class="button" title="Selection" :class="{'is-active':toolbarState.selectionMode}" v-on:click="selectionSelected"><span class="icon is-small"><i class="fa fa-mouse-pointer"></i></span></a>
                 <a class="button" title="Create Rectangle" :class="{'is-active':toolbarState.rectangleMode}" v-on:click="drawSelected"><span class="icon is-small"><i class="fa fa-pencil-square-o"></i></span></a>
                 <a class="button" title="Create Polygon" v-on:click="polygonSelected" :class="{'is-active':toolbarState.polygonMode}"><span class="icon is-small"><i class="fa fa-star-o"></i></span> </a>
+                <a class="button" title="Create Line" v-on:click="lineSelected" :class="{'is-active':toolbarState.lineMode}"><span class="icon is-small"><i class="fa fa-pencil"></i></span> </a>
             </p>
             <a class="button" title="Create Measure" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
 

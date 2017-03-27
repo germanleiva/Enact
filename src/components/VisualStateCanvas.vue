@@ -215,7 +215,7 @@ export default {
             e.preventDefault()
             if (globalStore.isDrawMode) {
                 this.drawingStarted(e);
-            } /*else if (globalStore.toolbarState.selectionMode) {
+            } else if (globalStore.toolbarState.selectionMode) {
                 let selectedShape = null;
                 //We traverse the shapes in backward order
                 let allShapes = this.shapesVM()
@@ -241,7 +241,7 @@ export default {
                     };
                 }
 
-            }*/
+            }
         },
 
         //DRAWING METHODS
