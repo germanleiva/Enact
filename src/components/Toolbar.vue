@@ -38,6 +38,9 @@ export default {
         polygonSelected() {
             globalStore.setPolygonMode()
         },
+        lineSelected() {
+            // globalStore.setLineMode()
+        },
         selectionSelected() {
             globalStore.setSelectionMode()
         },
