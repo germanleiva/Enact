@@ -528,6 +528,16 @@ class MeasureModel {
         }
         return measureIsAvailable && myMeasuresAreAvailable
     }
+    valueForProperty(propertyName) {
+        switch (propertyName) {
+            case 'size': {
+                return {x: this.width, y: this.height}
+            }
+            default: {
+                console.log("MeasureModel >> valueForProperty, Unrecognized property name: " + propertyName)
+            }
+        }
+    }
 }
 
 class VisualStateModel {

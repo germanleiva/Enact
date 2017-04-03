@@ -87,6 +87,10 @@ let mobileCanvasVM = new Vue({
         },
         distanceFor(distanceId) {
             return this.measures.find(aMeasure => aMeasure.id == distanceId)
+        },
+        touchFor(touchId) {
+            //hack
+            return this.currentInputEvent.touchFor(touchId)
         }
     }
 })

@@ -71,7 +71,11 @@ export default {
                     console.log("Against x: " + centerPoint.centerX + " y: " + centerPoint.centerY);
 
                     if (centerPoint.isInside(canvasX - touchVM.$el.offsetLeft,canvasY - touchVM.$el.offsetTop,touchVM.centerPointSize)) {
+                        console.log("IS INSIDE!, return type = touch");
+
                         return {type:'touch',id: touchVM.touch.id, handler: centerPoint.namePrefix}
+                    } else {
+                        console.log("IS NOT INSIDE");
                     }
                 }
             }
