@@ -214,8 +214,12 @@ class TranslationDiff extends PropertyDiff {
     get delta() {
         return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
     }
-    applyDelta(visualState,shapeModel) {
-        visualState.changeProperty(shapeModel,'position',shapeModel.position,{x:shapeModel.left+this.delta.x,y:shapeModel.top+this.delta.y})
+    applyDelta(visualState,shapeModel,inversed) {
+        let sign = 1
+        if (inversed) {
+            sign = -1
+        }
+        visualState.changeProperty(shapeModel,'position',shapeModel.position,{x:shapeModel.left+this.delta.x * sign,y:shapeModel.top+this.delta.y * sign})
     }
     get name() {
         return "position"
@@ -226,8 +230,12 @@ class ScalingDiff extends PropertyDiff {
     get delta() {
         return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
     }
-    applyDelta(visualState,shapeModel) {
-        visualState.changeProperty(shapeModel,'size',shapeModel.size,{x:shapeModel.width+this.delta.x,y:shapeModel.height+this.delta.y})
+    applyDelta(visualState,shapeModel,inversed=false) {
+        let sign = 1
+        if (inversed) {
+            sign = -1
+        }
+        visualState.changeProperty(shapeModel,'size',shapeModel.size,{x:shapeModel.width+this.delta.x * sign,y:shapeModel.height+this.delta.y * sign})
     }
     get name() {
         return "size"
@@ -244,7 +252,12 @@ class BackgroundColorDiff extends PropertyDiff {
         return deltaColor
     }
 
-    applyDelta(visualState,shapeModel) {
+    applyDelta(visualState,shapeModel,inversed=false) {
+        let sign = 1
+        if (inversed) {
+            sign = -1
+        }
+
         let deltaColorRgb = this.delta
 
         let originalColorRgb = tinyColor(shapeModel.color).toRgb()
@@ -252,7 +265,7 @@ class BackgroundColorDiff extends PropertyDiff {
         let newColorRgb = {}
         //white #ffffff (255,255,255) is boring
         for (let colorComponent of "rgb") {
-            newColorRgb[colorComponent] = (originalColorRgb[colorComponent] + deltaColorRgb[colorComponent]) //% 255
+            newColorRgb[colorComponent] = (originalColorRgb[colorComponent] + deltaColorRgb[colorComponent] * sign) //% 255
         }
         // console.log("delta: " + JSON.stringify(deltaColorRgb));
         // console.log("original: " + JSON.stringify(originalColorRgb));
@@ -268,9 +281,13 @@ class VertexDiff extends PropertyDiff {
     get delta() {
         return {x: this.after.x - this.before.x , y: this.after.y - this.before.y }
     }
-    applyDelta(visualState,shapeModel) {
+    applyDelta(visualState,shapeModel,inversed=false) {
+        let sign = 1
+        if (inversed) {
+            sign = -1
+        }
         let currentVertex = shapeModel.vertexFor(this.id)
-        visualState.changeProperty(shapeModel,this.id,currentVertex,{x:currentVertex.x+this.delta.x,y:currentVertex.y+this.delta.y})
+        visualState.changeProperty(shapeModel,this.id,currentVertex,{x:currentVertex.x+this.delta.x * sign,y:currentVertex.y+this.delta.y * sign})
     }
     get name() {
         return "position"
@@ -337,8 +354,8 @@ class DiffModel {
     get delta() {
         return this.property.delta
     }
-    applyDelta(visualState,shapeModel) {
-        this.property.applyDelta(visualState,shapeModel)
+    applyDelta(visualState,shapeModel,inversed=false) {
+        this.property.applyDelta(visualState,shapeModel,inversed)
     }
 }
 

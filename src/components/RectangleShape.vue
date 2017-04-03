@@ -474,7 +474,7 @@ export default {
                 console.log("dropForShape >> " + data)
                 let diffModel = new DiffModel(JSON.parse(data))
 
-                diffModel.applyDelta(this.visualState,this.shapeModel)
+                diffModel.applyDelta(this.visualState,this.shapeModel,event.altKey)
                 this.shapeModel.highlight = false
             } else {
                 console.log("WEIRD, we accepted the drop but there is no data for us =(")
