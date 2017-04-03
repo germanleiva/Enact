@@ -77,6 +77,7 @@ export default {
                     'border': this.isTestShape? '2px dashed #ffa500':'1px solid gray',
                     'overflow': 'visible',
                     'opacity': '1',
+                    'borderRadius': this.shapeModel.cornerRadius,
                     'pointer-events': this.isTestShape?'none':'auto'
                     // 'box-sizing': 'border-box' //To ignore the border size?
                 }
@@ -116,6 +117,7 @@ export default {
                 'opacity':0.3,
                 'width': this.shapeModel.width + 'px',
                 'height': this.shapeModel.height + 'px',
+                'borderRadius': this.shapeModel.cornerRadius,
                 'pointer-events':'none' //This is a hack to let the mouse event PASS-THROUGH the shape overlay
             }
         },

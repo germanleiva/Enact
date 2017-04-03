@@ -38,6 +38,7 @@ export const globalStore = new Vue({
         ruleCounter: 0,
         toolbarState: {
             rectangleMode: false,
+            circleMode: false,
             polygonMode: false,
             selectionMode: true,
             multiSelectionMode: false,
@@ -49,12 +50,12 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410 * 0.8, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660 * 0.8//iPhone 667 Nexus 5X 660
+        mobileWidth: 410 * 0.95, //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 * 0.9//iPhone 667 Nexus 5X 660
     },
     computed: {
         isDrawMode() {
-            return this.toolbarState.rectangleMode || this.toolbarState.polygonMode
+            return this.toolbarState.rectangleMode || this.toolbarState.circleMode || this.toolbarState.polygonMode
         },
         socket() {
             //TODO check if putting this as a computed property is legit
@@ -68,6 +69,7 @@ export const globalStore = new Vue({
     methods: {
         setSelectionMode() {
             this.toolbarState.rectangleMode = false;
+            this.toolbarState.circleMode = false;
             this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = true;
             this.toolbarState.measureMode = false;
@@ -75,6 +77,15 @@ export const globalStore = new Vue({
         },
         setRectangleMode() {
             this.toolbarState.rectangleMode = true;
+            this.toolbarState.circleMode = false;
+            this.toolbarState.polygonMode = false;
+            this.toolbarState.selectionMode = false;
+            this.toolbarState.measureMode = false;
+            this.cursorType = "crosshair";
+        },
+        setCircleMode() {
+            this.toolbarState.rectangleMode = false;
+            this.toolbarState.circleMode = true;
             this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = false;
@@ -82,6 +93,7 @@ export const globalStore = new Vue({
         },
         setPolygonMode() {
             this.toolbarState.rectangleMode = false;
+            this.toolbarState.circleMode = false;
             this.toolbarState.polygonMode = true;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = false;
@@ -89,6 +101,7 @@ export const globalStore = new Vue({
         },
         setMeasureMode() {
             this.toolbarState.rectangleMode = false;
+            this.toolbarState.circleMode = false;
             this.toolbarState.polygonMode = false;
             this.toolbarState.selectionMode = false;
             this.toolbarState.measureMode = true;
@@ -914,11 +927,17 @@ class InputEventTouch {
 }
 
 class ShapeModel {
-    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
+    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null, cornerRadius = '') {
         this.id = id;
         this.name = id;
 
         this.opacity = 1
+
+        if (aMasterVersion) {
+            this.cornerRadius = aMasterVersion.cornerRadius;
+        } else {
+            this.cornerRadius = cornerRadius;
+        }
 
         this._color = aColor
         this._position = {
@@ -946,6 +965,12 @@ class ShapeModel {
                     return new RectangleModel(shapeId, protoShape)
                 }
                 return new RectangleModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+            }
+            case 'circle': {
+                if (protoShape) {
+                    return new RectangleModel(shapeId, protoShape)
+                }
+                return new RectangleModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0, '50%')
             }
             case 'polygon': {
                 if (protoShape) {
@@ -994,6 +1019,7 @@ class ShapeModel {
             'height:' + this.height + 'px' + ";" +
             'border:' + ('1px') + ' solid gray' + ";" +
             'overflow:' + 'visible' + ";" +
+            'border-radius:' + this.cornerRadius + ";" +
             'opacity:' + opacityValue
     }
     //deltaX to be used by the RelevantPoint
@@ -1208,8 +1234,8 @@ class ShapeModel {
 }
 
 class RectangleModel extends ShapeModel {
-    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
-        super(id, aMasterVersion, aColor, left, top, width, height)
+    constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null, cornerRadius = '') {
+        super(id, aMasterVersion, aColor, left, top, width, height, cornerRadius)
         this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
     get type() {
@@ -1223,7 +1249,7 @@ class RectangleModel extends ShapeModel {
 
     toJSON() {
         let json = {}
-        for (let eachKey of ['id','type','color','top','left','width','height','opacity']) {
+        for (let eachKey of ['id','type','color','top','left','width','height','opacity', 'cornerRadius']) {
             json[eachKey] = this[eachKey]
         }
         return json
@@ -1249,6 +1275,9 @@ class RectangleModel extends ShapeModel {
         }
         if (json.opacity) {
             this.opacity = json.opacity
+        }
+        if (json.cornerRadius) {
+            this.cornerRadius = json.cornerRadius
         }
     }
 }

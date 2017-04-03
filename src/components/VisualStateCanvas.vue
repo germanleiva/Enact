@@ -245,7 +245,7 @@ export default {
         },
 
         //DRAWING METHODS
-        drawingStarted: function(e,shapeType) {
+        drawingStarted: function(e) {
             globalStore.deselectAllShapes()
 
             let startingCanvasMousePosition = {
@@ -269,8 +269,12 @@ export default {
 
                 this.visualStateModel.addVertex(this.currentPolygon.id,startingCanvasMousePosition)
 
-            } else if (globalStore.toolbarState.rectangleMode) {
-                let newShapeModel = this.visualStateModel.addNewShape('rectangle');
+            } else if (globalStore.toolbarState.rectangleMode || globalStore.toolbarState.circleMode) {
+                let shapeType = 'rectangle'
+                if (globalStore.toolbarState.circleMode) {
+                    shapeType = 'circle'
+                }
+                let newShapeModel = this.visualStateModel.addNewShape(shapeType);
 
                 if (this.nextState) {
                     this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
