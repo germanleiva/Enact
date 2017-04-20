@@ -1,6 +1,6 @@
 <template>
     <div class='box rule-placeholder' v-bind:class="ruleComplete()" :style="{ backgroundColor: activeColor , height: (200 + 52 * (rulePlaceholderModel.outputs.length - 1)) + 'px'}">
-        <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Main Condition">
+        <input class="condition input" v-on:mouseup="mouseUpFor($event,'mainCondition')" placeholder="Condition">
         <div class="leftSide" v-on:drop="dropForInput" v-on:dragover="dragOverForInput">
             <!--<div class="input" v-model="rulePlaceholderModel.input.id"></div>-->
             <div class="inputId button is-disabled" title="drag an input here" :class="IdStyle(rulePlaceholderModel.input)">{{titleForInput(rulePlaceholderModel.input)}}</div>

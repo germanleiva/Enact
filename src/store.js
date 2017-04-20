@@ -33,9 +33,9 @@ export const globalStore = new Vue({
         visualStates: [],
         inputEvents: [],
         isRecording: false,
-        shapeCounter: 0,
-        measureCounter: 0,
-        ruleCounter: 0,
+        shapeCounter: 1,
+        measureCounter: 1,
+        ruleCounter: 1,
         toolbarState: {
             rectangleMode: false,
             circleMode: false,
@@ -875,7 +875,9 @@ class InputEvent {
     constructor({ type: type, touches: touches, timeStamp: timeStamp }) {
         this.type = type
         this.touches = []
-        for (let eachTouchObject of touches) {
+        //We need to keep the old "for var i" iteration because touches in iOS are not iterable, they are a dictionary with numerical keys
+        for (let i=0; i < touches.length; i++) {
+            let eachTouchObject = touches[i]
             this.touches.push(new InputEventTouch(eachTouchObject))
         }
         this.timeStamp = timeStamp

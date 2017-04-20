@@ -32,7 +32,7 @@ export default {
     let amountOfTouchesLeft = 0
 
     globalBus.$on('message-from-device-INPUT_EVENT', function(data) {
-        // console.log(data)
+        console.log(data)
         // function drawTouches() {
         //     let points = globalStore.inputEvents;
         //     globalStore.context.clearRect(0, 0, globalStore.context.canvas.width, globalStore.context.canvas.height);
@@ -73,7 +73,7 @@ export default {
                 globalStore.inputEvents.push(anInputEvent);
 
                 //touches.length it's the current amount of tracked touches, not the ones ended
-                amountOfTouchesLeft = amountOfTouchesLeft - 1
+                amountOfTouchesLeft = Math.max(amountOfTouchesLeft - 1,0)
 
                 if (amountOfTouchesLeft == 0) {
                     globalStore.isRecording = false
