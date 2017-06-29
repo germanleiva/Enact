@@ -1,11 +1,14 @@
 <template>
   <div id="app">
     <toolbar></toolbar>
-    <output-area ref="outputArea"></output-area>
-    <input-area></input-area>
-    <div id="lowerArea" style="display:flex">
+    <div id="upperArea" style="display:flex">
         <visual-state-canvas :visual-state-model="deviceVisualState" class="mirror" style="position:relative" draggable="true" :is-mirror="true">
         </visual-state-canvas>
+        <output-area ref="outputArea"></output-area>
+    </div>
+    <input-area></input-area>
+    <div id="lowerArea" style="display:flex">
+
             <!-- <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas> -->
 
 <!--         <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
