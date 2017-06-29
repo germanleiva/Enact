@@ -2,7 +2,7 @@
     <div :style="styleObject" v-on:mouseover="mouseOver" v-on:mouseout="mouseOut" v-on:mousedown="draggedInputEventMark">
 <!--         <linea :start-point="startPoint" :end-point="endPoint" :line-color="isActive?'blue':'black'" :style="{'z-index': 300}"></linea>
  -->
-         <div v-show="showCenterPoint" :id="relevantCenterPoint.namePrefix + '-' + touch.id" :style="relevantCenterPointStyle" @mousedown="mouseDownStartedOnCenterRelevantPoint">
+         <div v-show="showCenterPoint" :id="relevantCenterPoint.namePrefix + '-' + touch.id" :style="relevantCenterPointStyle" @mousedown="mouseDownStartedOnCenterRelevantPoint"></div>
     </div>
 </template>
 <script>
