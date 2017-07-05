@@ -24,7 +24,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger }
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, State }
 
 export const globalBus = new Vue();
 
@@ -1961,5 +1961,17 @@ class ShapeInput extends InputRule {
     }
     activate() {
         this.previousValue = {x: this.currentShapeValue().x ,y: this.currentShapeValue().y}
+    }
+}
+
+let emptyGuard = "function() { return true; }"
+let emptyAction = "function() {}"
+
+class State {
+    constructor(name, guard = emptyGuard, actions = emptyAction, to = "") {
+        this.name = name;
+        this.guard = guard;
+        this.actions = actions;
+        this.to = to;
     }
 }
