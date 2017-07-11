@@ -540,6 +540,13 @@ class MeasureModel {
     }
 }
 
+class shapeTag {
+  constructor() {
+
+  }
+}
+
+
 class VisualStateModel {
     constructor() {
         this.shapesDictionary = {}
@@ -678,7 +685,8 @@ class VisualStateModel {
         // this.canvasElement().appendChild(newShapeVM.$el);
         // Vue.set(this.shapesDictionary, newShapeVM.id, newShapeVM);
         Vue.set(this.shapesDictionary, correspondingVersion.id, correspondingVersion);
-
+        console.log("jingyi: new shape created! ", correspondingVersion.id); //corspver is obj, id is id in dict
+        //create a new tag
         return correspondingVersion;
     }
     didCreateShape(newlyCreatedShape, previousState) {

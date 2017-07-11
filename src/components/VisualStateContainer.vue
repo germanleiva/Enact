@@ -6,24 +6,29 @@
                 <div class="inputDiffBox">
                     <div class='box inputDiffElement' v-for="(diffArray,touchName) in inputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{touchName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+
+                        <shape-tag v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></shape-tag>
+
                         </div>
                     </div>
                 </div>
                 <div class="outputDiffBox">
                     <div class='box outputDiffElement' v-for="(diffArray,shapeName) in outputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{shapeName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+                        <shape-tag v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></shape-tag>
                         </div>
                     </div>
                 </div>
                 <div class="measuresDiffBox">
                     <div class='box measureDiffElement' v-for="(diffArray,measureName) in measuresDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{measureName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+                        <shape-tag v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></shape-tag>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+      </div>
 </template>
 
 <script>
@@ -32,6 +37,8 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
 import DiffElement from './DiffElement.vue'
+import ShapeTag from './ShapeTag.vue'
+
 import VisualStateCanvas from './VisualStateCanvas.vue'
 
 export default {
@@ -45,7 +52,8 @@ export default {
     },
     components: {
         DiffElement,
-        VisualStateCanvas
+        VisualStateCanvas,
+        ShapeTag
     },
     computed: {
         currentInputEvent: {
@@ -261,5 +269,13 @@ export default {
     background-color: #E1E1E1 !important;
     border: 1px solid #ffffff !important;
     box-shadow: 0 4px 3px rgba(100, 200, 100, 0.1), 0 0 0 1px rgba(100, 100, 100, 0.4) !important;
+}
+.tag-box {
+  position: absolute;
+  background: #ff0000;
+  height: 300px;
+  width: 500px;
+  bottom: 0px;
+  right: 0px;
 }
 </style>
