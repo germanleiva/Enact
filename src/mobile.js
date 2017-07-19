@@ -1,6 +1,7 @@
 import Vue from 'vue'
 import io from 'socket.io-client';
 import CSSJSON from 'cssjson'
+import {StateMachine,logError,logSM,logEvent,logTouch,trim,log} from './statemachine.js'
 
 // import App from './App.vue'
 
@@ -660,6 +661,170 @@ socket.on('message-from-server', function(data) {
     }
 });
 
+/***
+    Utility functions to keep track of the touches.
+    touchInfo[i] is an info record for the i-th finger being put down:
+        The first finger is #0, the second #0, etc.
+        When lifting fingers, the corresponding entries are cleared.
+        When putting down a finger, the first free entry is used.
+    The properties of the info record are:
+        id: unique identifier (from touch object)
+        index: finger number (i.e., index in touchInfo)
+        first.x, first.y, first.t: position and time at touchdown
+        prev.x, prev.y, prev.t: previous position and time
+        cur.x, cur.y, cur.t: current position and time
+    The application can add its own properties if needed
+
+    The utility function manage the info records, and add a property 'info'
+    to each event, holding the info record.
+    **/
+
+    var touchId2Index = []; // maps a touch identifier to an index in touchInfo
+    var touchInfo = [];     // stores touch information
+    var numTouches = 0;     // number of non-null entries in touchInfo
+    var firstIndex = -1;    // index of first non-null entry in touchInfo
+
+    // Find the first available slot in touchInfo, initialize the info record
+    // and add it to the event
+    function recordTouchStart(event, touch) {
+        logTouch("-- recordTouchStart id "+touch.identifier);
+        var index = 0;
+        firstIndex = 0;
+        numTouches++;
+        while (touchInfo[index])
+            index++;
+        logTouch("-- index="+index);
+
+        touchId2Index[touch.identifier] = index;
+        event.info = touchInfo[index] = {
+            id: touch.identifier,
+            index: index,
+            first: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+            prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+            cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+        };
+        logTouch("-- done");
+    };
+
+    // Update the info record and add it to the event
+    function recordTouchMove(event, touch) {
+        logTouch("-- recordTouchMove id "+touch.identifier);
+        logTouch("-- index="+touchId2Index[touch.identifier]);
+        event.info = touchInfo[touchId2Index[touch.identifier]];
+        event.info.prev = event.info.cur;
+        event.info.cur = {x: touch.pageX, y: touch.pageY, t: event.timeStamp};
+        logTouch("-- done");
+    }
+
+    // Add the info record to the event
+    function recordTouchEnd(event, touch) {
+        event.info = touchInfo[touchId2Index[touch.identifier]];
+    }
+
+    // Remove the info record corresponding to a touch that is now gone
+    function clearTouch(event, touch) {
+        logTouch("-- clearTouch id "+touch.identifier);
+        var index = touchId2Index[touch.identifier];
+        delete touchInfo[index];
+        delete touchId2Index[touch.identifier];
+
+        numTouches--;
+        if (numTouches == 0)
+            firstIndex = -1;
+        else {
+            firstIndex = 0;
+            while (!touchInfo[firstIndex])
+                firstIndex++;
+        }
+        logTouch("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
+    }
+
+    // A touch event contains one or more touches that have changed.
+    // For example, when putting down two fingers at the same time, the event may contain two changed touches.
+    // This function calls the bookkeeping functions above for each changed touches of a give event
+    // and then passes the modified event to the state machine.
+    function processEvent(machine, type, event, preFn, postFn) {
+        logEvent(">> processEvent " + type + " - " + event.touches.length + " touches, "
+                + event.changedTouches.length + " changed touches");
+        event.preventDefault(); // avoid event bubbling
+        // process each change
+        for (var i = 0; i < event.changedTouches.length; i++) {
+            logEvent("  process touch #"+i);
+            // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
+            let touchBeingProcessed = event.changedTouches[i];
+            logTouch("  preFn ");
+            if (preFn){
+                // preFn(event, event.touch); // adds / modifies event.info
+                preFn(event, touchBeingProcessed); // adds / modifies event.info
+            }
+            logTouch("  machine.processEvent");
+            machine.processEvent(type, event);
+            logTouch("  postFn");
+            if (postFn) {
+                // postFn(event, event.touch);
+                postFn(event, touchBeingProcessed);
+            }
+        }
+        logEvent("<<done processEvent");
+    }
+
+    /**
+    A state machine
+    **/
+
+var stateMachine = new StateMachine({
+    shape1: function() {
+        return mobileCanvasVM.shapeFor("S1")
+    },
+
+    touch1: function(event) {
+        return event.touches[0]
+    },
+
+    recordDelta: function(event) {
+        var info = event.info;
+        info.delta = {
+            x: info.cur.x - info.prev.x,
+            y: info.cur.y - info.prev.y,
+            t: info.cur.t - info.prev.t
+        }
+    },
+    isInside: function(touch, shape) {
+        return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
+    },
+
+    actions: {
+        moveShape1: function(event) {
+            this.shape1().color = '#00ff00'
+            this.recordDelta(event);
+            let shapito1 = this.shape1()
+            let touchito1 = this.touch1(event)
+            shapito1.left += event.info.delta.x
+            shapito1.top += event.info.delta.y
+        },
+        changeColorShape1: function(event) {
+            this.shape1().color = '#ff0000'
+        },
+        aGuard: function(event) {
+            return true
+        },
+        isTouch1InsideShape1: function(event) {
+            return this.isInside(this.touch1(event),this.shape1())
+        }
+    },
+
+    states: {
+        idle: {
+            on_touchstart: 'isTouch1InsideShape1 ? -> moving'
+        },
+
+        moving: {
+            on_touchmove: 'moveShape1 -> moving',
+            on_touchend: 'changeColorShape1 -> idle',
+        }
+    }
+});
+
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
@@ -728,13 +893,15 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
         //hack
         mobileCanvasVM.currentInputEvent = new InputEvent(event)
 
-        for (let aRuleKey in mobileCanvasVM.rules) {
-            //Does the event has a rule that control that touch?
-            let aRule = mobileCanvasVM.rules[aRuleKey];
-            if (aRule.activate(event, mobileCanvasVM.interactiveShapes)) {
-                mobileCanvasVM.activeRules.push(aRule)
-            }
-        }
+        //Deleted to add state machines
+        // for (let aRuleKey in mobileCanvasVM.rules) {
+        //     //Does the event has a rule that control that touch?
+        //     let aRule = mobileCanvasVM.rules[aRuleKey];
+        //     if (aRule.activate(event, mobileCanvasVM.interactiveShapes)) {
+        //         mobileCanvasVM.activeRules.push(aRule)
+        //     }
+        // }
+        processEvent(stateMachine, 'touchstart', event, recordTouchStart, null);
 
         sendEvent(event,"CURRENT_EVENT")
     }
@@ -750,10 +917,14 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
         //hack
         mobileCanvasVM.currentInputEvent = new InputEvent(event)
 
-        for (let anActiveRule of mobileCanvasVM.activeRules) {
-            anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
-            socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id});
-        }
+        //Deleted to add state machines
+        // for (let anActiveRule of mobileCanvasVM.activeRules) {
+        //     anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
+        //     socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id});
+        // }
+        processEvent(stateMachine, 'touchmove', event, recordTouchMove, null);
+
+
         sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
@@ -765,35 +936,14 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
     } else {
         // We are interacting
         // console.log("We are ending interacting")
-        for (let eachActiveRule of mobileCanvasVM.activeRules) {
-            socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
-        }
-        mobileCanvasVM.activeRules = []
+
+        //Deleted to add state machines
+        // for (let eachActiveRule of mobileCanvasVM.activeRules) {
+        //     socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
+        // }
+        // mobileCanvasVM.activeRules = []
+        processEvent(stateMachine, 'touchend', event, recordTouchEnd, clearTouch);
+
         sendEvent(event,"CURRENT_EVENT")
     }
 },false,true);
-
-// document.body.addEventListener('mousedown', function(e) { e.preventDefault(); });
-// document.body.addEventListener('mousemove', function(e) { e.preventDefault(); });
-// document.body.addEventListener('mouseup', function(e) { e.preventDefault(); });
-
-document.getElementById('mobileCanvas').addEventListener("mousedown", function(event) {
-    event.preventDefault();
-    if (mobileCanvasVM.isRecording) {
-        sendEvent(event);
-    }
-});
-
-document.getElementById('mobileCanvas').addEventListener("mousemove", function(event) {
-    event.preventDefault();
-    if (mobileCanvasVM.isRecording) {
-        sendEvent(event);
-    }
-});
-
-document.getElementById('mobileCanvas').addEventListener("mouseup", function(event) {
-    event.preventDefault();
-    if (mobileCanvasVM.isRecording) {
-        sendEvent(event);
-    }
-});
