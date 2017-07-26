@@ -7,7 +7,7 @@
         <output-area ref="outputArea"></output-area>
     </div>
     <input-area></input-area>
-    <div id="lowerArea" style="display:flex">
+    <!-- <div id="lowerArea" style="display:flex"> -->
 
             <!-- <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas> -->
 
@@ -15,10 +15,10 @@
             <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
             <shape v-for="(aShapeModel,index) in deviceVisualState.shapesDictionary" v-bind:shape-model="aShapeModel" :parent-visual-state="deviceVisualState"></shape>
         </div> -->
-        <rule-area></rule-area>
+        <!-- <rule-area></rule-area> -->
 
         <code-area></code-area>
-    </div>
+    <!-- </div> -->
   </div>
 </template>
 

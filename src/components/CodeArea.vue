@@ -1,23 +1,7 @@
 <template>
     <div id="codeArea" class="codeArea">
-      <editor v-model="content" @init="editorInit" lang="javascript" theme="chrome" width="100%" height="500"></editor>
-
-        <div class="columns">
-            <div class="column stateColumn" v-for="eachState in states">
-              {{ eachState.name }}
-              <br/>
-              <label>Guard---</label>
-              <textarea v-model="eachState.guard"></textarea>
-              <br/>
-              <label>Actions--</label>
-              <textarea v-model="eachState.actions"></textarea>
-              <br/>
-              <label>To states</label>
-              <textarea v-model="eachState.to"></textarea>
-
-
-            </div>
-        </div>
+      <editor v-model="content" @init="editorInit" lang="javascript" theme="chrome" width="50%" height="350"></editor>
+      <state-diagram :states="states" width="100%"></state-diagram>
     </div>
 </template>
 
@@ -25,20 +9,28 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore, globalBus, RulePlaceholderModel, State} from '../store.js'
+import StateDiagram from './StateDiagram.vue'
 
 export default {
     name: 'code-area',
     data: function() {
         return {
-            states: [ new State("began"),new State("changed"),new State("ended")],
+            states: [
+                { x: 43, y: 67, name: "Idle", isSelected: false, isHovered: false, transitions: [] },
+                { x: 340, y: 150, name: "Change", isSelected: false, isHovered: false, transitions: [] },
+                // { x: 200, y: 250, name: "End", isSelected: false, isHovered: false, transitions: [] },
+                // { x: 300, y: 320, name: "fourth", isSelected: false, isHovered: false, transitions: [] },
+                // { x: 50, y: 250, name: "fifth", isSelected: false, isHovered: false, transitions: [] },
+                // { x: 90, y: 170, name: "last", isSelected: false, isHovered: false, transitions: [] }
+            ],
             content:
 `var stateMachine = {
     shape1: function() {
-        return mobileCanvasVM.shapeFor("S1")
+        return mobileCanvasVM.shapeFor("S1");
     },
 
     touch1: function(event) {
-        return event.touches[0]
+        return event.touches[0];
     },
 
     recordDelta: function(event) {
@@ -57,19 +49,17 @@ export default {
         moveShape1: function(event) {
             this.shape1().color = '#00ff00'
             this.recordDelta(event);
-            let shapito1 = this.shape1()
-            let touchito1 = this.touch1(event)
-            shapito1.left += event.info.delta.x
-            shapito1.top += event.info.delta.y
+            this.shape1().left += this.touch1(event).info.delta.x;
+            this.shape1().top += this.touch1(event).info.delta.y;
         },
         changeColorShape1: function(event) {
-            this.shape1().color = '#ff0000'
+            this.shape1().color = '#ff0000';
         },
         aGuard: function(event) {
-            return true
+            return true;
         },
         isTouch1InsideShape1: function(event) {
-            return this.isInside(this.touch1(event),this.shape1())
+            return this.isInside(this.touch1(event),this.shape1());
         }
     },
 
@@ -87,7 +77,8 @@ export default {
         }
     },
     components: {
-        editor:require('vue2-ace-editor')
+        editor:require('vue2-ace-editor'),
+        StateDiagram
     },
     methods: {
         editorInit:function(editor) {
@@ -113,6 +104,9 @@ export default {
 
     },
     mounted: function() {
+        this.states[0].transitions.push({ id:1, name: 'touchstart', target: this.states[1] });
+        this.states[1].transitions.push({ id:2, name: 'touchmove', target: this.states[1] });
+        this.states[1].transitions.push({ id:3, name: 'touchend', target: this.states[0] });
     }
 }
 </script>
@@ -124,7 +118,8 @@ export default {
     display: flex;
     flex-wrap: wrap;
     align-content:flex-start;*/
-    width: 70%;
+    /*width: 70%;*/
+    display:flex;
 }
 
 .stateColumn {

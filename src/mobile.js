@@ -774,11 +774,11 @@ socket.on('message-from-server', function(data) {
 
 var stateMachine = new StateMachine({
     shape1: function() {
-        return mobileCanvasVM.shapeFor("S1")
+        return mobileCanvasVM.shapeFor("S1");
     },
 
     touch1: function(event) {
-        return event.touches[0]
+        return event.touches[0];
     },
 
     recordDelta: function(event) {
@@ -797,34 +797,41 @@ var stateMachine = new StateMachine({
         moveShape1: function(event) {
             this.shape1().color = '#00ff00'
             this.recordDelta(event);
-            let shapito1 = this.shape1()
-            let touchito1 = this.touch1(event)
-            shapito1.left += event.info.delta.x
-            shapito1.top += event.info.delta.y
+            this.shape1().left += this.touch1(event).info.delta.x;
+            this.shape1().top += this.touch1(event).info.delta.y;
         },
         changeColorShape1: function(event) {
-            this.shape1().color = '#ff0000'
+            this.shape1().color = '#ff0000';
         },
         aGuard: function(event) {
-            return true
+            return true;
         },
         isTouch1InsideShape1: function(event) {
-            return this.isInside(this.touch1(event),this.shape1())
+            return this.isInside(this.touch1(event),this.shape1());
         }
     },
 
     states: {
         idle: {
-            on_touchstart: 'isTouch1InsideShape1 ? -> moving'
+            on_touchstart: { //'isTouch1InsideShape1 ? -> moving'
+                guard: this.actions.isTouchInputInstance1,
+                to: 'moving'
+            }
         },
 
         moving: {
-            on_touchmove: 'moveShape1 -> moving',
-            on_touchend: 'changeColorShape1 -> idle',
+            on_touchmove: { //'moveShape1 -> moving',
+                action: this.actions.moveShape1,
+                to: 'moving'
+            },
+            on_touchend: { //'changeColorShape1 -> idle',
+                action: this.actions.changeColorShape1,
+                to: 'idle'
+            }
+
         }
     }
 });
-
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
