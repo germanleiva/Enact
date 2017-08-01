@@ -1,259 +1,248 @@
 <template>
-    <svg width="960px" height="500px" @mousedown="canvasMouseDown" @mousemove="canvasMouseMove"  @mouseup="canvasMouseUp" @dblclick="canvasDoubleClick">
+    <svg id="svg" @dblclick.prevent="canvasDoubleClick" style="background:#384d54">
         <!--define arrow markers for graph links-->
         <defs>
-            <marker id="end-arrow" viewBox="0 -5 10 10" refX="3" markerWidth="8" markerHeight="8" orient="auto">
-                <path d="M0,-5L10,0L0,5" fill="#000">
+             <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
                 </path>
             </marker>
-            <marker id="start-arrow" viewBox="0 -5 10 10" refX="4" markerWidth="8" markerHeight="8" orient="auto">
-                <path d="M10,-5L0,0L10,5" fill="#000">
+             <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
+                </path>
+            </marker>
+             <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
+                </path>
+            </marker>
+             <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
                 </path>
             </marker>
         </defs>
         <!--line displayed when dragging new nodes-->
-        <path class="dragline" v-if="startState != undefined" :d="'M' + startState.x + ',' + startState.y + 'L' + dragLineEnd.x + ',' + dragLineEnd.y"></path>
-
-        <transition :transition="eachTransition" v-for="eachTransition in transitions" :key="eachTransition.id"></transition>
-        <!-- <path :id="key" class="transition" :d="computeTransitionPath(eachTransition)"></path> -->
-
-        <g v-for="eachState in states" :key="eachState.name" :class="{ state: true, selected: eachState.isSelected, hover: eachState.isHovered }" :transform="'translate(' + [eachState.x, eachState.y] + ')'" >
-            <circle r="50" class="outer" @mousedown="mouseDownOnOuterCircle(eachState)">
-            </circle>
-            <circle r="40" class="inner" @mousedown="mouseDownOnInnerCircle(eachState,$event)" @mouseup="mouseUpOnInnerCircle(eachState,$event)" @mouseover="eachState.isHovered = true" @mouseout="eachState.isHovered = false">
-            </circle>
-            <text text-anchor="middle" y="4">{{eachState.name}}</text>
-            <title>{{eachState.name}}</title>
+        <path v-for="eachLink in links" class="link" :class="{selected:eachLink.isSelected}" :marker-end="arrowHeadMaker(eachLink)" :d="arcPath(true, eachLink)" @click.prevent="toggleLink(eachLink)"></path>
+        <path v-for="eachLink in links" :id="invisiblePath(eachLink)" class="invis" :d="arcPath(eachLink.source.x < eachLink.target.x,eachLink)"></path>
+        <g v-for="eachLink in links">
+            <text class="linkLabel" :class="{selected:eachLink.isSelected}" dy="-5" @click.prevent="toggleLink(eachLink)">
+                <textPath startOffset="50%" text-anchor="middle" :href="'#'+invisiblePath(eachLink)" syle="fill:#cccccc;font-size:50px">{{eachLink.name}}</textPath>
+            </text>
         </g>
-        <rect v-if="selectionRectangle != undefined" class="selection" :rx="selectionRectangle.rx"  :ry="selectionRectangle.ry"  :x="selectionRectangle.x"  :y="selectionRectangle.y"  :width="selectionRectangle.width" :height="selectionRectangle.height"></rect>
+        <g v-for="eachNode in nodes" :key="eachNode.id" :transform="'translate(' + eachNode.x + ',' + eachNode.y + ')'" class="node" :class="{selected:eachNode.isSelected}">
+            <!-- <circle r="50" class="outer" @mousedown="mouseDownOnOuterCircle(eachNode)"></circle> -->
+
+            <!-- <circle r="40" class="inner" @mousedown="mouseDownOnInnerCircle(eachNode,$event)" @mouseup="mouseUpOnInnerCircle(eachNode,$event)" @mouseover="eachNode.isHovered = true" @mouseout="eachNode.isHovered = false"></circle> -->
+            <circle :id="'Node;'+eachNode.id" :r="nodeRadius" @click.prevent="toggleNode(eachNode)"></circle>
+            <text class="nodeTextClass" x="20" y=".31em" @click.prevent="toggleNode(eachNode)">{{eachNode.name}}</text>
+
+            <!-- <text text-anchor="middle" y="4">{{eachNode.name}}</text> -->
+            <!-- <title>{{eachNode.name}}</title> -->
+        </g>
+        <path class="dragline" v-if="startState != undefined" :d="dragLinePath"></path>
+
+        <!-- <rect v-if="selectionRectangle != undefined" class="selection" :rx="selectionRectangle.rx"  :ry="selectionRectangle.ry"  :x="selectionRectangle.x"  :y="selectionRectangle.y"  :width="selectionRectangle.width" :height="selectionRectangle.height"></rect> -->
     </svg>
 </template>
 
 <script>
 
-import Transition from './StateTransition.vue'
-
-var radius = 40;
+var linkDistance = 300;
 
 export default {
     name: 'state-machine',
     props: {
-      states: {
+      nodes: {
+        type: Array,
+        default: []
+      },
+      links: {
         type: Array,
         default: []
       }
     },
     components: {
-        Transition
     },
     data() {
         return {
+            simulation: undefined,
             startState: undefined,
             dragLineEnd: undefined,
-            endState: undefined,
-            previousPosition: {x:0,y:0},
-            selectionRectangle: undefined,
-            draggedState: undefined,
-            draggedTransition: undefined
+            nodeRadius: 20,
+            arrowSize: 30
         }
     },
     computed: {
-        transitions: function () {
-            return this.states.reduce(function (initial, state) {
-                return initial.concat(
-                    state.transitions.map(function (transition) {
-                        return { id: transition.id, source: state, target: transition.target };
-                    })
-                );
-            }, []);
+        dragLinePath() {
+            return 'M' + this.startState.x + ',' + this.startState.y + 'L' + this.dragLineEnd.x + ',' + this.dragLineEnd.y
         }
     },
-    methods: {
-        polarToCartesian: function (centerX, centerY, radius, angleInDegrees) {
-          var angleInRadians = (angleInDegrees-90) * Math.PI / 180.0;
+    mounted() {
+        let vm = this;
+        this.simulation = this.$d3.forceSimulation(this.nodes)
+            .force("x",this.$d3.forceX(vm.$el.clientWidth/2))
+            .force("y",this.$d3.forceY(vm.$el.clientHeight/2))
+            .force("collide",this.$d3.forceCollide(this.nodeRadius + 1))
+            .force("charge",this.$d3.forceManyBody().strength(-20))
+            .force("link",this.$d3.forceLink(this.links)
+                .id(function(aNode) {
+                    return aNode.id
+                })
+                .distance(linkDistance)
+            )
+            // .on("tick",function(e) {
+            //     vm.$forceUpdate
+            // })
 
-          return {
-            x: centerX + (radius * Math.cos(angleInRadians)),
-            y: centerY + (radius * Math.sin(angleInRadians))
-          };
-        },
-        getCentroid: function (d){
-            // document.getElementById("popo").getPointAtLength(document.getElementById("popo").getTotalLength()/2)
+        // simulation.nodes(this.nodes)
+        // simulation.force("link").links(this.links)
 
-            var pathEl   = document.getElementById(d.id)
-            if (pathEl) {
-                var midpoint = pathEl.getPointAtLength(pathEl.getTotalLength()/2);
-                return midpoint
-            }
+        let container = document.querySelector("svg");
 
-            return {x:0,y:0}
-        },
-        // http://www.dashingd3js.com/svg-paths-and-d3js
-        computeTransitionPath: /*d3.svg.diagonal.radial()*/function (d) {
-            // var deltaX = d.target.x - d.source.x,
-            //     deltaY = d.target.y - d.source.y,
-            //     dist = Math.sqrt(deltaX * deltaX + deltaY * deltaY),
-            //     normX = deltaX / dist,
-            //     normY = deltaY / dist,
-            //     sourcePadding = radius + 2,//d.left ? 17 : 12,
-            //     targetPadding = radius + 6,//d.right ? 17 : 12,
-            //     sourceX = d.source.x + (sourcePadding * normX),
-            //     sourceY = d.source.y + (sourcePadding * normY),
-            //     targetX = d.target.x - (targetPadding * normX),
-            //     targetY = d.target.y - (targetPadding * normY);
-            // return 'M' + sourceX + ',' + sourceY + 'L' + targetX + ',' + targetY;
-            let x1 = d.source.x,
-              y1 = d.source.y,
-              x2 = d.target.x,
-              y2 = d.target.y,
-              dx = x2 - x1,
-              dy = y2 - y1,
-              dr = Math.sqrt(dx * dx + dy * dy),
-
-              // Defaults for normal edge.
-              drx = dr,
-              dry = dr,
-              xRotation = 0, // degrees
-              largeArc = 0, // 1 or 0
-              sweep = 1; // 1 or 0
-
-              // Self edge.
-              if ( x1 === x2 && y1 === y2 ) {
-                // Fiddle with this angle to get loop oriented.
-                xRotation = -45;
-
-                // Needs to be 1.
-                largeArc = 1;
-
-                // Change sweep to change orientation of loop.
-                //sweep = 0;
-
-                // Make drx and dry different to get an ellipse
-                // instead of a circle.
-                drx = 40;
-                dry = 30;
-
-                // For whatever reason the arc collapses to a point if the beginning
-                // and ending points of the arc are the same, so kludge it.
-                x2 = x2 + 1;
-                y2 = y2 + 1;
-
-                // x2 += drx - 5;
-                // y2 += dry - 5;
-              } else {
-                // x2 -= 30
-                // y2 -= 30
-              }
-
-         return "M" + x1 + "," + y1 + "A" + drx + "," + dry + " " + xRotation + "," + largeArc + "," + sweep + " " + x2 + "," + y2;
-        },
-        mouseDownOnOuterCircle(aState) {
-            if (aState.isSelected) {
-              this.startState = aState;
-              this.dragLineEnd = {x:aState.x,y:aState.y}
-              this.endState = undefined;
-            }
-        },
-        mouseDownOnInnerCircle(aState,event) {
-            aState.isSelected = true
-
-            if (this.startState) {
-                return;
-            }
-
-            this.previousPosition.x = event.pageX
-            this.previousPosition.y = event.pageY
-
-            this.draggedState = aState
-
-            //This is to move the state at the end of the list, thus putting on top of all the other states
-            //Remove element
-            var index = this.states.indexOf(aState);
-            if (index > -1) {
-                this.states.splice(index, 1);
-            }
-            //Add element at the end
-            this.states.push(aState)
-        },
-        mouseUpOnInnerCircle(aState,event) {
-            this.previousPosition.x = 0
-            this.previousPosition.y = 0
-
-            if( this.startState && this.endState) {
-                this.startState.transitions.push( { name : "transition name 1", target : this.endState});
-            }
-
-            this.startState = undefined
-            this.dragLineEnd = undefined
-            this.draggedState = undefined
-        },
-        canvasMouseDown(event) {
-            if( !event.shiftKey) {
-                for (let eachState of this.states) {
-                    if (eachState != this.draggedState)
-                        eachState.isSelected = false
-                }
+        function dragsubject() {
+            let e = this.$d3.event
+            //nodeRadius constraint drag to the nodes and not the rest of the container (e.g edges)
+            let result = this.simulation.find(e.x, e.y,this.nodeRadius);
+            return result;
+        }
+        function dragstarted() {
+            let e = this.$d3.event
+            if (e.sourceEvent.shiftKey) {
+                this.startState = e.subject
+                this.dragLineEnd = {x:e.sourceEvent.pageX,y:e.sourceEvent.pageY}
                 return
             }
-            this.selectionRectangle = {rx:6,ry:6,x:event.pageX,y:event.pageY,width:0,height:0}
-        },
-        canvasMouseMove(event) {
-            if( this.selectionRectangle) {
-                let move = {x: event.pageX - this.selectionRectangle.x , y: event.pageY - this.selectionRectangle.y }
+            if (!e.active) this.simulation.alphaTarget(0.3).restart();
+            e.subject.fx = e.subject.x;
+            e.subject.fy = e.subject.y;
+        }
 
-                if( move.x < 1 || (move.x*2<this.selectionRectangle.width)) {
-                    this.selectionRectangle.x = event.pageX;
-                    this.selectionRectangle.width -= move.x;
-                } else {
-                    this.selectionRectangle.width = move.x;
-                }
-
-                if( move.y < 1 || (move.y*2<this.selectionRectangle.height)) {
-                    this.selectionRectangle.y = event.pageY;
-                    this.selectionRectangle.height -= move.y;
-                } else {
-                    this.selectionRectangle.height = move.y;
-                }
-
-                // deselect all temporary selected state objects
-                for (let eachState of this.states) {
-                    // inner circle inside selection frame
-                    eachState.isSelected = false
-
-                    //xInside && yInside
-                    if (eachState.x-radius>=this.selectionRectangle.x && eachState.x+radius<=this.selectionRectangle.x+this.selectionRectangle.width &&
-                        eachState.y-radius>=this.selectionRectangle.y && eachState.y+radius<=this.selectionRectangle.y+this.selectionRectangle.height) {
-                        eachState.isSelected = true
-                    }
-                }
-            } else if (this.startState) {
-                //update drag line
+        function dragged() {
+            let e = this.$d3.event
+            if (this.startState) {
                 this.dragLineEnd.x = event.pageX
                 this.dragLineEnd.y = event.pageY
+                return
+            }
+            e.subject.fx = e.x;
+            e.subject.fy = e.y;
+        }
 
-                for (let eachState of this.states) {
-                    if (eachState.isHovered) {
-                        this.endState = eachState;
-                        continue;
-                    }
+        function dragended() {
+            let e = this.$d3.event
+
+            if (this.startState) {
+                let endState = this.simulation.find(e.x, e.y,this.nodeRadius);
+
+                if (endState) {
+                    let newLink = {source: this.startState.id, target: endState.id, name: 'unnamed '+this.links.length, isSelected:false}
+                    this.links.push(newLink)
+
+                    //To force an update
+                    this.simulation.force("link").links(this.links)
                 }
+                this.dragLineEnd = undefined
+                this.startState = undefined
+                return;
+            }
+            if (!e.active) this.simulation.alphaTarget(0);
+            e.subject.fy = null;
+        }
 
-            } else if (this.draggedState || this.draggedTransition) {
-                let draggedObject = this.draggedState || this.draggedTransition;
+        this.$d3.select(container).call(this.$d3.drag()
+          .container(container)
+          .subject(dragsubject.bind(this))
+          .on("start", dragstarted.bind(this))
+          .on("drag", dragged.bind(this))
+          .on("end", dragended.bind(this)));
 
-                draggedObject.x += event.pageX - this.previousPosition.x;
-                draggedObject.y += event.pageY - this.previousPosition.y;
-
-                this.previousPosition.x =  event.pageX
-                this.previousPosition.y =  event.pageY
+        //keep nodes on top
+        // for (var each of document.body.getElementsByClassName("nodeStrokeClass")) {
+        //     var gNode = each.parentNode;
+        //     gNode.parentNode.appendChild(gNode);
+        // };
+    },
+    methods: {
+        toggleNode(aNode) {
+            for (let eachLink of this.links) {
+                eachLink.isSelected = false
+            }
+            for (let eachNode of this.nodes) {
+                eachNode.isSelected = eachNode == aNode
             }
         },
-        canvasMouseUp(event) {
-            this.selectionRectangle = undefined
-            this.draggedTransition = undefined
+        toggleLink(aLink) {
+            for (let eachNode of this.nodes) {
+                eachNode.isSelected = false
+            }
+            for (let eachLink of this.links) {
+                eachLink.isSelected = eachLink == aLink
+            }
+        },
+        arrowHeadMaker(eachLink) {
+            let name = eachLink.source == eachLink.target ? '#selfarrowhead' : '#arrowhead'
+            let suffix = ""
+            if (eachLink.isSelected) {
+                suffix = "-selected"
+            }
+            return `url(${name}${suffix})`
+        },
+        arcPath(leftHand, d) {
+            if (!d.source || !d.target) {
+                debugger
+            }
+
+            var x1 = leftHand ? d.source.x : d.target.x,
+                y1 = leftHand ? d.source.y : d.target.y,
+                x2 = leftHand ? d.target.x : d.source.x,
+                y2 = leftHand ? d.target.y : d.source.y,
+                dx = x2 - x1,
+                dy = y2 - y1,
+                dr = Math.sqrt(dx * dx + dy * dy),
+                drx = dr,
+                dry = dr,
+                sweep = leftHand ? 0 : 1,
+                siblings = this.siblingLinks(d.source, d.target),
+                siblingCount = siblings.length,
+                xRotation = 0,
+                largeArc = 0;
+
+                if (dr === 0) {
+                    sweep = 0;
+                    xRotation = -130;
+                    largeArc = 1;
+                    drx = 60;
+                    dry = 50;
+                    x2 = x2 + 1;
+                    y2 = y2 + 1;
+                }
+
+                if (siblingCount > 1) {
+                    // console.log(siblings);
+                    var arcScale = this.$d3.scalePoint()
+                                        .domain(siblings)
+                                        .range([1, siblingCount]);
+                    drx = drx/(1 + (1/siblingCount) * (arcScale(d.name) - 1));
+                    dry = dry/(1 + (1/siblingCount) * (arcScale(d.name) - 1));
+                }
+
+            return "M" + x1 + "," + y1 + "A" + drx + ", " + dry + " " + xRotation + ", " + largeArc + ", " + sweep + " " + x2 + "," + y2;
+        },
+        siblingLinks(source, target) {
+          var siblings = [];
+          for(var i = 0; i < this.links.length; ++i){
+              if( (this.links[i].source.id == source.id && this.links[i].target.id == target.id) || (this.links[i].source.id == target.id && this.links[i].target.id == source.id) )
+                  siblings.push(this.links[i].name);
+          };
+          return siblings;
+        },
+        invisiblePath(aLink) {
+            return "invis_" + aLink.source.id + "-" + aLink.name + "-" + aLink.target.id;
         },
         canvasDoubleClick(event) {
-            this.states.push( { x : event.pageX, y : event.pageY, name : "new state", isSelected:false, isHovered: false, transitions : [] });
+            let newState = {id: `${this.nodes.length}`, name: 'new state', x:event.pageX, y:event.pageY};
+            this.nodes.push(newState);
+
+            //To force an update
+            this.simulation.nodes(this.nodes)
         }
     }
 }
@@ -261,83 +250,67 @@ export default {
 </script>
 
 <style scoped>
-/* #app {
-   font-family: 'Avenir', Helvetica, Arial, sans-serif;
-   -webkit-font-smoothing: antialiased;
-   -moz-osx-font-smoothing: grayscale;
-   text-align: center;
-   color: #2c3e50;
-   margin-top: 60px;
- }*/
 
-rect.selection {
-    stroke: gray;
-    stroke-dasharray: 4px;
-    stroke-opacity: 0.5;
-    fill: transparent;
+text {
+    fill: white;
+    font-family: 'Open Sans';
+    user-select: none;
 }
 
-g.state circle {
-    stroke: gray;
+.node {
+    cursor:pointer;
+}
+
+.node circle {
+    stroke: white;
+    stroke-width: 1.5px;
+    fill:#0db7ed;
+}
+
+.node.selected circle {
+    fill:red;
+    cursor:default;
+}
+
+path.link, path.textpath {
+    fill: none;
+    stroke: #cccccc;
+    stroke-width: 1px;
+}
+
+path.link.selected{
+    stroke-width: 4px;
+    stroke: red
+}
+
+path.invis {
+    fill: none;
+    stroke-width: 0;
+}
+
+.nodeTextClass {
+    font-size: 20px;
     cursor: pointer;
 }
-
-g.state circle.inner {
-    fill: white;
+.selected > .nodeTextClass {
+    font-size: 30px;
+    fill: red;
+    cursor: default;
 }
 
-g.state.hover circle.inner {
-    fill: aliceblue;
+.linkLabel {
+    font-size: 20px;
+    cursor: pointer;
 }
-
-g.state circle.outer {
-    stroke-width: 0px;
-    stroke-dasharray: 4px;
-    stroke-opacity: 0.5;
-    fill: transparent;
+.linkLabel.selected {
+    font-size: 30px;
+    fill: red;
+    cursor: default;
 }
-
-g.state.selected circle.outer {
-    stroke-width: 1px;
-}
-
-g.state text {
-    font: 12px sans-serif;
-    font-weight: bold;
-    pointer-events: none;
-}
-
-path.transition {
+.dragline {
     fill: none;
     stroke: #000;
     stroke-width: 1px;
-    cursor: default;
-    marker-mid: url("#end-arrow");
-    /*marker-segment: url(#end-arrow); NOT YET IMPLEMENTED :@*/
 }
 
-path.dragline {
-    fill: none;
-    stroke: #000;
-    stroke-width: 1px;
-    cursor: default;
-    marker-end: url(#end-arrow);
-}
-
-path.dragline {
-    pointer-events: none;
-}
-
-/* disable text selection */
-svg *::selection {
-    background: transparent;
-}
-
-svg *::-moz-selection {
-    background: transparent;
-}
-
-svg *::-webkit-selection {
-    background: transparent;
-}
 </style>

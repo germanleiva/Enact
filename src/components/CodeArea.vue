@@ -1,27 +1,53 @@
 <template>
     <div id="codeArea" class="codeArea">
-      <editor v-model="content" @init="editorInit" lang="javascript" theme="chrome" width="50%" height="350"></editor>
-      <state-diagram :states="states" width="100%"></state-diagram>
+      <!-- <editor v-model="content" @init="editorInit" lang="javascript" theme="chrome" width="50%" height="350"></editor> -->
+      <codemirror ref="myEditor"
+              :code="content"
+              :options="editorOptions"
+              @ready="onEditorReady"
+              @focus="onEditorFocus"
+              @change="onEditorCodeChange">
+      </codemirror>
+      <state-diagram :nodes="states" :links="edges" width="50%"></state-diagram>
     </div>
 </template>
 
 <script>
+import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore, globalBus, RulePlaceholderModel, State} from '../store.js'
+import { codemirror, CodeMirror } from 'vue-codemirror'
 import StateDiagram from './StateDiagram.vue'
+import TextMark from './TextMark.vue'
 
 export default {
     name: 'code-area',
     data: function() {
         return {
+            editorOptions: {
+                // codemirror options
+                tabSize: 4,
+                mode: 'text/javascript',
+                theme: 'base16-dark',
+                lineNumbers: true,
+                line: true,
+                // keyMap: "sublime",
+                extraKeys: { "Ctrl": "autocomplete" },
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                styleSelectedText: true,
+                highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
+                // more codemirror config...
+            },
             states: [
-                { x: 43, y: 67, name: "Idle", isSelected: false, isHovered: false, transitions: [] },
-                { x: 340, y: 150, name: "Change", isSelected: false, isHovered: false, transitions: [] },
-                // { x: 200, y: 250, name: "End", isSelected: false, isHovered: false, transitions: [] },
-                // { x: 300, y: 320, name: "fourth", isSelected: false, isHovered: false, transitions: [] },
-                // { x: 50, y: 250, name: "fifth", isSelected: false, isHovered: false, transitions: [] },
-                // { x: 90, y: 170, name: "last", isSelected: false, isHovered: false, transitions: [] }
+                { id: 'idle', name: 'Idle', x:0, y:0, isSelected: false},
+                { id: 'moving', name: 'Moving', x:0, y:0, isSelected: false}
+            ],
+            edges: [
+                { source: 'idle', target: 'moving', name: 'touchstart', isSelected: false},
+                { source: 'moving', target: 'moving', name: 'touchmove', isSelected: false},
+                { source: 'moving', target: 'idle', name: 'touchend', isSelected: false},
             ],
             content:
 `var stateMachine = {
@@ -77,16 +103,70 @@ export default {
         }
     },
     components: {
-        editor:require('vue2-ace-editor'),
+        // editor:require('vue2-ace-editor'),
+        codemirror: codemirror,
         StateDiagram
     },
     methods: {
+        onEditorReady(editor) {
+          console.log('the editor is ready!', editor)
+          let from = {line:0,ch:0} //Inclusive
+          let to = {line: 9, ch: 0} //Ch 0 means, that that line is not affected
+
+          // <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
+
+
+            var markSpan = document.createElement('span')
+            markSpan.className = "locura";
+            markSpan.innerHTML = "CHAN";
+              editor.doc.markText(from, to, {replacedWith: markSpan});
+
+            // create component constructor
+            const TextMarkConstructor = Vue.extend(TextMark);
+            var child = new TextMarkConstructor({
+                el: markSpan, // define the el of component
+                parent: this, // define parent of component
+            }).$mount();
+            // debugger;
+        },
+        onEditorFocus(editor) {
+          console.log('the editor is focus!', editor)
+        },
+        onEditorCodeChange(newCode) {
+          console.log('this is new code', newCode)
+          this.code = newCode
+        },
         editorInit:function(editor) {
             // require('brace/mode/html');
+            var browserifyAce = require('brace')
+
             require('brace/mode/javascript');
             // require('brace/mode/less');
             require('brace/theme/chrome');
-            editor.getSession().setUseWrapMode(true)
+            editor.getSession().setUseWrapMode(true);
+                // debugger;
+
+            var TokenIterator = browserifyAce.acequire("ace/token_iterator").TokenIterator
+
+            // let tokenIterator = new TokenIterator(editor.getSession(),0,0)
+            var acorn = require('acorn');
+
+            var ast = acorn.parse(this.content, { ecmaVersion: 6 });
+
+            // debugger;
+
+            editor.on('mousemove',function(e){
+                // for (var i = 0; i < 100; i++) {
+                //     let result = tokenIterator.stepForward();
+                //     console.log(result)
+                //     debugger;
+                // }
+                var position = e.getDocumentPosition();
+                var token = editor.session.getTokenAt(position.row, position.column);
+                console.log(`${position.row} ${position.column} ${JSON.stringify(token)}`)
+            })
+
+            // editor.tokenTooltip = new TokenTooltip(editor);
         }
         // addNewRule() {
         //     globalStore.ruleCounter++;
@@ -101,12 +181,12 @@ export default {
         // rulesPlaceholders: function() {
         //     return globalStore.rulesPlaceholders
         // }
-
+        editor() {
+          return this.$refs.myEditor.editor
+        }
     },
     mounted: function() {
-        this.states[0].transitions.push({ id:1, name: 'touchstart', target: this.states[1] });
-        this.states[1].transitions.push({ id:2, name: 'touchmove', target: this.states[1] });
-        this.states[1].transitions.push({ id:3, name: 'touchend', target: this.states[0] });
+
     }
 }
 </script>
@@ -124,5 +204,9 @@ export default {
 
 .stateColumn {
     width: 200px;
+}
+
+.locura:hover {
+    background-color: yellow;
 }
 </style>

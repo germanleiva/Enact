@@ -11,11 +11,14 @@
     "build": "cross-env NODE_ENV=production webpack --progress --hide-modules;cross-env NODE_ENV=production node server.js"
   },
   "dependencies": {
+    "acorn": "^5.1.1",
     "express": "^4.14.1",
     "lodash": "^4.17.4",
     "socket.io": "^1.7.2",
     "tinycolor2": "^1.4.1",
     "vue": "^2.1.0",
+    "vue-codemirror": "^3.1.2",
+    "vue-d3": "^0.1.0",
     "vuex": "^2.1.1"
   },
   "devDependencies": {

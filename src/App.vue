@@ -27,6 +27,9 @@ import Vue from 'vue'
 import {extendArray} from './collections.js'
 extendArray(Array);
 
+import VueD3 from 'vue-d3'
+Vue.use(VueD3)
+
 import {globalStore, globalBus, VisualStateModel, InputEvent} from './store.js'
 import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
