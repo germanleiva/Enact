@@ -1,5 +1,5 @@
 <template>
-    <span v-on:mouseover="mouseOver" v-on:mouseout="mouseOut">CHAN</span>
+    <span v-on:mouseover="mouseOver" v-on:mouseout="mouseOut">{{codeToShow}}</span>
 </template>
 
 <script>
@@ -10,12 +10,23 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'text-mark',
-    props: ['visualState','object','propertyName'],
+    props: ['textMarkerModel','visualState','object','propertyName'],
     data: function() {
         return {}
     },
     computed: {
-
+        markedSpan() {
+            return this.textMarkerModel.lines[0].markedSpans[0];
+        },
+        from() {
+            return this.markedSpan.from
+        },
+        to() {
+            return this.markedSpan.to
+        },
+        codeToShow() {
+            return `${this.object.id}.${this.propertyName}`
+        }
     },
     methods: {
         mouseOver: function(e) {
@@ -35,10 +46,14 @@ export default {
 <style scoped>
 
 span {
+    padding-left: 5px;
+    padding-right: 5px;
     background-color: red;
 }
 
 span:hover {
     background-color: yellow;
 }
+
+
 </style>

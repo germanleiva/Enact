@@ -188,6 +188,9 @@ export default {
             }
             for (let eachLink of this.links) {
                 eachLink.isSelected = eachLink == aLink
+                if (eachLink.isSelected) {
+                    this.$emit('selectedLink', eachLink)
+                }
             }
         },
         arrowHeadMaker(eachLink) {

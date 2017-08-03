@@ -21,15 +21,19 @@
         </div>
         <!-- <div class="columnVariables" style="background-color:green"></div> -->
         <div class="column" style="background-color:blue;">
-            <state-diagram :nodes="states" :links="edges" style="height:200px">
+            <state-diagram
+                :nodes="states"
+                :links="edges"
+                style="height:200px"
+                @selectedLink="selectedLink">
             </state-diagram>
             <div style="background-color:rgba(255,100,0,50)">
-                <codemirror
-                  :code="`function algo() { return console.log('pepe'); }`"
+                <codemirror ref="transitionCodeMirror"
+                  :code="'EMPTY'"
                   :options="editorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
-                  @change="onEditorCodeChange">
+                  @change="onTransitionEditorCodeChange">
                 </codemirror>
             </div>
         </div>
@@ -86,6 +90,13 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
+const defaultSourceCode =
+`{
+    description: '',
+    guard: (e) => { return true },
+    action: (e) => { }
+}`
+
 export default {
     name: 'code-area',
     data: function() {
@@ -111,9 +122,9 @@ export default {
                 { id: 'moving', name: 'Moving', x:0, y:0, isSelected: false}
             ],
             edges: [
-                { source: 'idle', target: 'moving', name: 'touchstart', isSelected: false},
-                { source: 'moving', target: 'moving', name: 'touchmove', isSelected: false},
-                { source: 'moving', target: 'idle', name: 'touchend', isSelected: false},
+                { source: 'idle', target: 'moving', name: 'touchstart', isSelected: false, sourceCode: "" + defaultSourceCode},
+                { source: 'moving', target: 'moving', name: 'touchmove', isSelected: false, sourceCode: "" + defaultSourceCode},
+                { source: 'moving', target: 'idle', name: 'touchend', isSelected: false, sourceCode: "" + defaultSourceCode},
             ],
             content:
 `var stateMachine = {
@@ -209,7 +220,7 @@ export default {
                     var markSpan = document.createElement('span')
                     // markSpan.className = "locura";
                     // markSpan.innerHTML = "CHAN";
-                    editor.doc.markText(from, to, {replacedWith: markSpan});
+                    let newTextMarkerModel = editor.doc.markText(from, to, {replacedWith: markSpan});
 
                     // create component constructor
                     const TextMarkConstructor = Vue.extend(TextMark);
@@ -217,6 +228,7 @@ export default {
                         el: markSpan, // define the el of component
                         parent: this, // define parent of component
                         propsData: {
+                            textMarkerModel: newTextMarkerModel,
                             visualState: visualState,
                             object: object,
                             propertyName: propertyName
@@ -305,8 +317,10 @@ export default {
           console.log('the editor is focus!', editor)
         },
         onEditorCodeChange(newCode) {
-          console.log('onEditorCodeChange')
-          this.code = newCode
+              this.content = newCode
+        },
+        onTransitionEditorCodeChange(newCode) {
+            this.selectedEdge.sourceCode = newCode
         },
         // addNewRule() {
         //     globalStore.ruleCounter++;
@@ -316,13 +330,19 @@ export default {
 
         //     globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder.toJSON() })
         // }
+        selectedLink(aLink) {
+            this.$refs.transitionCodeMirror.editor.setValue(aLink.sourceCode)
+        }
     },
     computed: {
         // rulesPlaceholders: function() {
         //     return globalStore.rulesPlaceholders
         // }
         codeEditor() {
-          return this.$refs.codeMirror.editor
+          return this.$refs.codeContainer.editor
+        },
+        selectedEdge() {
+            return this.edges.find(anEdge => anEdge.isSelected)
         }
     },
     mounted: function() {
