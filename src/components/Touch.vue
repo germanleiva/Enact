@@ -137,7 +137,7 @@ export default {
                 newDistanceVM.$mount()
                 window.document.body.appendChild(newDistanceVM.$el);
 
-                globalStore.toolbarState.linkingObject = this.touch;
+                globalStore.currentLink = {object:this.touch,visualState:this.parentVisualState};
 
                 var moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
@@ -148,7 +148,7 @@ export default {
                 var upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
-                    globalStore.toolbarState.linkingObject = undefined;
+                    globalStore.currentLink = undefined;
                     newMeasureModel.deleteYourself();
                     window.document.body.removeChild(newDistanceVM.$el);
                     newDistanceVM.$destroy();

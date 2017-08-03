@@ -44,7 +44,7 @@ export const globalStore = new Vue({
             multiSelectionMode: false,
             measureMode: false,
             shapeType: 'rectangle',
-            linkingObject: undefined,
+            currentLink: undefined,
             currentColor: '#1a60f3',
         },
         cursorType: 'auto',

@@ -1,5 +1,5 @@
 <template>
-    <span v-on:mousedown="mouseDown">CHAN</span>
+    <span v-on:mouseover="mouseOver" v-on:mouseout="mouseOut">CHAN</span>
 </template>
 
 <script>
@@ -10,7 +10,7 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'text-mark',
-    // props: ['content'],
+    props: ['visualState','object','propertyName'],
     data: function() {
         return {}
     },
@@ -18,10 +18,15 @@ export default {
 
     },
     methods: {
-        mouseDown: function(e) {
+        mouseOver: function(e) {
             e.preventDefault()
             e.stopPropagation();
-            console.log("hoveringgg")
+            this.object.highlight = true
+        },
+        mouseOut: function(e) {
+            e.preventDefault()
+            e.stopPropagation();
+            this.object.highlight = false
         }
     }
 }

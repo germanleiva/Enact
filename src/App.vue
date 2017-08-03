@@ -17,7 +17,7 @@
         </div> -->
         <!-- <rule-area></rule-area> -->
 
-        <code-area></code-area>
+    <code-area></code-area>
     <!-- </div> -->
   </div>
 </template>

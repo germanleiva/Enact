@@ -249,8 +249,8 @@ export default {
 
             let axisName = axis=='x'?'axisX':'axisY'
 
-            let linkingObject = globalStore.toolbarState.linkingObject
-            if (linkingObject) {
+            if (globalStore.currentLink) {
+                let {object:linkingObject,visualState:vs} = globalStore.currentLink
                 switch(aRuleSide) {
                     case 'mainCondition':{
                         //This should only work if the linkingObject can act as an input

@@ -1,20 +1,20 @@
 <template>
-    <svg id="svg" @dblclick.prevent="canvasDoubleClick" style="background:#384d54">
+    <svg id="svg" @dblclick.prevent="canvasDoubleClick" width="100%" height="100%" style="background:#384d54;padding-top:0px">
         <!--define arrow markers for graph links-->
         <defs>
-             <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+             <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
                 </path>
             </marker>
-             <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+             <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
                 </path>
             </marker>
-             <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+             <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
                 </path>
             </marker>
-             <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2.4" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+             <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
                 </path>
             </marker>
@@ -45,7 +45,7 @@
 
 <script>
 
-var linkDistance = 300;
+var linkDistance = 200;
 
 export default {
     name: 'state-machine',
@@ -67,11 +67,21 @@ export default {
             startState: undefined,
             dragLineEnd: undefined,
             nodeRadius: 20,
-            arrowSize: 30
+            arrowSize: 20
         }
     },
     computed: {
+        width() {
+            return this.$el.clientWidth
+        },
+        height() {
+            return this.$el.clientHeight
+        },
         dragLinePath() {
+            if (!this.startState) {
+                // debugger;
+                return
+            }
             return 'M' + this.startState.x + ',' + this.startState.y + 'L' + this.dragLineEnd.x + ',' + this.dragLineEnd.y
         }
     },
@@ -89,13 +99,15 @@ export default {
                 .distance(linkDistance)
             )
             // .on("tick",function(e) {
-            //     vm.$forceUpdate
-            // })
+            //     // vm.$forceUpdate
+            // }.bind(this))
 
         // simulation.nodes(this.nodes)
         // simulation.force("link").links(this.links)
 
         let container = document.querySelector("svg");
+        let offsetLeft = this.$el.getBoundingClientRect().left;
+        let offsetTop = this.$el.getBoundingClientRect().top;
 
         function dragsubject() {
             let e = this.$d3.event
@@ -107,7 +119,8 @@ export default {
             let e = this.$d3.event
             if (e.sourceEvent.shiftKey) {
                 this.startState = e.subject
-                this.dragLineEnd = {x:e.sourceEvent.pageX,y:e.sourceEvent.pageY}
+                // debugger;
+                this.dragLineEnd = {x:e.x ,y:e.y}
                 return
             }
             if (!e.active) this.simulation.alphaTarget(0.3).restart();
@@ -118,8 +131,8 @@ export default {
         function dragged() {
             let e = this.$d3.event
             if (this.startState) {
-                this.dragLineEnd.x = event.pageX
-                this.dragLineEnd.y = event.pageY
+                this.dragLineEnd.x = e.x
+                this.dragLineEnd.y = e.y
                 return
             }
             e.subject.fx = e.x;
@@ -238,7 +251,7 @@ export default {
             return "invis_" + aLink.source.id + "-" + aLink.name + "-" + aLink.target.id;
         },
         canvasDoubleClick(event) {
-            let newState = {id: `${this.nodes.length}`, name: 'new state', x:event.pageX, y:event.pageY};
+            let newState = {id: `${this.nodes.length}`, name: 'new state', x:100, y:100};
             this.nodes.push(newState);
 
             //To force an update
