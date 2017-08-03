@@ -9,9 +9,9 @@ export {StateMachine,logError,logSM,logEvent,logTouch,trim,log}
 	}
 	var logFilter = {
 		Error:	true,
-		SM:		false,
-		Event:	false,
-		Touch:	false,
+		SM:		true,
+		Event:	true,
+		Touch:	true,
 	};
 	function logError(msg)	{if (logFilter.Error) log ("*** "+msg)}
 	function logSM(msg)		{ if (logFilter.SM) log(msg); }

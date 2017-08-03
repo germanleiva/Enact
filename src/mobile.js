@@ -772,6 +772,26 @@ socket.on('message-from-server', function(data) {
     A state machine
     **/
 
+    let actions = {
+        moveShape1: function(event) {
+            this.shape1().color = '#00ff00'
+            this.recordDelta(event);
+            // this.shape1().left += this.touch1(event).info.delta.x;
+            // this.shape1().top += this.touch1(event).info.delta.y;
+            this.shape1().left += event.info.delta.x;
+            this.shape1().top += event.info.delta.y;
+        },
+        changeColorShape1: function(event) {
+            this.shape1().color = '#ff0000';
+        },
+        aGuard: function(event) {
+            return true;
+        },
+        isTouch1InsideShape1: function(event) {
+            return this.isInside(this.touch1(event),this.shape1());
+        }
+    }
+
 var stateMachine = new StateMachine({
     shape1: function() {
         return mobileCanvasVM.shapeFor("S1");
@@ -793,32 +813,15 @@ var stateMachine = new StateMachine({
         return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
     },
 
-    actions: {
-        moveShape1: function(event) {
-            this.shape1().color = '#00ff00'
-            this.recordDelta(event);
-            // this.shape1().left += this.touch1(event).info.delta.x;
-            // this.shape1().top += this.touch1(event).info.delta.y;
-            this.shape1().left += event.info.delta.x;
-            this.shape1().top += event.info.delta.y;
-        },
-        changeColorShape1: function(event) {
-            this.shape1().color = '#ff0000';
-        },
-        aGuard: function(event) {
-            return true;
-        },
-        isTouch1InsideShape1: function(event) {
-            return this.isInside(this.touch1(event),this.shape1());
-        }
-    },
+    actions: actions,
 
     states: {
         idle: {
-            on_touchstart: /*{*/ 'isTouch1InsideShape1 ? -> moving',
-                // guard: this.isTouchInputInstance1,
-                // to: 'moving'
-            // }
+            on_touchstart: {// 'isTouch1InsideShape1 ? -> moving',
+                guard: 'isTouch1InsideShape1',
+                action: function() { console.log("doing the action"); },
+                to: 'moving'
+            }
         },
 
         moving: {

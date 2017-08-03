@@ -16,6 +16,7 @@ import Vue from 'vue';
 import io from 'socket.io-client';
 import _ from 'lodash';
 import tinyColor from 'tinycolor2';
+import JSONfn from 'json-fn';
 
 let isLoggerActive = false;
 let logger = function(text) {
@@ -24,7 +25,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, State }
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, State, Transition}
 
 export const globalBus = new Vue();
 
@@ -1964,14 +1965,109 @@ class ShapeInput extends InputRule {
     }
 }
 
-let emptyGuard = "function() { return true; }"
-let emptyAction = "function() {}"
-
 class State {
-    constructor(name, guard = emptyGuard, actions = emptyAction, to = "") {
+    constructor(id,name) {
         this.name = name;
-        this.guard = guard;
-        this.actions = actions;
-        this.to = to;
+        this.description = '';
+        this.id = id;
+        this.isSelected = false;
+        this.x = 0;
+        this.y = 0;
+        this.enter = undefined;
+        this.leave = undefined;
+    }
+    get sourceCode() {
+        let enterFn =
+`function(e) {
+      // This function is executed when we enter this state
+    }`;
+        let leaveFn =
+`function(e) {
+      // This function is executed when we leave this state
+    }`;
+        if (this.enter) {
+            enterFn = eval(JSONfn.stringify(this.enter))
+        }
+        if (this.leave) {
+            leaveFn = eval(JSONfn.stringify(this.leave))
+        }
+
+        return `{
+    description: '${this.description}',
+    name: '${this.name}',
+    enter: ${enterFn},
+    leave: ${leaveFn}
+}`;
+    }
+    set sourceCode(newCode) {
+        try {
+            let actualValues
+
+            eval("actualValues = "+newCode);
+
+            for (let eachKey of ["description","name","enter","leave"]) {
+                this[eachKey] = actualValues[eachKey]
+            }
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+                console.log("SyntaxError in State >> set sourceCode, ignoring until the code is fixed")
+            }
+        }
+    }
+}
+
+class Transition {
+    constructor(name,source,target) {
+        this.name = name;
+        this.description = '';
+        this.source = source;
+        this.target = target;
+        this.isSelected = false;
+        this.guard = undefined
+        this.action = undefined
+    }
+    get sourceCode() {
+        let guardFn =
+`function(e) {
+      // Only when the guard is true the transition is executed
+      return true
+    }`;
+        let actionFn =
+`function(e) {
+      // When the transition is executed this action is performed
+      return true
+    }`;
+        if (this.guard) {
+            guardFn = eval(JSONfn.stringify(this.guard))
+        }
+        if (this.action) {
+            actionFn = eval(JSONfn.stringify(this.action))
+        }
+
+        // guardFn = guardFn.substring(1,guardFn.length - 1).replace(/\\n/g,"\n");
+        // actionFn = actionFn.substring(1,actionFn.length - 1).replace(/\\n/g,"\n");
+
+        return `{
+    description: '${this.description}',
+    name: '${this.name}',
+    guard: ${guardFn},
+    action: ${actionFn}
+}`;
+    }
+    set sourceCode(newCode) {
+        try {
+            let actualValues
+
+            eval("actualValues = "+newCode);
+
+            for (let eachKey of ["description","name","guard","action"]) {
+                this[eachKey] = actualValues[eachKey]
+            }
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+                console.log("SyntaxError in Transition >> set sourceCode, ignoring until the code is fixed")
+            }
+        }
+
     }
 }
