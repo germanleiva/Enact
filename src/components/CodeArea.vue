@@ -25,11 +25,12 @@
                 :nodes="states"
                 :links="edges"
                 style="height:200px"
-                @selectedLink="selectedLink">
+                @selectedNode="onSelectedState"
+                @selectedLink="onSelectedEdge">
             </state-diagram>
             <div style="background-color:rgba(255,100,0,50)">
                 <codemirror ref="transitionCodeMirror"
-                  :code="'EMPTY'"
+                  :code="''"
                   :options="editorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
@@ -90,12 +91,26 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
-const defaultSourceCode =
+const defaultTransitionSourceCode =
 `{
     description: '',
-    guard: (e) => { return true },
-    action: (e) => { }
-}`
+    guard: (e) => {
+        return true
+    },
+    action: (e) => {
+\t\t
+    }
+}`;
+const defaultStateSourceCode =
+`{
+    description: '',
+    enter: (e) => {
+\t\t
+    },
+    leave: (e) => {
+\t\t
+    }
+}`;
 
 export default {
     name: 'code-area',
@@ -118,13 +133,13 @@ export default {
                 // more codemirror config...
             },
             states: [
-                { id: 'idle', name: 'Idle', x:0, y:0, isSelected: false},
-                { id: 'moving', name: 'Moving', x:0, y:0, isSelected: false}
+                { id: 'idle', name: 'Idle', x:0, y:0, isSelected: false, sourceCode: defaultStateSourceCode},
+                { id: 'moving', name: 'Moving', x:0, y:0, isSelected: false, sourceCode: defaultStateSourceCode}
             ],
             edges: [
-                { source: 'idle', target: 'moving', name: 'touchstart', isSelected: false, sourceCode: "" + defaultSourceCode},
-                { source: 'moving', target: 'moving', name: 'touchmove', isSelected: false, sourceCode: "" + defaultSourceCode},
-                { source: 'moving', target: 'idle', name: 'touchend', isSelected: false, sourceCode: "" + defaultSourceCode},
+                { source: 'idle', target: 'moving', name: 'touchstart', isSelected: false, sourceCode:  defaultTransitionSourceCode},
+                { source: 'moving', target: 'moving', name: 'touchmove', isSelected: false, sourceCode:  defaultTransitionSourceCode},
+                { source: 'moving', target: 'idle', name: 'touchend', isSelected: false, sourceCode: defaultTransitionSourceCode},
             ],
             content:
 `var stateMachine = {
@@ -320,7 +335,12 @@ export default {
               this.content = newCode
         },
         onTransitionEditorCodeChange(newCode) {
-            this.selectedEdge.sourceCode = newCode
+            if (this.currentlySelectedEdge) {
+                this.currentlySelectedEdge.sourceCode = newCode
+            }
+            if (this.currentlySelectedState) {
+                this.currentlySelectedState.sourceCode = newCode
+            }
         },
         // addNewRule() {
         //     globalStore.ruleCounter++;
@@ -330,7 +350,10 @@ export default {
 
         //     globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder.toJSON() })
         // }
-        selectedLink(aLink) {
+        onSelectedState(aNode) {
+            this.$refs.transitionCodeMirror.editor.setValue(aNode.sourceCode)
+        },
+        onSelectedEdge(aLink) {
             this.$refs.transitionCodeMirror.editor.setValue(aLink.sourceCode)
         }
     },
@@ -341,8 +364,11 @@ export default {
         codeEditor() {
           return this.$refs.codeContainer.editor
         },
-        selectedEdge() {
+        currentlySelectedEdge() {
             return this.edges.find(anEdge => anEdge.isSelected)
+        },
+        currentlySelectedState() {
+            return this.states.find(aState => aState.isSelected)
         }
     },
     mounted: function() {

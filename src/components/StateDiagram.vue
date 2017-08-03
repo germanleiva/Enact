@@ -180,6 +180,9 @@ export default {
             }
             for (let eachNode of this.nodes) {
                 eachNode.isSelected = eachNode == aNode
+                if (eachNode.isSelected) {
+                    this.$emit('selectedNode', eachNode)
+                }
             }
         },
         toggleLink(aLink) {

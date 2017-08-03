@@ -253,7 +253,6 @@ export {StateMachine,logError,logSM,logEvent,logTouch,trim,log}
 				} catch(e) {
 					logError("ignoring error in state exit action: "+e);
 				}
-
 			// call the transition action, if any
 			if (transition.action)
 				try {

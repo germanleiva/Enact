@@ -797,8 +797,10 @@ var stateMachine = new StateMachine({
         moveShape1: function(event) {
             this.shape1().color = '#00ff00'
             this.recordDelta(event);
-            this.shape1().left += this.touch1(event).info.delta.x;
-            this.shape1().top += this.touch1(event).info.delta.y;
+            // this.shape1().left += this.touch1(event).info.delta.x;
+            // this.shape1().top += this.touch1(event).info.delta.y;
+            this.shape1().left += event.info.delta.x;
+            this.shape1().top += event.info.delta.y;
         },
         changeColorShape1: function(event) {
             this.shape1().color = '#ff0000';
@@ -813,21 +815,21 @@ var stateMachine = new StateMachine({
 
     states: {
         idle: {
-            on_touchstart: { //'isTouch1InsideShape1 ? -> moving'
-                guard: this.actions.isTouchInputInstance1,
-                to: 'moving'
-            }
+            on_touchstart: /*{*/ 'isTouch1InsideShape1 ? -> moving',
+                // guard: this.isTouchInputInstance1,
+                // to: 'moving'
+            // }
         },
 
         moving: {
-            on_touchmove: { //'moveShape1 -> moving',
-                action: this.actions.moveShape1,
-                to: 'moving'
-            },
-            on_touchend: { //'changeColorShape1 -> idle',
-                action: this.actions.changeColorShape1,
-                to: 'idle'
-            }
+            on_touchmove: /*{*/ 'moveShape1 -> moving',
+                // action: this.moveShape1,
+                // to: 'moving'
+            // },
+            on_touchend: /*{*/ 'changeColorShape1 -> idle',
+                // action: this.changeColorShape1,
+                // to: 'idle'
+            // }
 
         }
     }
