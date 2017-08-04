@@ -25,7 +25,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, State, Transition}
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, StateMachine}
 
 export const globalBus = new Vue();
 
@@ -37,6 +37,8 @@ export const globalStore = new Vue({
         shapeCounter: 1,
         measureCounter: 1,
         ruleCounter: 1,
+        stateCounter: 1,
+        transitionCounter: 1,
         toolbarState: {
             rectangleMode: false,
             circleMode: false,
@@ -1966,46 +1968,129 @@ class ShapeInput extends InputRule {
 }
 
 class State {
-    constructor(id,name) {
-        this.name = name;
-        this.description = '';
+    constructor(machine,{id,name,description,isSelected,isActive,x,y,enter,exit}) {
+        this.machine = machine;
+
         this.id = id;
-        this.isSelected = false;
-        this.x = 0;
-        this.y = 0;
-        this.enter = undefined;
-        this.leave = undefined;
+        this._name = name;
+        this._description = description || '';
+        this._isSelected = isSelected || false;
+        this.isActive = isActive || false;
+        this.x = x || 0;
+        this.y = y || 0;
+        this.enter = enter || function(e) { /* This function is executed when we enter this state */ };
+        this.exit = exit || function(e) { /* This function is executed when we leave this state */ };
     }
+
+    get actions() {
+        return this.machine.actions;
+    }
+
+    get objects() {
+        return this.machine.objects;
+    }
+
+    get name() {
+        return this._name;
+    }
+    set name(value) {
+        this._name = value
+        this.machine.notifyChange("STATE",this,"name");
+    }
+
+    get description() {
+        return this._description;
+    }
+    set description(value) {
+        this._description = value
+        this.machine.notifyChange("STATE",this,"description");
+    }
+
+    get isSelected() {
+        return this._isSelected;
+    }
+    set isSelected(value) {
+        this._isSelected = value
+        this.machine.notifyChange("STATE",this,"isSelected");
+    }
+
+    get isActive() {
+        return this._isActive;
+    }
+    set isActive(value) {
+        this._isActive = value
+        this.machine.notifyChange("STATE",this,"isActive");
+    }
+
+    get enter() {
+        return this._enter;
+    }
+    set enter(value) {
+        this._enter = value
+        this.machine.notifyChange("STATE",this,"enter");
+    }
+
+    get exit() {
+        return this._exit;
+    }
+    set exit(value) {
+        this._exit = value
+        this.machine.notifyChange("STATE",this,"exit");
+    }
+
+    toJSONString(properties=undefined) {
+        let enterFn = eval(JSONfn.stringify(this.enter))
+        let exitFn = eval(JSONfn.stringify(this.exit))
+
+        if (!properties) {
+            properties = ['id','description','name','isSelected','isActive','x','y','enter','exit']
+        }
+        let result = "{\n"
+        for (let eachProperty of properties) {
+            let value = this[eachProperty]
+            if (eachProperty == "enter" || eachProperty == "exit") {
+                value = eval(JSONfn.stringify(value))
+            } else {
+                if (typeof value == "string") {
+                    value = "\'" + value + "\'"
+                }
+            }
+            result += `\t${eachProperty}: ${value},\n`
+        }
+        return result+"\n}"
+    }
+
+    fromJSON(actualValues) {
+        for (let eachKey in actualValues) {
+            if (eachKey == "id") {
+                if (this.id) {
+                    //If I have an id I should not change it
+                    continue;
+                }
+            }
+            this[eachKey] = actualValues[eachKey]
+        }
+    }
+
     get sourceCode() {
-        let enterFn =
-`function(e) {
-      // This function is executed when we enter this state
-    }`;
-        let leaveFn =
-`function(e) {
-      // This function is executed when we leave this state
-    }`;
-        if (this.enter) {
-            enterFn = eval(JSONfn.stringify(this.enter))
-        }
-        if (this.leave) {
-            leaveFn = eval(JSONfn.stringify(this.leave))
-        }
+        let enterFn = eval(JSONfn.stringify(this.enter))
+        let exitFn = eval(JSONfn.stringify(this.exit))
 
         return `{
-    description: '${this.description}',
-    name: '${this.name}',
-    enter: ${enterFn},
-    leave: ${leaveFn}
+        description: '${this.description}',
+        name: '${this.name}',
+        enter: ${enterFn},
+        exit: ${exitFn}
 }`;
     }
+
     set sourceCode(newCode) {
         try {
             let actualValues
 
             eval("actualValues = "+newCode);
 
-            for (let eachKey of ["description","name","enter","leave"]) {
+            for (let eachKey of ["description","name","enter","exit"]) {
                 this[eachKey] = actualValues[eachKey]
             }
         } catch (e) {
@@ -2017,43 +2102,92 @@ class State {
 }
 
 class Transition {
-    constructor(name,source,target) {
-        this.name = name;
-        this.description = '';
-        this.source = source;
-        this.target = target;
-        this.isSelected = false;
-        this.guard = undefined
-        this.action = undefined
-    }
-    get sourceCode() {
-        let guardFn =
-`function(e) {
-      // Only when the guard is true the transition is executed
-      return true
-    }`;
-        let actionFn =
-`function(e) {
-      // When the transition is executed this action is performed
-      return true
-    }`;
-        if (this.guard) {
-            guardFn = eval(JSONfn.stringify(this.guard))
-        }
-        if (this.action) {
-            actionFn = eval(JSONfn.stringify(this.action))
-        }
+    constructor(machine,{id,name,description,source,target,isSelected,isActive,guard,action}) {
+        this.machine = machine;
 
-        // guardFn = guardFn.substring(1,guardFn.length - 1).replace(/\\n/g,"\n");
-        // actionFn = actionFn.substring(1,actionFn.length - 1).replace(/\\n/g,"\n");
+        this.id = id;
+        this._name = name;
+        this._description = description || '';
+        this.source = typeof source === "string" ? this.machine.findStateId(source) : source;
+        this.target = typeof target === "string" ? this.machine.findStateId(target) : target;
+        this._isSelected = isSelected || false;
+        this._isActive = isSelected || false;
+        this._guard = guard || function(e) {
+// Only when the guard is true the transition is executed
+return true;
+};
+        this._action = action || function(e) {
+// When the transition is executed this action is performed
+};
+    }
+
+    get functions() {
+        return this.machine.functions
+    }
+    get objects() {
+        return this.machine.objects;
+    }
+
+    get name() {
+        return this._name;
+    }
+    set name(value) {
+        this._name = value
+        this.machine.notifyChange("TRANSITION",this,"name");
+    }
+
+    get description() {
+        return this._description;
+    }
+    set description(value) {
+        this._description = value
+        this.machine.notifyChange("TRANSITION",this,"description");
+    }
+
+    get isSelected() {
+        return this._isSelected;
+    }
+    set isSelected(value) {
+        this._isSelected = value
+        this.machine.notifyChange("TRANSITION",this,"isSelected");
+    }
+
+    get isActive() {
+        return this._isActive;
+    }
+    set isActive(value) {
+        this._isActive = value
+        this.machine.notifyChange("TRANSITION",this,"isActive");
+    }
+
+    get guard() {
+        return this._guard;
+    }
+    set guard(value) {
+        this._guard = value
+        this.machine.notifyChange("TRANSITION",this,"guard");
+    }
+
+    get action() {
+        return this._action;
+    }
+    set action(value) {
+        this._action = value
+        this.machine.notifyChange("TRANSITION",this,"action");
+    }
+
+    get sourceCode() {
+        let guardFn = eval(JSONfn.stringify(this.guard))
+        let actionFn = eval(JSONfn.stringify(this.action))
 
         return `{
-    description: '${this.description}',
-    name: '${this.name}',
-    guard: ${guardFn},
-    action: ${actionFn}
+        description: '${this.description}',
+        name: '${this.name}',
+        guard: ${guardFn},
+        action: ${actionFn}
 }`;
     }
+
     set sourceCode(newCode) {
         try {
             let actualValues
@@ -2065,9 +2199,195 @@ class Transition {
             }
         } catch (e) {
             if (e instanceof SyntaxError) {
-                console.log("SyntaxError in Transition >> set sourceCode, ignoring until the code is fixed")
+                console.log("SyntaxError in Transition >> sourceCode, ignoring until the code is fixed")
             }
         }
 
+    }
+    toJSONString(properties=undefined) {
+        if (!properties) {
+            properties = ["id","description","name","source","target","guard","action","isSelected","isActive"]
+        }
+
+        let result = "{\n"
+        let lastProperty = properties[properties.length - 1]
+        for (let eachProperty of properties) {
+            let value = this[eachProperty]
+            if (eachProperty == "guard" || eachProperty == "action") {
+                value = eval(JSONfn.stringify(value))
+            } else {
+                if (eachProperty == "source" || eachProperty == "target") {
+                    value = value.id
+                }
+                if (typeof value == "string") {
+                    value = "\'" + value + "\'"
+                }
+            }
+            result += `\t${eachProperty}: ${value}${eachProperty==lastProperty?'':','}\n`
+        }
+        return result+"}"
+    }
+    fromJSON(actualValues) {
+        for (let eachKey in actualValues) {
+            if (eachKey == "id") {
+                if (this.id) {
+                    //If I have an id I should not change it
+                    continue;
+                }
+            }
+            this[eachKey] = actualValues[eachKey]
+        }
+    }
+}
+
+class StateMachine {
+    constructor({isServer}) {
+        this.states = []
+        this.transitions = []
+        this.functions = {}
+        this.objects = {}
+        this.currentState = undefined;
+        this.firstState = undefined;
+        this.isServer = isServer
+    }
+
+    insertNewState(stateDescription) {
+
+        if (!stateDescription.id) {
+            globalStore.stateCounter += 1
+            stateDescription.id = ""+globalStore.stateCounter
+        }
+        let newState = new State(this,stateDescription);
+
+        this.states.push(newState);
+
+        if (!this.firstState) {
+            this.firstState = newState;
+        }
+        if (!this.currentState) {
+            this.currentState = this.firstState;
+        }
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_NEW_STATE", message:  newState.toJSONString() });
+        }
+
+        return newState;
+    }
+
+    insertNewTransition(transitionDescription) {
+        if (!transitionDescription.id) {
+            globalStore.transitionCounter += 1
+            transitionDescription.id = "" + globalStore.transitionCounter
+        }
+
+        let newTransition = new Transition(this,transitionDescription);
+
+        this.transitions.push(newTransition);
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_NEW_TRANSITION", message:  newTransition.toJSONString() });
+        }
+
+        return newTransition;
+    }
+
+    findTransitionsFrom(sourceState,transitionName) {
+        return this.transitions.find((aTransition) => aTransition.source == sourceState && aTransition.name == transitionName)
+    }
+
+    findStateId(stateId) {
+        return this.states.find((aState) => aState.id == stateId)
+    }
+
+    findTransitionId(transitionId){
+        return this.transitions.find((aTransition) => aTransition.id == transitionId)
+    }
+
+    notifyChange(type,object,propertyName) {
+        //type could be STATE or TRANSITION
+
+        // let message = {id:object.id,propertyName:propertyName,value:object[propertyName]}
+        let message = object.toJSONString(["id",propertyName])
+        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_CHANGED_"+type, message: message });
+    }
+
+    processEvent(type, event) {
+        var machine = this;
+        var state = this.currentState;
+
+        if (!state) {
+            return false;
+        }
+
+        var transition = this.findTransitionsFrom(state,type);
+        //logSM('inprocessEvent '+type+' in state '+ state.name);
+        if (! transition) {
+            console.log('['+state.name+'] -- '+type+' -> no transition');
+            return false;
+        }
+
+        return this.processTransition(state,event,transition,this);
+    }
+
+    // This function fires a transition, returning true if it did,
+    // false otherwise (i.e. if a guard returned false or failed)
+    processTransition(state,event,transition,machine) {
+        // call the guard, if any
+        if (transition.guard) {
+            try {
+                if (! transition.guard.call(machine, event, transition, state))
+                    return false;
+            } catch (e) {
+                console.log("ignoring error in guard (skipping transition): "+e);
+                return false;
+            }
+        }
+
+        // call the exit action of the current state, if any
+        var dest = transition.target;
+        // console.log('['+state.name+'] -- '+type+' -> '+(dest? ('['+dest.name+']') : 'same state'));
+        if (dest && state.exit)
+            try {
+                state.exit.call(machine, event, transition, state);
+            } catch(e) {
+                console.log("ignoring error in state exit action: "+e);
+            }
+        // call the transition action, if any
+        if (transition.action) {
+            try {
+                transition.action.call(machine, event, transition, state);
+            } catch(e) {
+                console.log("ignoring error in transition action: "+e);
+            }
+        }
+
+        // set the new current state and call the enter action of the destination state, if any
+        if (dest) {
+            machine.currentState = dest;
+            if (dest.enter){
+                try {
+                    dest.enter.call(machine, event, transition, state);
+                } catch(e) {
+                    console.log("ignoring error in state enter action: "+e);
+                }
+            }
+        }
+
+        return true;
+    }
+    armTimeout(delay) {
+        if (this._timer)
+            this.cancelTimeout;
+        var machine = this;
+        this._timer = setTimeout(function() {
+            machine.processEvent('timeout', null);
+        }, delay);
+    }
+    cancelTimeout() {
+        if (this._timer) {
+            clearTimeout(this._timer);
+            delete this._timer;
+        }
     }
 }

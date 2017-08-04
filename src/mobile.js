@@ -1,13 +1,12 @@
 import Vue from 'vue'
 import io from 'socket.io-client';
 import CSSJSON from 'cssjson'
-import {StateMachine,logError,logSM,logEvent,logTouch,trim,log} from './statemachine.js'
 
 // import App from './App.vue'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent, StateMachine} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
@@ -15,6 +14,48 @@ let isInside = function(touch, shape) {
     return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
 }
 
+let stateMachine = new StateMachine({isServer:false})
+stateMachine.objects = {
+    shape1:function() {
+        return mobileCanvasVM.shapeFor("S1");
+    }.bind(stateMachine),
+    touch1: function() {
+        return event.touches[0];
+    }.bind(stateMachine)
+}
+
+stateMachine.functions = {
+    isInside: function(touch, shape) {
+        return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
+    }.bind(stateMachine),
+    recordDelta: function(event) {
+        var info = event.info;
+        info.delta = {
+            x: info.cur.x - info.prev.x,
+            y: info.cur.y - info.prev.y,
+            t: info.cur.t - info.prev.t
+        }
+    }.bind(stateMachine),
+    moveShape1: function(event) {
+        this.objects.shape1().color = '#00ff00'
+        this.functions.recordDelta(event);
+        // this.shape1().left += this.touch1(event).info.delta.x;
+        // this.shape1().top += this.touch1(event).info.delta.y;
+        this.objects.shape1().left += event.info.delta.x;
+        this.objects.shape1().top += event.info.delta.y;
+    }.bind(stateMachine),
+    changeColorShape1: function(event) {
+        this.objects.shape1().color = '#ff0000';
+    }.bind(stateMachine),
+    trueGuard: function(event) {
+        return true;
+    }.bind(stateMachine),
+    isTouch1InsideShape1: function(event) {
+        return this.functions.isInside(this.objects.touch1(event),this.objects.shape1());
+    }.bind(stateMachine)
+}
+
+debugger;
 // let r1_initial_y_position
 // let r2_initial_y_position
 // let r1_initial_height
@@ -309,6 +350,54 @@ socket.on('message-from-server', function(data) {
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             deleteRectangleVM(data.message.id)
+            break;
+        }
+        case "MACHINE_NEW_STATE": {
+            let jsonStateData;
+            eval(`jsonStateData = ${data.message}`);
+            stateMachine.insertNewState(jsonStateData);
+            break;
+        }
+        case "MACHINE_NEW_TRANSITION": {
+            let jsonTransitionData;
+            eval(`jsonTransitionData = ${data.message}`);
+            stateMachine.insertNewTransition(jsonTransitionData)
+            break;
+        }
+        case "MACHINE_CHANGED_STATE": {
+            try {
+                let changedStateData;
+
+                eval("changedStateData = "+data.message);
+
+                let state = stateMachine.findStateId(changedStateData.id)
+                state.fromJSON(changedStateData)
+            } catch (e) {
+                if (e instanceof SyntaxError) {
+                    console.log("SyntaxError in MACHINE_CHANGED_STATE" + e)
+                } else {
+                    console.log("Unknown error in MACHINE_CHANGED_STATE: " + e)
+                }
+                console.log(data.message)
+            }
+            break;
+        }
+        case "MACHINE_CHANGED_TRANSITION": {
+            try {
+                let changedTransitionData;
+
+                eval("changedTransitionData = "+data.message);
+
+                let transition = stateMachine.findTransitionId(changedTransitionData.id)
+                transition.fromJSON(changedTransitionData)
+            } catch (e) {
+                if (e instanceof SyntaxError) {
+                    console.log("SyntaxError in MACHINE_CHANGED_TRANSITION" + e)
+                } else {
+                    console.log("Unknown error in MACHINE_CHANGED_TRANSITION: " + e)
+                }
+                console.log(data.message)
+            }
             break;
         }
         case "NEW_RULE":{
@@ -687,13 +776,13 @@ socket.on('message-from-server', function(data) {
     // Find the first available slot in touchInfo, initialize the info record
     // and add it to the event
     function recordTouchStart(event, touch) {
-        logTouch("-- recordTouchStart id "+touch.identifier);
+        console.log("-- recordTouchStart id "+touch.identifier);
         var index = 0;
         firstIndex = 0;
         numTouches++;
         while (touchInfo[index])
             index++;
-        logTouch("-- index="+index);
+        console.log("-- index="+index);
 
         touchId2Index[touch.identifier] = index;
         event.info = touchInfo[index] = {
@@ -703,17 +792,17 @@ socket.on('message-from-server', function(data) {
             prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
             cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
         };
-        logTouch("-- done");
+        console.log("-- done");
     };
 
     // Update the info record and add it to the event
     function recordTouchMove(event, touch) {
-        logTouch("-- recordTouchMove id "+touch.identifier);
-        logTouch("-- index="+touchId2Index[touch.identifier]);
+        console.log("-- recordTouchMove id "+touch.identifier);
+        console.log("-- index="+touchId2Index[touch.identifier]);
         event.info = touchInfo[touchId2Index[touch.identifier]];
         event.info.prev = event.info.cur;
         event.info.cur = {x: touch.pageX, y: touch.pageY, t: event.timeStamp};
-        logTouch("-- done");
+        console.log("-- done");
     }
 
     // Add the info record to the event
@@ -723,7 +812,7 @@ socket.on('message-from-server', function(data) {
 
     // Remove the info record corresponding to a touch that is now gone
     function clearTouch(event, touch) {
-        logTouch("-- clearTouch id "+touch.identifier);
+        console.log("-- clearTouch id "+touch.identifier);
         var index = touchId2Index[touch.identifier];
         delete touchInfo[index];
         delete touchId2Index[touch.identifier];
@@ -736,7 +825,7 @@ socket.on('message-from-server', function(data) {
             while (!touchInfo[firstIndex])
                 firstIndex++;
         }
-        logTouch("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
+        console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
     }
 
     // A touch event contains one or more touches that have changed.
@@ -744,99 +833,29 @@ socket.on('message-from-server', function(data) {
     // This function calls the bookkeeping functions above for each changed touches of a give event
     // and then passes the modified event to the state machine.
     function processEvent(machine, type, event, preFn, postFn) {
-        logEvent(">> processEvent " + type + " - " + event.touches.length + " touches, "
+        console.log(">> processEvent " + type + " - " + event.touches.length + " touches, "
                 + event.changedTouches.length + " changed touches");
         event.preventDefault(); // avoid event bubbling
         // process each change
         for (var i = 0; i < event.changedTouches.length; i++) {
-            logEvent("  process touch #"+i);
+            console.log("  process touch #"+i);
             // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
             let touchBeingProcessed = event.changedTouches[i];
-            logTouch("  preFn ");
+            console.log("  preFn ");
             if (preFn){
                 // preFn(event, event.touch); // adds / modifies event.info
                 preFn(event, touchBeingProcessed); // adds / modifies event.info
             }
-            logTouch("  machine.processEvent");
+            console.log("  machine.processEvent");
             machine.processEvent(type, event);
-            logTouch("  postFn");
+            console.log("  postFn");
             if (postFn) {
                 // postFn(event, event.touch);
                 postFn(event, touchBeingProcessed);
             }
         }
-        logEvent("<<done processEvent");
+        console.log("<<done processEvent");
     }
-
-    /**
-    A state machine
-    **/
-
-    let actions = {
-        moveShape1: function(event) {
-            this.shape1().color = '#00ff00'
-            this.recordDelta(event);
-            // this.shape1().left += this.touch1(event).info.delta.x;
-            // this.shape1().top += this.touch1(event).info.delta.y;
-            this.shape1().left += event.info.delta.x;
-            this.shape1().top += event.info.delta.y;
-        },
-        changeColorShape1: function(event) {
-            this.shape1().color = '#ff0000';
-        },
-        aGuard: function(event) {
-            return true;
-        },
-        isTouch1InsideShape1: function(event) {
-            return this.isInside(this.touch1(event),this.shape1());
-        }
-    }
-
-var stateMachine = new StateMachine({
-    shape1: function() {
-        return mobileCanvasVM.shapeFor("S1");
-    },
-
-    touch1: function(event) {
-        return event.touches[0];
-    },
-
-    recordDelta: function(event) {
-        var info = event.info;
-        info.delta = {
-            x: info.cur.x - info.prev.x,
-            y: info.cur.y - info.prev.y,
-            t: info.cur.t - info.prev.t
-        }
-    },
-    isInside: function(touch, shape) {
-        return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
-    },
-
-    actions: actions,
-
-    states: {
-        idle: {
-            on_touchstart: {// 'isTouch1InsideShape1 ? -> moving',
-                guard: 'isTouch1InsideShape1',
-                action: function() { console.log("doing the action"); },
-                to: 'moving'
-            }
-        },
-
-        moving: {
-            on_touchmove: /*{*/ 'moveShape1 -> moving',
-                // action: this.moveShape1,
-                // to: 'moving'
-            // },
-            on_touchend: /*{*/ 'changeColorShape1 -> idle',
-                // action: this.changeColorShape1,
-                // to: 'idle'
-            // }
-
-        }
-    }
-});
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;

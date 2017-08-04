@@ -21,9 +21,9 @@
         </div>
         <!-- <div class="columnVariables" style="background-color:green"></div> -->
         <div class="column" style="background-color:blue;">
-            <state-diagram
-                :nodes="states"
-                :links="transitions"
+            <state-diagram v-if="stateMachine != undefined"
+                :nodes="stateMachine.states"
+                :links="stateMachine.transitions"
                 style="height:200px"
                 @selectedNode="onSelectedState"
                 @selectedLink="onSelectedEdge">
@@ -46,7 +46,7 @@
 import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus, DiffModel, State, Transition} from '../store.js'
+import {globalStore, globalBus, DiffModel, StateMachine} from '../store.js'
 import { codemirror, CodeMirror } from 'vue-codemirror'
 import StateDiagram from './StateDiagram.vue'
 import TextMark from './TextMark.vue'
@@ -111,66 +111,8 @@ export default {
                 highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
                 // more codemirror config...
             },
-            states: [
-                new State('idle','Idle'),
-                new State('moving','Moving')
-            ],
-            transitions: [
-                new Transition('touchstart','idle','moving'),
-                new Transition('touchmove','moving','moving'),
-                new Transition('touchend','moving','idle')
-            ],
-            content:
-`var stateMachine = {
-    shape1: function() {
-        return mobileCanvasVM.shapeFor("S1");
-    },
-
-    touch1: function(event) {
-        return event.touches[0];
-    },
-
-    recordDelta: function(event) {
-        var info = event.info;
-        info.delta = {
-            x: info.cur.x - info.prev.x,
-            y: info.cur.y - info.prev.y,
-            t: info.cur.t - info.prev.t
-        }
-    },
-    isInside: function(touch, shape) {
-        return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
-    },
-
-    actions: {
-        moveShape1: function(event) {
-            this.shape1().color = '#00ff00'
-            this.recordDelta(event);
-            this.shape1().left += this.touch1(event).info.delta.x;
-            this.shape1().top += this.touch1(event).info.delta.y;
-        },
-        changeColorShape1: function(event) {
-            this.shape1().color = '#ff0000';
-        },
-        aGuard: function(event) {
-            return true;
-        },
-        isTouch1InsideShape1: function(event) {
-            return this.isInside(this.touch1(event),this.shape1());
-        }
-    },
-
-    states: {
-        idle: {
-            on_touchstart: 'isTouch1InsideShape1 ? -> moving'
-        },
-
-        moving: {
-            on_touchmove: 'moveShape1 -> moving',
-            on_touchend: 'changeColorShape1 -> idle',
-        }
-    }
-}`
+            stateMachine: undefined,
+            content: `var stateMachine = undefined;`
         }
     },
     components: {
@@ -341,14 +283,23 @@ export default {
           return this.$refs.codeContainer.editor
         },
         currentlySelectedEdge() {
-            return this.transitions.find(anEdge => anEdge.isSelected)
+            return this.stateMachine.transitions.find(anEdge => anEdge.isSelected)
         },
         currentlySelectedState() {
-            return this.states.find(aState => aState.isSelected)
+            return this.stateMachine.states.find(aState => aState.isSelected)
         }
     },
     mounted: function() {
+        let newStateMachine = new StateMachine({isServer:true})
 
+        let idleState = newStateMachine.insertNewState({name:'Idle'});
+        let movingState = newStateMachine.insertNewState({name:'Moving'});
+
+        newStateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
+        newStateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
+        newStateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
+
+        this.stateMachine = newStateMachine
     }
 }
 </script>

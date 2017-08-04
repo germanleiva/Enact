@@ -87,15 +87,16 @@ export default {
     },
     mounted() {
         let vm = this;
+
         this.simulation = this.$d3.forceSimulation(this.nodes)
             .force("x",this.$d3.forceX(vm.$el.clientWidth/2))
             .force("y",this.$d3.forceY(vm.$el.clientHeight/2))
             .force("collide",this.$d3.forceCollide(this.nodeRadius + 1))
             .force("charge",this.$d3.forceManyBody().strength(-20))
             .force("link",this.$d3.forceLink(this.links)
-                .id(function(aNode) {
-                    return aNode.id
-                })
+                // .id(function(aNode) {
+                //     return aNode.id
+                // })
                 .distance(linkDistance)
             )
             // .on("tick",function(e) {
