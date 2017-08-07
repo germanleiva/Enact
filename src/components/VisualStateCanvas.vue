@@ -141,7 +141,8 @@ export default {
                         eachPresentAndFutureMeasure.to.id = objectForMouseEvent.id
                         eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handler
                     }
-                    globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: newMeasure.from ,to: newMeasure.to} })
+
+                    this.globalStore.stateMachine.addMeasure(newMeasure)
                 } else {
                     //delete measure?
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {
@@ -263,7 +264,7 @@ export default {
                     this.currentPolygon = newShapeModel
 
                     if (globalStore.visualStates[0] === this.visualStateModel) {
-                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: this.currentPolygon.toJSON() })
+                        globalStore.newShapeCreated(this.currentPolygon)
                     }
                 }
 
@@ -303,7 +304,7 @@ export default {
                 window.addEventListener('mouseup', mouseUpHandler, false);
 
                 if (globalStore.visualStates[0] === this.visualStateModel) {
-                    globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
+                    globalStore.newShapeCreated(newShapeModel);
                 }
             }
         },

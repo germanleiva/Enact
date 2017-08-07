@@ -39,6 +39,9 @@ export default {
             e.stopPropagation();
             this.object.highlight = false
         }
+    },
+    destroyed: function(){
+        console.log("TextMark destroyed")
     }
 }
 </script>

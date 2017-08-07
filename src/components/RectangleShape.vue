@@ -127,7 +127,7 @@ export default {
         }
     },
     destroyed: function() {
-        console.log("WE DESTROYED SHAPE (the original props of this has: " + this.shapeModel.id +")")
+        console.log("WE DESTROYED RECTANGLE (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
         styleObject: function(newVal,oldVal) {

@@ -39,6 +39,7 @@ export const globalStore = new Vue({
         ruleCounter: 1,
         stateCounter: 1,
         transitionCounter: 1,
+        stateMachine: undefined,
         toolbarState: {
             rectangleMode: false,
             circleMode: false,
@@ -70,6 +71,9 @@ export const globalStore = new Vue({
         }
     },
     methods: {
+        newShapeCreated(aShapeModel) {
+            this.stateMachine.addShape(aShapeModel)
+        },
         setSelectionMode() {
             this.toolbarState.rectangleMode = false;
             this.toolbarState.circleMode = false;
@@ -762,9 +766,10 @@ class VisualStateModel {
         Vue.delete(this.shapesDictionary, aShapeModel.id)
             // this.shapesDictionary[aShapeModel.id] = undefined
 
-
         if (globalStore.visualStates[0] === this) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
+        } else {
+            console.log("DELETED NOT FROM 1st VS")
         }
     }
     toggleHighlightForInvolvedElement(diffData, aBoolean) {
@@ -2240,20 +2245,131 @@ return true;
     }
 }
 
+class SMShape {
+    constructor(aShape) {
+        this.id = aShape.id
+    }
+    set highlight(aValue) {
+        for (let eachVS of globalStore.visualStates) {
+            let foundShape = eachVS.shapeFor(this.id)
+            if (foundShape) {
+                foundShape.highlight = aValue
+            }
+        }
+    }
+}
+
+class SMMeasure {
+    constructor(aMeasure) {
+        this.id = aMeasure.id
+    }
+    set highlight(aValue) {
+        for (let eachVS of globalStore.visualStates) {
+            let foundMeasure = eachVS.measureFor(this.id)
+            if (foundMeasure) {
+                foundMeasure.highlight = aValue
+            }
+        }
+    }
+}
+
+class SMFunction {
+    constructor(name) {
+        this.func = undefined
+        this.name = name
+    }
+    get code() {
+        return JSONfn.stringify(this.func)
+    }
+    set code(newCode) {
+        try {
+            eval("this.func = "+newCode);
+        } catch (e) {
+            if (e instanceof SyntaxError) {
+                console.log("SyntaxError in SMFunction >> set code, ignoring until the code is fixed")
+            }
+        }
+    }
+    get stringCode() {
+        return eval(this.code)
+    }
+}
+
+class SMFunctionIsInside extends SMFunction {
+    constructor() {
+        super("isInside");
+        this.code = `function isInside(small,big) {
+  return (small.pos.x > big.pos.x && small.pos.x < big.pos.x + big.size.width) &&
+         (small.pos.y > big.pos.y && small.pos.y < big.pos.y + big.size.height)
+}`
+    }
+}
+
+class SMFunctionMap extends SMFunction {
+    constructor() {
+        super("map");
+        this.code = `function map(input, output, inputOutputRatio=[1,1]) {
+  output.applyDelta(input,inputOutputRatio)
+}`
+    }
+}
+
 class StateMachine {
     constructor({isServer}) {
         this.states = []
         this.transitions = []
-        this.functions = {}
-        this.objects = {}
+
+        this.event = undefined; //This is the event that we are currently processing
         this.currentState = undefined;
         this.firstState = undefined;
+
         this.isServer = isServer
+
+        this.globalScope = {}
+
+        this.shapes = {}
+        this.touches = {}
+        this.measures = {}
+
+        this.functions = {
+            isInside: new SMFunctionIsInside(),
+            map: new SMFunctionMap()
+        }
+    }
+
+    addShape(aShape) {
+        let aSMShape = new SMShape(aShape)
+        Vue.set(this.shapes, aSMShape.id, aSMShape);
+        Vue.set(this.globalScope, aSMShape.id, aSMShape);
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: aShape.toJSON() })
+        }
+    }
+
+    addMeasure(aMeasure) {
+        Vue.set(this.measures, '$'+aMeasure.id, aMeasure);
+        Vue.set(this.globalScope, '$'+aMeasure.id, aMeasure);
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: aMeasure.from ,to: aMeasure.to} });
+        }
+    }
+
+    addFunction(aFunction) {
+        Vue.set(this.functions, aFunction.name, aFunction);
+        Vue.set(this.globalScope, aFunction.name, aFunction);
+
+        if (this.isServer) {
+            // globalStore.socket.emit('message-from-desktop', { type: "NEW_FUNCTION", message: aFunction });
+        }
     }
 
     insertNewState(stateDescription) {
-
         if (!stateDescription.id) {
+            if (!this.isServer) {
+                throw new 'we are creating new State ids outside the server'
+            }
             globalStore.stateCounter += 1
             stateDescription.id = ""+globalStore.stateCounter
         }
@@ -2269,7 +2385,7 @@ class StateMachine {
         }
 
         if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_NEW_STATE", message:  newState.toJSONString() });
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_STATE", message:  newState.toJSONString() });
         }
 
         return newState;
@@ -2277,6 +2393,9 @@ class StateMachine {
 
     insertNewTransition(transitionDescription) {
         if (!transitionDescription.id) {
+            if (!this.isServer) {
+                throw new 'we are creating new Transitions ids outside the server'
+            }
             globalStore.transitionCounter += 1
             transitionDescription.id = "" + globalStore.transitionCounter
         }
@@ -2286,7 +2405,7 @@ class StateMachine {
         this.transitions.push(newTransition);
 
         if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_NEW_TRANSITION", message:  newTransition.toJSONString() });
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_TRANSITION", message:  newTransition.toJSONString() });
         }
 
         return newTransition;
@@ -2315,6 +2434,9 @@ class StateMachine {
     processEvent(type, event) {
         var machine = this;
         var state = this.currentState;
+
+        let eventCopy = Object.assign({},event)
+        this.event = eventCopy;
 
         if (!state) {
             return false;

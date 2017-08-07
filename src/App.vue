@@ -108,7 +108,7 @@ export default {
 
     // this.prepareCanvas()
     var that = this;
-    window.addEventListener('keydown', function(e) {
+    window.addEventListener('keydownxxx', function(e) {
         // e.preventDefault()
         if (e.target.tagName == "INPUT") {
             //ignore

@@ -55,7 +55,6 @@ stateMachine.functions = {
     }.bind(stateMachine)
 }
 
-debugger;
 // let r1_initial_y_position
 // let r2_initial_y_position
 // let r1_initial_height
@@ -352,13 +351,13 @@ socket.on('message-from-server', function(data) {
             deleteRectangleVM(data.message.id)
             break;
         }
-        case "MACHINE_NEW_STATE": {
+        case "NEW_STATE": {
             let jsonStateData;
             eval(`jsonStateData = ${data.message}`);
             stateMachine.insertNewState(jsonStateData);
             break;
         }
-        case "MACHINE_NEW_TRANSITION": {
+        case "NEW_TRANSITION": {
             let jsonTransitionData;
             eval(`jsonTransitionData = ${data.message}`);
             stateMachine.insertNewTransition(jsonTransitionData)

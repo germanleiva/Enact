@@ -3,15 +3,20 @@
         <div class="column">
             <div class="columns">
                 <div class="column" style="height:200px;overflow: auto">
-                    <a v-for="i in [0]" class="button" style="width:100%">Object {{i}}</a>
+                    <div v-for="aShape in stateMachine.shapes" class="button objectClass" @mouseover="aShape.highlight = true" @mouseout="aShape.highlight = false">{{aShape.id}}</div>
+                    <br>
+                    <div v-for="aTouch in stateMachine.touches" class="button objectClass">{{aTouch.id}}</div>
+                    <br>
+                    <div v-for="aMeasure in stateMachine.measures" class="button objectClass">{{aMeasure.id}}</div>
                 </div>
                 <div class="column" style="height:200px;overflow: auto">
-                    <a v-for="i in [0]" class="button" style="width:100%">Function {{i}}</a>
+                    <a class="button is-primary" style="width:100%">New Function</a>
+                    <a v-for="aSMFunction in stateMachine.functions" class="button" style="width:100%" @click="selectedFunction = aSMFunction">{{aSMFunction.name}}</a>
                 </div>
             </div>
             <div ref="codeContainer" style="background-color: yellow">
-                <codemirror ref="codeMirror"
-                  :code="content"
+                <codemirror ref="codeMirror" v-if="selectedFunction != undefined"
+                  :code="selectedFunction.stringCode"
                   :options="editorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
@@ -21,7 +26,7 @@
         </div>
         <!-- <div class="columnVariables" style="background-color:green"></div> -->
         <div class="column" style="background-color:blue;">
-            <state-diagram v-if="stateMachine != undefined"
+            <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
                 style="height:200px"
@@ -48,6 +53,12 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore, globalBus, DiffModel, StateMachine} from '../store.js'
 import { codemirror, CodeMirror } from 'vue-codemirror'
+require('json-fn');
+
+require('codemirror/addon/hint/show-hint.js')
+require('codemirror/addon/hint/show-hint.css')
+require('codemirror/addon/hint/javascript-hint.js')
+
 import StateDiagram from './StateDiagram.vue'
 import TextMark from './TextMark.vue'
 
@@ -91,6 +102,45 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
+let orig = CodeMirror.hint.javascript;
+CodeMirror.hint.javascript = function(editor,options) {
+    var inner = orig(editor,options) || {from: cm.getCursor(), to: cm.getCursor(), list: []};
+
+// text: string
+//      The completion text. This is the only required property.
+// displayText: string
+//      The text that should be displayed in the menu.
+// className: string
+//      A CSS class name to apply to the completion's line in the menu.
+// render: fn(Element, self, data)
+//      A method used to create the DOM structure for showing the completion by appending it to its first argument.
+// hint: fn(CodeMirror, self, data)
+//      A method used to actually apply the completion, instead of the default behavior.
+// from: {line, ch}
+//      Optional from position that will be used by pick() instead of the global one passed with the full list of completions.
+// to: {line, ch}
+//      Optional to position that will be used by pick() instead of the global one passed with the full list of completions.
+
+    // for (let i of [1,2,3,4,5,6]) {
+    //     inner.list.push({text:`this.shapes['S${i}']`,displayText:`$S${i}`})
+    // }
+
+
+    // inner.list.push("$S1");
+    // inner.list.push("$S2");
+    // inner.list.push("$S3");
+    return inner;
+}
+
+globalStore.stateMachine = new StateMachine({isServer:true});
+
+let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
+let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
+idleState.isSelected = true;
+globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
+globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
+globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
+
 export default {
     name: 'code-area',
     data: function() {
@@ -104,15 +154,17 @@ export default {
                 line: true,
                 // keyMap: "sublime",
                 lineWrapping: true,
-                extraKeys: { "Ctrl": "autocomplete" },
+                extraKeys: { "Ctrl-Space": "autocomplete" },
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
                 styleSelectedText: true,
                 highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
                 // more codemirror config...
+                hintOptions: {
+                    globalScope: globalStore.stateMachine.globalScope
+                }
             },
-            stateMachine: undefined,
-            content: `var stateMachine = undefined;`
+            selectedFunction: undefined
         }
     },
     components: {
@@ -253,7 +305,23 @@ export default {
           console.log('the editor is focus!', editor)
         },
         onEditorCodeChange(newCode) {
-              this.content = newCode
+            // getLineTokens()
+
+            var regexObjects = /\$(\w{2,})/g;
+            var match;
+            while (match = regexObjects.exec(newCode)) {
+                let objectId = match[1];
+                let characterInCode = match.index;
+                // let foundShape = this.stateMachine.shapes.find((aShape) => aShape.id === id)
+                // if (foundShape) {
+                    console.log("WE SHOULD CREATE A TEXT MARKER?")
+                // }
+            }
+
+            if (this.selectedFunction) {
+                console.log("UPDATING CODE")
+                this.selectedFunction.code = newCode
+            }
         },
         onTransitionEditorCodeChange(newCode) {
             let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
@@ -287,19 +355,17 @@ export default {
         },
         currentlySelectedState() {
             return this.stateMachine.states.find(aState => aState.isSelected)
+        },
+        stateMachine() {
+            return globalStore.stateMachine;
+        },
+        codeForSelectedFunction() {
+            debugger;
+            return JSONfn(this.selectedFunction)
         }
     },
     mounted: function() {
-        let newStateMachine = new StateMachine({isServer:true})
-
-        let idleState = newStateMachine.insertNewState({name:'Idle'});
-        let movingState = newStateMachine.insertNewState({name:'Moving'});
-
-        newStateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
-        newStateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
-        newStateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
-
-        this.stateMachine = newStateMachine
+        this.onSelectedState(this.currentlySelectedState)
     }
 }
 </script>
@@ -314,6 +380,14 @@ export default {
     /*width: 70%;*/
     padding-top: 10px;
     height: 400px;
+}
+
+.objectClass {
+    min-width: 40px;
+    text-align: center;
+    margin-right: 2px;
+    margin-bottom: 2px !important;
+    padding: 4px !important;
 }
 
 </style>
