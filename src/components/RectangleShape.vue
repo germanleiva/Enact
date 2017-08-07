@@ -285,8 +285,8 @@ export default {
             }
 
             //Starting to move a shape
-            let currentWindowMousePositionX = e.pageX;
-            let currentWindowMousePositionY = e.pageY;
+            let currentWindowMousePositionX = e.pageX - document.body.scrollLeft;
+            let currentWindowMousePositionY = e.pageY - document.body.scrollTop;
             let offsetX = currentWindowMousePositionX - this.shapeModel.left;
             let offsetY = currentWindowMousePositionY - this.shapeModel.top;
 
