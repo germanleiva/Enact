@@ -6,54 +6,39 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent, StateMachine} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent, StateMachine, SMFunction} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
 
-let isInside = function(touch, shape) {
-    return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
-}
+var stateMachineHandler = {
+  get (target, key) {
+    let foundShape = mobileCanvasVM.interactiveShapes[key]
+    if (foundShape) {
+        return foundShape.shapeModel
+    }
 
-let stateMachine = new StateMachine({isServer:false})
-stateMachine.objects = {
-    shape1:function() {
-        return mobileCanvasVM.shapeFor("S1");
-    }.bind(stateMachine),
-    touch1: function() {
-        return event.touches[0];
-    }.bind(stateMachine)
-}
+    let foundFunction = target.functions.find((f) => f.name == key)
+    if (foundFunction) {
+        return foundFunction.func
+    }
 
-stateMachine.functions = {
-    isInside: function(touch, shape) {
-        return shape.left < touch.pageX && shape.top < touch.pageY && shape.left + shape.width > touch.pageX && shape.top + shape.height > touch.pageY;
-    }.bind(stateMachine),
-    recordDelta: function(event) {
-        var info = event.info;
-        info.delta = {
-            x: info.cur.x - info.prev.x,
-            y: info.cur.y - info.prev.y,
-            t: info.cur.t - info.prev.t
+    if (target.event) {
+        for (var i = 0; i < target.event.touches.length; i++) {
+            let aTouch = target.event.touches[i];
+            if (aTouch.id == key) {
+                return aTouch
+            }
         }
-    }.bind(stateMachine),
-    moveShape1: function(event) {
-        this.objects.shape1().color = '#00ff00'
-        this.functions.recordDelta(event);
-        // this.shape1().left += this.touch1(event).info.delta.x;
-        // this.shape1().top += this.touch1(event).info.delta.y;
-        this.objects.shape1().left += event.info.delta.x;
-        this.objects.shape1().top += event.info.delta.y;
-    }.bind(stateMachine),
-    changeColorShape1: function(event) {
-        this.objects.shape1().color = '#ff0000';
-    }.bind(stateMachine),
-    trueGuard: function(event) {
-        return true;
-    }.bind(stateMachine),
-    isTouch1InsideShape1: function(event) {
-        return this.functions.isInside(this.objects.touch1(event),this.objects.shape1());
-    }.bind(stateMachine)
+    }
+
+    return target[key]
+  }
 }
+
+var proxyStateMachine = new Proxy(new StateMachine({isServer:false}), stateMachineHandler)
+
+let stateMachine = proxyStateMachine
+window.stateMachine = proxyStateMachine
 
 // let r1_initial_y_position
 // let r2_initial_y_position
@@ -330,6 +315,18 @@ socket.on('message-from-server', function(data) {
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             createShapeVM(data.message.id, data.message)
+            break;
+        }
+        case "NEW_FUNCTION":{
+            // console.log("NEW_SHAPE: id: " + data.message.id +  " " + JSON.stringify(data.message));
+            // var parentDOM = document.getElementById("mobileCanvas")
+            // parentDOM.innerHTML = data.message;
+            let functionDescription = JSON.parse(data.message)
+            functionDescription.machine = stateMachine
+
+            let newFunction = new SMFunction(functionDescription);
+            stateMachine.addFunction(newFunction);
+
             break;
         }
         case "EDIT_SHAPE":{
@@ -767,7 +764,7 @@ socket.on('message-from-server', function(data) {
     to each event, holding the info record.
     **/
 
-    var touchId2Index = []; // maps a touch identifier to an index in touchInfo
+    var touchId2Index = {}; // maps a touch identifier to an index in touchInfo
     var touchInfo = [];     // stores touch information
     var numTouches = 0;     // number of non-null entries in touchInfo
     var firstIndex = -1;    // index of first non-null entry in touchInfo

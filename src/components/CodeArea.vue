@@ -10,14 +10,14 @@
                     <div v-for="aMeasure in stateMachine.measures" class="button objectClass">{{aMeasure.id}}</div>
                 </div>
                 <div class="column" style="height:200px;overflow: auto">
-                    <a class="button is-primary" style="width:100%">New Function</a>
-                    <a v-for="aSMFunction in stateMachine.functions" class="button" style="width:100%" @click="selectedFunction = aSMFunction">{{aSMFunction.name}}</a>
+                    <a class="button is-primary" style="width:100%" @click="createNewFunction()">New Function</a>
+                    <a v-for="aSMFunction in stateMachine.functions" class="button" :class="{'is-active':aSMFunction.isSelected}"style="width:100%" @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a>
                 </div>
             </div>
             <div ref="codeContainer" style="background-color: yellow">
                 <codemirror ref="codeMirror" v-if="selectedFunction != undefined"
                   :code="selectedFunction.stringCode"
-                  :options="editorOptions"
+                  :options="transitionEditorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
                   @change="onEditorCodeChange">
@@ -164,7 +164,25 @@ export default {
                     globalScope: globalStore.stateMachine.globalScope
                 }
             },
-            selectedFunction: undefined
+            transitionEditorOptions: {
+                // codemirror options
+                tabSize: 4,
+                mode: 'text/javascript',
+                // theme: 'default',
+                lineNumbers: true,
+                line: true,
+                // keyMap: "sublime",
+                lineWrapping: true,
+                extraKeys: { "Ctrl-Space": "autocomplete" },
+                foldGutter: true,
+                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
+                styleSelectedText: true,
+                highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
+                // more codemirror config...
+                hintOptions: {
+                    globalScope: globalStore.stateMachine.globalScope
+                }
+            },
         }
     },
     components: {
@@ -319,7 +337,6 @@ export default {
             }
 
             if (this.selectedFunction) {
-                console.log("UPDATING CODE")
                 this.selectedFunction.code = newCode
             }
         },
@@ -341,7 +358,17 @@ export default {
         onSelectedEdge(aLink) {
             this.$refs.transitionCodeMirror.editor.setValue(aLink.sourceCode)
 
+        },
+        createNewFunction(){
+            let newFunction = this.stateMachine.addNewFunction("unnamed")
+            this.toggleFunction(newFunction)
+        },
+        toggleFunction(aSMFunction) {
+            for (let eachFunction of this.stateMachine.functions) {
+                eachFunction.isSelected = eachFunction == aSMFunction
+            }
         }
+
     },
     computed: {
         // rulesPlaceholders: function() {
@@ -359,9 +386,8 @@ export default {
         stateMachine() {
             return globalStore.stateMachine;
         },
-        codeForSelectedFunction() {
-            debugger;
-            return JSONfn(this.selectedFunction)
+        selectedFunction() {
+            return this.stateMachine.functions.find((f) => f.isSelected)
         }
     },
     mounted: function() {
