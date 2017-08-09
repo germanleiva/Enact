@@ -118,7 +118,7 @@ export default {
         }
         function dragstarted() {
             let e = this.$d3.event
-            if (e.sourceEvent.shiftKey) {
+            if (e.sourceEvent.ctrlKey) {
                 this.startState = e.subject
                 // debugger;
                 this.dragLineEnd = {x:e.x ,y:e.y}
@@ -147,11 +147,7 @@ export default {
                 let endState = this.simulation.find(e.x, e.y,this.nodeRadius);
 
                 if (endState) {
-                    let newLink = {source: this.startState.id, target: endState.id, name: 'unnamed '+this.links.length, isSelected:false}
-                    this.links.push(newLink)
-
-                    //To force an update
-                    this.simulation.force("link").links(this.links)
+                    this.$emit("diagramNewLink",{source:this.startState,target:endState})
                 }
                 this.dragLineEnd = undefined
                 this.startState = undefined
@@ -258,12 +254,38 @@ export default {
             return "invis_" + aLink.source.id + "-" + aLink.name + "-" + aLink.target.id;
         },
         canvasDoubleClick(event) {
-            let newState = {id: `${this.nodes.length}`, name: 'new state', x:100, y:100};
-            this.nodes.push(newState);
-
-            //To force an update
-            this.simulation.nodes(this.nodes)
+            this.$emit('diagramNewNode')
         }
+        // addNewState(newState) {
+        //     // let newState = {id: `${this.nodes.length}`, name: 'new state', x:100, y:100};
+        //     newState.x = 100;
+        //     newState.y = 100;
+
+        //     this.nodes.push(newState);
+
+        //     //To force an update
+        //     this.simulation.nodes(this.nodes)
+        // }
+        // addNewTransition(newLink) {
+        //     // let newLink = {source: this.startState.id, target: endState.id, name: 'unnamed '+this.links.length, isSelected:false}
+        //     this.links.push(newLink)
+
+        //     //To force an update
+        //     this.simulation.force("link").links(this.links)
+        // }
+    },
+    watch: {
+        nodes: function() {
+            if (this.simulation) {
+                this.simulation.nodes(this.nodes);
+            }
+        },
+        links: function() {
+            if (this.simulation) {
+                this.simulation.force("link").links(this.links);
+            }
+        }
+
     }
 }
 

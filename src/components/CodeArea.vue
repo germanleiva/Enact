@@ -27,7 +27,9 @@
                 :links="stateMachine.transitions"
                 style="height:250px"
                 @selectedNode="onSelectedState"
-                @selectedLink="onSelectedEdge">
+                @selectedLink="onSelectedEdge"
+                @diagramNewNode="addNewState"
+                @diagramNewLink="addNewTransition">
             </state-diagram>
             <div style="background-color:rgba(255,100,0,50)">
                 <codemirror ref="transitionCodeMirror"
@@ -362,6 +364,12 @@ export default {
             for (let eachFunction of this.stateMachine.functions) {
                 eachFunction.isSelected = eachFunction == aSMFunction
             }
+        },
+        addNewState() {
+            this.stateMachine.insertNewState({name:'New State'});
+        },
+        addNewTransition({source,target}) {
+            this.stateMachine.insertNewTransition({name:'unnamed',source:source,target:target});
         }
 
     },
