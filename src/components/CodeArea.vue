@@ -1,19 +1,16 @@
 <template>
     <div id="codeArea" class="columns">
-        <div class="column">
-            <div class="columns">
-                <div class="column" style="height:200px;overflow: auto">
-                    <div v-for="aShape in stateMachine.shapes" class="button objectClass" @mouseover="aShape.highlight = true" @mouseout="aShape.highlight = false">{{aShape.id}}</div>
-                    <br>
-                    <div v-for="aTouch in stateMachine.touches" class="button objectClass">{{aTouch.id}}</div>
-                    <br>
-                    <div v-for="aMeasure in stateMachine.measures" class="button objectClass">{{aMeasure.id}}</div>
-                </div>
-                <div class="column" style="height:200px;overflow: auto">
-                    <a class="button is-primary" style="width:100%" @click="createNewFunction()">New Function</a>
-                    <a v-for="aSMFunction in stateMachine.functions" class="button" :class="{'is-active':aSMFunction.isSelected}"style="width:100%" @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a>
-                </div>
-            </div>
+        <div class="column is-2" >
+            <aside class="menu">
+                <p class="menu-label">Functions</p>
+                <ul class="menu-list" style="height:475px;overflow:scroll">
+                    <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
+                </ul>
+            </aside>
+            <a class="button" @click="createNewFunction()">New</a>
+            <a class="button" @click="">Delete</a>
+        </div>
+        <div class="column is-4">
             <div ref="codeContainer" style="background-color: yellow">
                 <codemirror ref="codeMirror" v-if="selectedFunction != undefined"
                   :code="selectedFunction.stringCode"
@@ -24,12 +21,11 @@
                 </codemirror>
             </div>
         </div>
-        <!-- <div class="columnVariables" style="background-color:green"></div> -->
-        <div class="column" style="background-color:blue;">
+        <div class="column">
             <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
-                style="height:200px"
+                style="height:250px"
                 @selectedNode="onSelectedState"
                 @selectedLink="onSelectedEdge">
             </state-diagram>
@@ -43,7 +39,6 @@
                 </codemirror>
             </div>
         </div>
-
     </div>
 </template>
 
@@ -397,6 +392,9 @@ export default {
 </script>
 
 <style>
+/*.CodeMirror {
+    height: 100% !important;
+}*/
 .codeArea {
 /*    width: 100%;
     background-color: #eeeeee;
@@ -405,15 +403,7 @@ export default {
     align-content:flex-start;*/
     /*width: 70%;*/
     padding-top: 10px;
-    height: 400px;
-}
-
-.objectClass {
-    min-width: 40px;
-    text-align: center;
-    margin-right: 2px;
-    margin-bottom: 2px !important;
-    padding: 4px !important;
+    height: 550px;
 }
 
 </style>

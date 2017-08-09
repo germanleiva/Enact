@@ -2464,7 +2464,7 @@ class StateMachine {
         newSMFunction.code = `function ${named}() {
   //Write your new function here
 }`
-        this.addFunction(aNewSMFunction)
+        this.addFunction(newSMFunction)
         return newSMFunction
     }
 
