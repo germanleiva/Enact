@@ -2342,8 +2342,8 @@ class SMFunctionIsInside extends SMFunction {
 class SMFunctionMap extends SMFunction {
     constructor({machine}) {
         super({machine,name:"map"});
-        this.code = `function map(input, output, inputOutputRatio=[1,1]) {
-  output.applyDelta(input,inputOutputRatio)
+        this.code = `function map({input, output, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, ratio = 1}) {
+  output.applyDelta(input,min,max,ratio)
 }`
     }
 }
