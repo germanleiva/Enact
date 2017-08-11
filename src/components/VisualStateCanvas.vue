@@ -142,7 +142,7 @@ export default {
                         eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handler
                     }
 
-                    this.globalStore.stateMachine.addMeasure(newMeasure)
+                    globalStore.stateMachine.addMeasure(newMeasure)
                 } else {
                     //delete measure?
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {

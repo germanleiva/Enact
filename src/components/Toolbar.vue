@@ -13,7 +13,6 @@
 
             <input type="color" title="Color Picker" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
             <a class="button is-alone" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
-            <a class="button is-alone" title="Add new Rule" v-on:click="addNewRule"><span class="icon is-small"><i class="fa fa-cubes"></i></span></a>
         </div>
     </div>
 </template>
@@ -22,7 +21,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,globalBus,VisualStateModel,RulePlaceholderModel} from '../store.js'
+import {globalStore,globalBus,VisualStateModel} from '../store.js'
 
 export default {
   name: 'toolbar',
@@ -79,14 +78,6 @@ export default {
             let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
             newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
 
-        },
-        addNewRule() {
-            globalStore.ruleCounter++;
-            var newRulePlaceholder = new RulePlaceholderModel(globalStore.ruleCounter)
-
-            globalStore.rulesPlaceholders.push(newRulePlaceholder);
-
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder })
         }
     },
     created: function() {

@@ -560,6 +560,70 @@ class VisualStateModel {
         this.showAllInputEvents = false
         this.timeoutForStopMovingSelectedShapes = undefined
     }
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return target.allObjectNames
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                let object = target.objectFor(key)
+                if (object) {
+                    return object.proxy
+                }
+                return target[key]
+            }
+        })
+    }
+
+    get name() {
+        return 'VS' + globalStore.visualStates.indexOf(this) + 1
+    }
+
+    get allObjectNames() {
+        let allObjectNames = []
+        for (let eachShapeKey in this.shapesDictionary) {
+            let shapeName = this.shapesDictionary[eachShapeKey].name
+            if (allObjectNames.indexOf(shapeName) < 0) {//Unnecessary?
+                allObjectNames.push(shapeName)
+            }
+        }
+        for (let eachMeasure of this.measures) {
+            if (allObjectNames.indexOf(eachMeasure.name) < 0) {//Unnecessary?
+                allObjectNames.push(eachMeasure.name)
+            }
+        }
+        if (this.currentInputEvent) {
+            for (let eachTouch of this.currentInputEvent.touches) {
+                if (allObjectNames.indexOf(eachTouch.name) < 0) {//Unnecessary?
+                    allObjectNames.push(eachTouch.name)
+                }
+            }
+        }
+        return allObjectNames
+    }
+
+    objectFor(name) {
+        let shape = this.shapeFor(name)
+        if (shape) {
+            return shape
+        }
+
+        let measure = this.measureFor(name)
+        if (measure) {
+            return measure
+        }
+
+        let touch = this.touchFor(name)
+        if (touch) {
+            return touch
+        }
+
+        return undefined
+    }
+
     get testShapes() {
         if (this.currentInputEvent) {
             return this.currentInputEvent.testShapes
@@ -991,6 +1055,20 @@ class ShapeModel {
         this.isSelected = false
         this.isResizing = false
         this.isMoving = false
+    }
+
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return ['pos','size','color']
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                return target[key]
+            }
+        })
     }
 
     static createShape(shapeType,shapeId,protoShape) {
@@ -1986,6 +2064,7 @@ class State {
         this.y = y || 0;
         this.enter = enter || function(e) { /* This function is executed when we enter this state */ };
         this.exit = exit || function(e) { /* This function is executed when we leave this state */ };
+        this.isReadyToServe = false
     }
 
     get actions() {
@@ -2125,6 +2204,8 @@ return true;
         this._action = action || function(e) {
 // When the transition is executed this action is performed
 };
+
+        this.isReadyToServe = false;
     }
 
     get functions() {
@@ -2233,73 +2314,40 @@ return true;
         }
         return result+"}"
     }
-    fromJSON(actualValues) {
-        for (let eachKey in actualValues) {
+    fromJSON(json) {
+        for (let eachKey in json) {
             if (eachKey == "id") {
                 if (this.id) {
                     //If I have an id I should not change it
                     continue;
                 }
             }
-            this[eachKey] = actualValues[eachKey]
-        }
-    }
-}
-
-class SMShape {
-    constructor(aShape) {
-        this.id = aShape.id
-    }
-    set highlight(aValue) {
-        for (let eachVS of globalStore.visualStates) {
-            let foundShape = eachVS.shapeFor(this.id)
-            if (foundShape) {
-                foundShape.highlight = aValue
-            }
-        }
-    }
-}
-
-class SMMeasure {
-    constructor(aMeasure) {
-        this.id = aMeasure.id
-    }
-    set highlight(aValue) {
-        for (let eachVS of globalStore.visualStates) {
-            let foundMeasure = eachVS.measureFor(this.id)
-            if (foundMeasure) {
-                foundMeasure.highlight = aValue
-            }
+            this[eachKey] = json[eachKey]
         }
     }
 }
 
 class SMFunction {
     constructor({machine,name,id,code}) {
-        this.id = id
-        this._name = name
-        this.func = undefined
-        this.machine = machine
-        this.isSelected = false
         if (!id) {
             id = globalStore.functionCounter
             globalStore.functionCounter += 1
         }
+
+        this.id = id
+        this.name = name
+        this.func = undefined //It is coupled with the code property
+        this.machine = machine
+        this.isSelected = false
+
         if (code) {
-            this.code = eval(code)
+            this.code = code
         }
-    }
-    set name(newName) {
-        if (this._name != newName) {
-            this._name = newName
-            this.machine.updateGlobalScope()
-        }
-    }
-    get name() {
-        return this._name;
+
+        this.isReadyToServe = false
     }
     get code() {
-        return JSONfn.stringify(this.func)
+        return eval(JSONfn.stringify(this.func))
     }
     set code(newCode) {
         try {
@@ -2308,14 +2356,14 @@ class SMFunction {
             if (nameRegexResult) {
                 this.name = nameRegexResult[1]
             }
+            if (this.isReadyToServe && this.machine.isServer) {
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_FUNCTION", message: this.toJSON() });
+            }
         } catch (e) {
             if (e instanceof SyntaxError) {
                 console.log("SyntaxError in SMFunction >> set code, ignoring until the code is fixed")
             }
         }
-    }
-    get stringCode() {
-        return eval(this.code)
     }
 
     toJSON() {
@@ -2324,6 +2372,12 @@ class SMFunction {
             result[key] = this[key]
         }
         return JSON.stringify(result)
+    }
+
+    fromJSON(json) {
+        for (let key in json) {
+            this[key] = json[key]
+        }
     }
 }
 
@@ -2342,7 +2396,11 @@ class SMFunctionIsInside extends SMFunction {
 class SMFunctionMap extends SMFunction {
     constructor({machine}) {
         super({machine,name:"map"});
-        this.code = `function map({input, output, min = Number.NEGATIVE_INFINITY, max = Number.POSITIVE_INFINITY, ratio = 1}) {
+        this.code = `function map({input,
+              output,
+              min = Number.NEGATIVE_INFINITY,
+              max = Number.POSITIVE_INFINITY,
+              ratio = 1}) {
   output.applyDelta(input,min,max,ratio)
 }`
     }
@@ -2408,11 +2466,56 @@ class StateMachine {
         this.shapes = []
         this.measures = []
         this.touches = []
+        // this.hardcodedValues = {}
 
         this.functions = []
-        this.globalScope = {}
 
-        this.updateGlobalScope();
+        let self = this;
+        this.globalScope = new Proxy({}, {
+            ownKeys(target) {
+                let allKeys = []
+
+                for (let eachArray of [globalStore.visualStates,self.shapes,self.measures,self.touches]) {
+                    for (let eachObject of eachArray) {
+                        if (allKeys.indexOf(eachObject.name) < 0) {
+                            allKeys.push(eachObject.name)
+                        }
+                    }
+                }
+
+                return allKeys
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get (target, key) {
+                let vs = globalStore.visualStates.find((vs) => vs.name == key)
+                if (vs) {
+                    return vs.proxy;
+                }
+
+                let foundShape = self.shapes.find((s) => s.name == key)
+                if (foundShape) {
+                    return foundShape.proxy
+                }
+
+                let foundFunction = self.functions.find((f) => f.name == key)
+                if (foundFunction) {
+                    return foundFunction.func
+                }
+
+                // if (target.event) {
+                //     for (var i = 0; i < target.event.touches.length; i++) {
+                //         let aTouch = target.event.touches[i];
+                //         if (aTouch.id == key) {
+                //             return aTouch
+                //         }
+                //     }
+                // }
+
+                return target[key]
+            }
+        });
 
         if (this.isServer) {
             for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this}),new SMFunctionRecordDelta({machine:this}), new SMFunctionMoveShape1({machine:this}), new SMFunctionChangeColorShape1({machine:this}), new SMFunctionIsTouch1InsideShape1({machine:this})]) {
@@ -2422,28 +2525,8 @@ class StateMachine {
         }
     }
 
-    updateGlobalScope() {
-        for (let eachKey in this.globalScope) {
-            Vue.delete(this.globalScope,eachKey)
-        }
-
-        for (let eachArray of [this.shapes,this.measures,this.touches,this.functions]) {
-            for (let eachObject of eachArray) {
-                let key
-                if (eachArray === this.functions) {
-                    key = eachObject.name
-                } else {
-                    key = eachObject.id
-                }
-                Vue.set(this.globalScope,key,eachObject)
-            }
-        }
-    }
-
     addShape(aShape) {
-        let aSMShape = new SMShape(aShape)
-        this.shapes.push(aSMShape);
-        this.updateGlobalScope();
+        this.shapes.push(aShape);
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: aShape.toJSON() })
@@ -2452,7 +2535,6 @@ class StateMachine {
 
     addMeasure(aMeasure) {
         this.measures.push(aMeasure);
-        this.updateGlobalScope();
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: aMeasure.from ,to: aMeasure.to} });
@@ -2470,10 +2552,19 @@ class StateMachine {
 
     addFunction(aFunction) {
         this.functions.push(aFunction);
-        this.updateGlobalScope();
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_FUNCTION", message: aFunction.toJSON() });
+            aFunction.isReadyToServe = true;
+        }
+    }
+
+    updateFunction(aFunctionJSON) {
+        let foundFunction = this.functions.find((f) => f.id == aFunctionJSON.id)
+        if (foundFunction) {
+           foundFunction.fromJSON(aFunctionJSON)
+        } else {
+            console.log("Couldn't find function to update with id: " + aFunctionJSON.id)
         }
     }
 
@@ -2498,6 +2589,7 @@ class StateMachine {
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_STATE", message:  newState.toJSONString() });
+            newState.isReadyToServe = true;
         }
 
         return newState;
@@ -2518,6 +2610,7 @@ class StateMachine {
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_TRANSITION", message:  newTransition.toJSONString() });
+            newTransition.isReadyToServe = true;
         }
 
         return newTransition;
@@ -2539,8 +2632,10 @@ class StateMachine {
         //type could be STATE or TRANSITION
 
         // let message = {id:object.id,propertyName:propertyName,value:object[propertyName]}
-        let message = object.toJSONString(["id",propertyName])
-        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_CHANGED_"+type, message: message });
+        if (object.isReadyToServe) {
+            let message = object.toJSONString(["id",propertyName])
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_CHANGED_"+type, message: message });
+        }
     }
 
     processEvent(type, event) {

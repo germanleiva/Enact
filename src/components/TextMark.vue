@@ -1,5 +1,5 @@
 <template>
-    <span v-on:mouseover="mouseOver" v-on:mouseout="mouseOut">{{codeToShow}}</span>
+    <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}</span>
 </template>
 
 <script>
@@ -10,7 +10,7 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'text-mark',
-    props: ['textMarkerModel','visualState','object','propertyName'],
+    props: ['textMarkerModel','visualStateId','objectId','propertyName','extraPropertyName'],
     data: function() {
         return {}
     },
@@ -25,23 +25,47 @@ export default {
             return this.markedSpan.to
         },
         codeToShow() {
-            return `${this.object.id}.${this.propertyName}`
+            if (this.visualStateId) {
+                //Hardcoded value
+                let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
+                let object = parentVisualState.objectFor(this.objectId)
+                if (object) {
+                    if (this.propertyName) {
+                        if (this.extraPropertyName) {
+                            return `${object.valueForProperty(this.propertyName)[this.extraPropertyName]}`
+                        }
+                        return `${JSON.stringify(object.valueForProperty(this.propertyName))}`
+                    }
+                    return `$.${this.visualStateId}.${this.objectId}`
+                }
+            }
+            if (this.propertyName) {
+                if (this.extraPropertyName) {
+                    return `$.${this.objectId}.${this.propertyName}.${this.extraPropertyName}`
+                }
+                return `$.${this.objectId}.${this.propertyName}`
+            }
+            return `$.${this.objectId}`
         }
     },
     methods: {
         mouseOver: function(e) {
             e.preventDefault()
             e.stopPropagation();
-            this.object.highlight = true
+            // this.object.highlight = true
         },
         mouseOut: function(e) {
             e.preventDefault()
             e.stopPropagation();
-            this.object.highlight = false
+            // this.object.highlight = false
+        },
+        doubleClick: function(e) {
+            this.textMarkerModel.clear()
         }
     },
     destroyed: function(){
         console.log("TextMark destroyed")
+        this.textMarkerModel.clear();
     }
 }
 </script>

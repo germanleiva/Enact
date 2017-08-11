@@ -11,9 +11,9 @@
             <a class="button" @click="">Delete</a>
         </div>
         <div class="column is-4">
-            <div ref="codeContainer" style="background-color: yellow">
-                <codemirror ref="codeMirror" v-if="selectedFunction != undefined"
-                  :code="selectedFunction.stringCode"
+            <div style="background-color: yellow">
+                <codemirror ref="codeContainer" v-if="selectedFunction != undefined"
+                  :code="selectedFunction.code"
                   :options="transitionEditorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
@@ -63,11 +63,11 @@ let ContextMenu = Vue.extend({
     template: `<div :style="styleObject">
     <p class="menu-label">
         Select property
-      </p>
-      <ul class="menu-list">
+    </p>
+    <ul class="menu-list">
         <li v-for="eachProperty in properties"><a v-on:click="clickedOn(eachProperty)">{{eachProperty}}</a><li>
-      </ul>
-      </div>`,
+    </ul>
+</div>`,
       data: function() {
         return {
             startingX: 0,
@@ -158,7 +158,7 @@ export default {
                 highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
                 // more codemirror config...
                 hintOptions: {
-                    globalScope: globalStore.stateMachine.globalScope
+                    globalScope: {$:globalStore.stateMachine.globalScope},
                 }
             },
             transitionEditorOptions: {
@@ -177,9 +177,10 @@ export default {
                 highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
                 // more codemirror config...
                 hintOptions: {
-                    globalScope: globalStore.stateMachine.globalScope
+                    globalScope: {$:globalStore.stateMachine.globalScope},
                 }
             },
+            textMarkers: [],
         }
     },
     components: {
@@ -187,6 +188,12 @@ export default {
         StateDiagram
     },
     methods: {
+        deleteAllTextMarkers() {
+            for (let eachTextMarker of Array.from(this.textMarkers)) {
+                eachTextMarker.$el.remove()
+                eachTextMarker.$destroy()
+            }
+        },
         setEditorCursorAt(editor,event) {
             let newCoordinates = editor.coordsChar({left:event.pageX,top:event.pageY})
             editor.focus()
@@ -199,53 +206,51 @@ export default {
 
                 let newCoordinates = this.setEditorCursorAt(editor,event)
 
-                let newContextMenu = new ContextMenu()
-                newContextMenu.startingX = event.pageX;
-                newContextMenu.startingY = event.pageY;
-
-                newContextMenu.onSelectedProperty = (propertyName,axis) => {
-                    // for (let eachAxis of axis) {
-                    //     value[eachAxis] = object[property].value[eachAxis]
-                    // }
-                    // this[ruleSectionToFill] = value
-
-                    // aRuleSide[axisName].loadElement(maxOrMin,object,propertyName)
-                    // newContextMenu.$el.remove()
-                    // newContextMenu.$destroy()
-                    console.log("SELECTED PROPERTY: " + propertyName)
-                    // editor.focus()
-                    // editor.doc.setCursor(newCoordinates)
-                    editor.doc.replaceSelection(`{${propertyName}:${JSON.stringify(object[propertyName])}}`)
-
-                    let from = newCoordinates
-                    let to = editor.doc.getCursor("to")
-
-                    var markSpan = document.createElement('span')
-                    // markSpan.className = "locura";
-                    // markSpan.innerHTML = "CHAN";
-                    let newTextMarkerModel = editor.doc.markText(from, to, {replacedWith: markSpan});
-
-                    // create component constructor
-                    const TextMarkConstructor = Vue.extend(TextMark);
-                    var child = new TextMarkConstructor({
-                        el: markSpan, // define the el of component
-                        parent: this, // define parent of component
-                        propsData: {
-                            textMarkerModel: newTextMarkerModel,
-                            visualState: visualState,
-                            object: object,
-                            propertyName: propertyName
-                        }
-                    }).$mount();
-
-                    // this.content = editor.getValue()
-                    // debugger;
+                let codeToInsert
+                if (event.shiftKey) {
+                    codeToInsert = `$.${visualState.name}.${object.name}`
+                } else {
+                    codeToInsert = `$.${object.name}`
                 }
 
-                newContextMenu.$mount()
-                window.document.body.appendChild(newContextMenu.$el)
+                editor.doc.replaceSelection(codeToInsert)
 
-                editor.focus()
+                // let newContextMenu = new ContextMenu()
+                // newContextMenu.startingX = event.pageX;
+                // newContextMenu.startingY = event.pageY;
+                // newContextMenu.$mount()
+                // window.document.body.appendChild(newContextMenu.$el)
+
+                // newContextMenu.onSelectedProperty = (propertyName,axis) => {
+                //     console.log("SELECTED PROPERTY: " + propertyName)
+                //     // editor.focus()
+                //     // editor.doc.setCursor(newCoordinates)
+                //     editor.doc.replaceSelection(`{${propertyName}:${JSON.stringify(object[propertyName])}}`)
+
+                //     let from = newCoordinates
+                //     let to = editor.doc.getCursor("to")
+
+                //     var markSpan = document.createElement('span')
+                //     // markSpan.className = "locura";
+                //     // markSpan.innerHTML = "CHAN";
+                //     let newTextMarkerModel = editor.doc.markText(from, to, {replacedWith: markSpan});
+
+                //     // create component constructor
+                //     const TextMarkConstructor = Vue.extend(TextMark);
+                //     var child = new TextMarkConstructor({
+                //         el: markSpan, // define the el of component
+                //         parent: this, // define parent of component
+                //         propsData: {
+                //             textMarkerModel: newTextMarkerModel,
+                //             visualState: visualState,
+                //             object: object,
+                //             propertyName: propertyName
+                //         }
+                //     }).$mount();
+
+                //     // this.content = editor.getValue()
+                //     // debugger;
+                // }
             }
         },
         dragOverOnCode(editor,event) {
@@ -318,19 +323,67 @@ export default {
         },
         onEditorFocus(editor) {
           console.log('the editor is focus!', editor)
+          if (editor == this.$refs.transitionCodeMirror.editor) {
+            let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
+            if (currentlySelectedItem) {
+                // editor.options.hintOptions.globalScope = {"this":{arriba:'up',pepe:3}}
+            }
+          }
         },
         onEditorCodeChange(newCode) {
-            // getLineTokens()
+            this.deleteAllTextMarkers();
 
-            var regexObjects = /\$(\w{2,})/g;
+            let allVSNames = globalStore.visualStates.map((vs) => vs.name).join("|")
+            let allObjects = "S1|S2|S3|T1|T2|D1|D2"
+            let allProperties = "position|size|color|force|angularRotation"
+            let allExtraProperties = "x|y|width|height"
+            const validExtraProperties = {'position':['x','y'],'size':['width','height']}
+
+            var regex = new RegExp(`\\$(?:\\.(${allVSNames}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(${allExtraProperties}))?`, "g");
+
             var match;
-            while (match = regexObjects.exec(newCode)) {
-                let objectId = match[1];
-                let characterInCode = match.index;
-                // let foundShape = this.stateMachine.shapes.find((aShape) => aShape.id === id)
-                // if (foundShape) {
-                    console.log("WE SHOULD CREATE A TEXT MARKER?")
-                // }
+
+            let linesOfCode = newCode.split('\n');
+            for (let lineNumber=0;lineNumber<linesOfCode.length;lineNumber++) {
+                let code = linesOfCode[lineNumber];
+
+                while (match = regex.exec(code)) {
+                    let visualStateId = match[1];
+                    let objectId = match[2];
+                    let propertyName = match[3];
+                    let extraPropertyName = match[4];
+
+                    if (!objectId || (extraPropertyName && validExtraProperties[propertyName].indexOf(extraPropertyName) < 0)) {
+                        debugger;
+                        continue;
+                    }
+                    let matchStartingCh = match.index;
+                    // let foundShape = this.stateMachine.shapes.find((aShape) => aShape.id === id)
+                    // if (foundShape) {
+                        let from = {line:lineNumber,ch:matchStartingCh}
+                        let to = {line:lineNumber,ch:matchStartingCh + match[0].length}
+
+                        var markSpan = document.createElement('span')
+                        // markSpan.className = "locura";
+                        // markSpan.innerHTML = "CHAN";
+                        let newTextMarkerModel = this.codeEditor.doc.markText(from, to, {replacedWith: markSpan,atomic:false});
+
+                        // create component constructor
+                        const TextMarkConstructor = Vue.extend(TextMark);
+                        var textMarkComponent = new TextMarkConstructor({
+                            el: markSpan, // define the el of component
+                            parent: this, // define parent of component
+                            propsData: {
+                                textMarkerModel: newTextMarkerModel,
+                                visualStateId: visualStateId,
+                                objectId: objectId,
+                                propertyName: propertyName,
+                                extraPropertyName: extraPropertyName
+                            }
+                        }).$mount();
+                    // }
+                    this.textMarkers.push(textMarkComponent)
+                }
             }
 
             if (this.selectedFunction) {
@@ -341,14 +394,6 @@ export default {
             let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
             currentlySelectedItem.sourceCode = newCode
         },
-        // addNewRule() {
-        //     globalStore.ruleCounter++;
-        //     var newRulePlaceholder = new RulePlaceholderModel(globalStore.ruleCounter)
-
-        //     globalStore.rulesPlaceholders.push(newRulePlaceholder);
-
-        //     globalStore.socket.emit('message-from-desktop', { type: "NEW_RULE", message: newRulePlaceholder.toJSON() })
-        // }
         onSelectedState(aNode) {
             this.$refs.transitionCodeMirror.editor.setValue(aNode.sourceCode)
         },
@@ -374,9 +419,6 @@ export default {
 
     },
     computed: {
-        // rulesPlaceholders: function() {
-        //     return globalStore.rulesPlaceholders
-        // }
         codeEditor() {
           return this.$refs.codeContainer.editor
         },

@@ -6,97 +6,14 @@ import CSSJSON from 'cssjson'
 
 require('./mobile.css')
 
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, RuleModel, ShapeInput, MeasureInput, TouchInput, ShapeOutputRule, InputEvent, StateMachine, SMFunction} from './store.js'
+import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
-
-var stateMachineHandler = {
-  get (target, key) {
-    let foundShape = mobileCanvasVM.interactiveShapes[key]
-    if (foundShape) {
-        return foundShape.shapeModel
-    }
-
-    let foundFunction = target.functions.find((f) => f.name == key)
-    if (foundFunction) {
-        return foundFunction.func
-    }
-
-    if (target.event) {
-        for (var i = 0; i < target.event.touches.length; i++) {
-            let aTouch = target.event.touches[i];
-            if (aTouch.id == key) {
-                return aTouch
-            }
-        }
-    }
-
-    return target[key]
-  }
-}
-
-var proxyStateMachine = new Proxy(new StateMachine({isServer:false}), stateMachineHandler)
-
-let stateMachine = proxyStateMachine
-window.stateMachine = proxyStateMachine
-
-// let r1_initial_y_position
-// let r2_initial_y_position
-// let r1_initial_height
-
-// let exampleRule1 = new RuleModel(1,
-//     {type:'touch',id:0,property:'translation',axiss:['y']},
-//     // new TouchInput(0, 'translation', ['y'], isInside),
-//     undefined,
-//     {vsId: '0', shapeId:'shape0',property:'bottom'}, //inputMax
-//     { id: 'shape0', property: 'translation', axis: ['y'] },
-//     undefined,
-//     {vsId: '0', shapeId:'shape0',property:'top'}//outputMax
-// )
-
-// let exampleRule2 = new RuleModel(2,
-//     {type:'touch',id:1,property:'translation',axiss:['y']},
-//     // new TouchInput(1, 'translation', ['y'], isInside),,
-//     {vsId: '0', shapeId:'shape1',property:'top'}, //inputMin
-//     undefined,
-//     { id: 'shape1', property: 'translation', axis: ['y'] },
-//     {vsId: '0', shapeId:'shape1',property:'top'}, //outputMin
-//     undefined
-// )
-// let exampleRule3 = new RuleModel(3,
-//     {type:'distance',fromType:'shape', fromId:'shape0',fromHandler:'southEast',toType:'shape',toId:'shape1',toHandler:'northEast',axiss:['y']},
-//     undefined,
-//     undefined,
-//     { id: 'shape2', property: 'scaling', axis: ['y'] },
-//     undefined,
-//     {vsId: '0', shapeId:'shape0',property:'height'} //outputMax
-// )
-// let exampleRule4 = new RuleModel(4,
-//     {type:'point', fromType: 'distance', fromId:'distance0',fromHandler:'center',toType:'distance', toId:'distance0',toHandler:'center',axiss:['y']},
-//     // new MeasureInput(function(newEvent){
-//     //     let r1 = interactiveShapes['shape0'];
-//     //     let r2 = interactiveShapes['shape1'];
-//     //     let r3 = interactiveShapes['shape2']
-//     //     let previousValue = {x: r3.centerX, y: r3.centerY};
-//     //     let r1bottom = r1.top + r1.height
-//     //     let newValue = {x: r3.centerX, y: r1bottom + (r2.top - r1bottom) / 2}
-//     //     // console.log("Calculating measure center r3: " + JSON.stringify(previousValue) + " " + JSON.stringify(newValue))
-//     //     return {previousValue,newValue}
-//     // },['y']),
-//     undefined,
-//     undefined,
-//     { id: 'shape2', property: 'center', axis: ['y'] }
-// )
-
-// let rules = [exampleRule1, exampleRule2, exampleRule3, exampleRule4]
 
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
     data: {
-        isRecording: false,
-        activeRules: [],
-        rules: {},
-        interactiveShapes: {},
+        isRecording: false,        interactiveShapes: {},
         measures: []
     },
     computed: {
@@ -120,6 +37,46 @@ let mobileCanvasVM = new Vue({
         }
     }
 })
+
+var stateMachineHandler = {
+  ownKeys(target) {
+    return ['peras','bananas']
+  },
+  get (target, key) {
+    console.log("stateMachineHandler >> get")
+    if (key in target) {
+        return target[key]
+    }
+
+    let foundShape = mobileCanvasVM.interactiveShapes[key]
+    if (foundShape) {
+        return foundShape.shapeModel
+    }
+
+    let foundFunction = target.functions.find((f) => f.name == key)
+    if (foundFunction) {
+        return foundFunction.func
+    }
+
+    if (target.event) {
+        for (var i = 0; i < target.event.touches.length; i++) {
+            let aTouch = target.event.touches[i];
+            if (aTouch.id == key) {
+                return aTouch
+            }
+        }
+    }
+
+    return target[key] //Just to send the typical error
+  }
+}
+
+var proxyStateMachine = new Proxy(new StateMachine({isServer:false}), stateMachineHandler)
+
+let stateMachine = proxyStateMachine
+window.stateMachine = proxyStateMachine //For debugging in the developer tools
+
+var $ = stateMachine.globalScope
 
 let RectangleVM = Vue.extend({
     template: `<div :id="id" class="shape" v-bind:style="styleObject"></div>`,
@@ -294,7 +251,6 @@ socket.on('message-from-server', function(data) {
                 deleteRectangleVM(shapeId)
             }
 
-            mobileCanvasVM.rules = {}
             break;
         }
         case "START_RECORDING":{
@@ -318,14 +274,18 @@ socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_FUNCTION":{
-            // console.log("NEW_SHAPE: id: " + data.message.id +  " " + JSON.stringify(data.message));
-            // var parentDOM = document.getElementById("mobileCanvas")
-            // parentDOM.innerHTML = data.message;
             let functionDescription = JSON.parse(data.message)
             functionDescription.machine = stateMachine
 
             let newFunction = new SMFunction(functionDescription);
             stateMachine.addFunction(newFunction);
+
+            break;
+        }
+        case "EDIT_FUNCTION":{
+            let functionDescription = JSON.parse(data.message)
+            console.log(functionDescription)
+            stateMachine.updateFunction(functionDescription)
 
             break;
         }
@@ -367,7 +327,12 @@ socket.on('message-from-server', function(data) {
                 eval("changedStateData = "+data.message);
 
                 let state = stateMachine.findStateId(changedStateData.id)
-                state.fromJSON(changedStateData)
+                if (state) {
+                   state.fromJSON(changedStateData)
+                } else {
+                    //The updates notification are in the setters of the State so we receive them from the constructor of the State
+                    console.log("A state that I don't have changed. Shouldn't be a big problem...")
+                }
             } catch (e) {
                 if (e instanceof SyntaxError) {
                     console.log("SyntaxError in MACHINE_CHANGED_STATE" + e)
@@ -394,110 +359,6 @@ socket.on('message-from-server', function(data) {
                 }
                 console.log(data.message)
             }
-            break;
-        }
-        case "NEW_RULE":{
-            // console.log("NEW_RULE => " + JSON.stringify(data.message))
-            let newRule = new RuleModel(data.message.id)
-            // Vue.set(object, key, value)
-            Vue.set(mobileCanvasVM.rules,data.message.id,newRule)
-
-            break;
-        }
-        case "EDIT_RULE":{
-            console.log("EDIT_RULE => " + JSON.stringify(data.message))
-        // data.message = {"id":1,"input":{"type":"touch","id":0,"property":"translation","axiss":["x","y"],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}},"output":{"type":"shape","axiss":[],"min":{"x":5e-324,"y":5e-324},"max":{"x":1.7976931348623157e+308,"y":1.7976931348623157e+308}
-            let receivedRule = data.message;
-            let editedRule = mobileCanvasVM.rules[receivedRule.id]
-            editedRule.factor.x = data.message.factor.x
-            editedRule.factor.y = data.message.factor.y
-
-            if (editedRule) {
-                switch (receivedRule.input.type) {
-                    case 'touch':{
-                        let isTouchInputInstance = editedRule.input instanceof TouchInput
-                        if (editedRule.input == undefined || !isTouchInputInstance) {
-                            editedRule.input = new TouchInput(receivedRule.input.id,receivedRule.input.property,receivedRule.input.axiss)
-                        }
-                        editedRule.input.touchId = receivedRule.input.id.slice(1,receivedRule.input.id.length) //TODO this removes the first character F of the id
-                        editedRule.input.property = receivedRule.input.property
-                        editedRule.input.axis = receivedRule.input.axiss
-
-                        editedRule.input.minX = receivedRule.input.min.x
-                        editedRule.input.minY = receivedRule.input.min.y
-
-                        editedRule.input.maxX = receivedRule.input.max.x
-                        editedRule.input.maxY = receivedRule.input.max.y
-                        break;
-                    }
-                    case 'measure':{
-                        let isMeasureInputInstance = editedRule.input instanceof MeasureInput
-                        if (editedRule.input == undefined || !isMeasureInputInstance) {
-                            editedRule.input = new MeasureInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
-                        }
-                        editedRule.input.measureObject = mobileCanvasVM.measures.find(aMeasure => aMeasure.id == receivedRule.input.id)
-                        editedRule.input.property = receivedRule.input.property
-                        editedRule.input.axis = receivedRule.input.axiss
-
-                        editedRule.input.minX = receivedRule.input.min.x
-                        editedRule.input.minY = receivedRule.input.min.y
-
-                        editedRule.input.maxX = receivedRule.input.max.x
-                        editedRule.input.maxY = receivedRule.input.max.y
-
-                        break;
-                    }
-                    case 'shape':{
-                        let isShapeInputInstance = editedRule.input instanceof ShapeInput
-                        if (editedRule.input == undefined || !isShapeInputInstance) {
-                            editedRule.input = new ShapeInput(undefined,receivedRule.input.property,receivedRule.input.axiss)
-                        }
-                        editedRule.input.shapeObject = mobileCanvasVM.shapeFor(receivedRule.input.id)
-                        editedRule.input.property = receivedRule.input.property
-                        editedRule.input.axis = receivedRule.input.axiss
-
-                        editedRule.input.minX = receivedRule.input.min.x
-                        editedRule.input.minY = receivedRule.input.min.y
-
-                        editedRule.input.maxX = receivedRule.input.max.x
-                        editedRule.input.maxY = receivedRule.input.max.y
-
-                        break;
-                    }
-                    default:{
-                        console.log("EDIT_RULE >> unrecognized input type: " + receivedRule.input.type)
-                    }
-                }
-                for (let i=0; i<receivedRule.outputs.length;i++) {
-                    let eachOutputRule = receivedRule.outputs[i];
-                    let correspondingOutputRule = editedRule.outputs[i]
-
-                    switch (eachOutputRule.type) {
-                        case 'shape':{
-                            if (!correspondingOutputRule) {
-                                correspondingOutputRule = new ShapeOutputRule(eachOutputRule.id,eachOutputRule.property,eachOutputRule.axiss)
-                                editedRule.outputs.push(correspondingOutputRule)
-                            }
-                            correspondingOutputRule.id = eachOutputRule.id
-                            correspondingOutputRule.property = eachOutputRule.property
-                            correspondingOutputRule.axis = eachOutputRule.axiss
-
-                            correspondingOutputRule.minX = eachOutputRule.min.x
-                            correspondingOutputRule.minY = eachOutputRule.min.y
-
-                            correspondingOutputRule.maxX = eachOutputRule.max.x
-                            correspondingOutputRule.maxY = eachOutputRule.max.y
-                            break;
-                        }
-                        default:{
-                            console.log("EDIT_RULE >> unrecognized output type: "+eachOutputRule.type)
-                        }
-                    }
-                }
-            } else {
-                console.log("WERID, editing a rule that we don't have")
-            }
-
             break;
         }
         case "TEST_EVENTS": {
@@ -772,13 +633,13 @@ socket.on('message-from-server', function(data) {
     // Find the first available slot in touchInfo, initialize the info record
     // and add it to the event
     function recordTouchStart(event, touch) {
-        console.log("-- recordTouchStart id "+touch.identifier);
+        // console.log("-- recordTouchStart id "+touch.identifier);
         var index = 0;
         firstIndex = 0;
         numTouches++;
         while (touchInfo[index])
             index++;
-        console.log("-- index="+index);
+        // console.log("-- index="+index);
 
         touchId2Index[touch.identifier] = index;
         event.info = touchInfo[index] = {
@@ -788,17 +649,17 @@ socket.on('message-from-server', function(data) {
             prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
             cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
         };
-        console.log("-- done");
+        // console.log("-- done");
     };
 
     // Update the info record and add it to the event
     function recordTouchMove(event, touch) {
-        console.log("-- recordTouchMove id "+touch.identifier);
-        console.log("-- index="+touchId2Index[touch.identifier]);
+        // console.log("-- recordTouchMove id "+touch.identifier);
+        // console.log("-- index="+touchId2Index[touch.identifier]);
         event.info = touchInfo[touchId2Index[touch.identifier]];
         event.info.prev = event.info.cur;
         event.info.cur = {x: touch.pageX, y: touch.pageY, t: event.timeStamp};
-        console.log("-- done");
+        // console.log("-- done");
     }
 
     // Add the info record to the event
@@ -808,7 +669,7 @@ socket.on('message-from-server', function(data) {
 
     // Remove the info record corresponding to a touch that is now gone
     function clearTouch(event, touch) {
-        console.log("-- clearTouch id "+touch.identifier);
+        // console.log("-- clearTouch id "+touch.identifier);
         var index = touchId2Index[touch.identifier];
         delete touchInfo[index];
         delete touchId2Index[touch.identifier];
@@ -821,7 +682,7 @@ socket.on('message-from-server', function(data) {
             while (!touchInfo[firstIndex])
                 firstIndex++;
         }
-        console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
+        // console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
     }
 
     // A touch event contains one or more touches that have changed.
@@ -829,28 +690,26 @@ socket.on('message-from-server', function(data) {
     // This function calls the bookkeeping functions above for each changed touches of a give event
     // and then passes the modified event to the state machine.
     function processEvent(machine, type, event, preFn, postFn) {
-        console.log(">> processEvent " + type + " - " + event.touches.length + " touches, "
-                + event.changedTouches.length + " changed touches");
+        // console.log(">> processEvent " + type + " - " + event.touches.length + " touches, " + event.changedTouches.length + " changed touches");
         event.preventDefault(); // avoid event bubbling
         // process each change
         for (var i = 0; i < event.changedTouches.length; i++) {
-            console.log("  process touch #"+i);
+            // console.log("  process touch #"+i);
             // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
             let touchBeingProcessed = event.changedTouches[i];
-            console.log("  preFn ");
+            // console.log("  preFn ");
             if (preFn){
                 // preFn(event, event.touch); // adds / modifies event.info
                 preFn(event, touchBeingProcessed); // adds / modifies event.info
             }
-            console.log("  machine.processEvent");
+
             machine.processEvent(type, event);
-            console.log("  postFn");
+
             if (postFn) {
                 // postFn(event, event.touch);
                 postFn(event, touchBeingProcessed);
             }
         }
-        console.log("<<done processEvent");
     }
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
@@ -915,19 +774,11 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
 
         sendEvent(event);
     } else {
-        // console.log("We are starting interacting")
+        console.log(`==> touchstart EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
         //hack
         mobileCanvasVM.currentInputEvent = new InputEvent(event)
 
-        //Deleted to add state machines
-        // for (let aRuleKey in mobileCanvasVM.rules) {
-        //     //Does the event has a rule that control that touch?
-        //     let aRule = mobileCanvasVM.rules[aRuleKey];
-        //     if (aRule.activate(event, mobileCanvasVM.interactiveShapes)) {
-        //         mobileCanvasVM.activeRules.push(aRule)
-        //     }
-        // }
         processEvent(stateMachine, 'touchstart', event, recordTouchStart, null);
 
         sendEvent(event,"CURRENT_EVENT")
@@ -939,18 +790,12 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
     if (mobileCanvasVM.isRecording) {
         sendEvent(event);
     } else {
-        // console.log("We are interacting")
+        console.log(`==> touchmove EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
         //hack
         mobileCanvasVM.currentInputEvent = new InputEvent(event)
 
-        //Deleted to add state machines
-        // for (let anActiveRule of mobileCanvasVM.activeRules) {
-        //     anActiveRule.applyNewInput(event, mobileCanvasVM.interactiveShapes);
-        //     socket.emit('message-from-device', { type: "ACTIVE_RULE", id: anActiveRule.id});
-        // }
         processEvent(stateMachine, 'touchmove', event, recordTouchMove, null);
-
 
         sendEvent(event,"CURRENT_EVENT")
     }
@@ -962,13 +807,8 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
         sendEvent(event);
     } else {
         // We are interacting
-        // console.log("We are ending interacting")
+        console.log(`==> touchend EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
-        //Deleted to add state machines
-        // for (let eachActiveRule of mobileCanvasVM.activeRules) {
-        //     socket.emit('message-from-device', { type: "DEACTIVE_RULE", id: eachActiveRule.id });
-        // }
-        // mobileCanvasVM.activeRules = []
         processEvent(stateMachine, 'touchend', event, recordTouchEnd, clearTouch);
 
         sendEvent(event,"CURRENT_EVENT")

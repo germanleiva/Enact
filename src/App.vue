@@ -7,18 +7,7 @@
         <output-area ref="outputArea"></output-area>
     </div>
     <input-area></input-area>
-    <!-- <div id="lowerArea" style="display:flex"> -->
-
-            <!-- <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas> -->
-
-<!--         <div style="position:relative" draggable="true" @dragstart="mirrorDragged">
-            <canvas id="myCanvas" :width="canvasWidth" :height="canvasHeight"></canvas>
-            <shape v-for="(aShapeModel,index) in deviceVisualState.shapesDictionary" v-bind:shape-model="aShapeModel" :parent-visual-state="deviceVisualState"></shape>
-        </div> -->
-        <!-- <rule-area></rule-area> -->
-
     <code-area></code-area>
-    <!-- </div> -->
   </div>
 </template>
 
@@ -35,7 +24,6 @@ import Toolbar from './components/Toolbar.vue'
 import OutputArea from './components/OutputArea.vue'
 import InputArea from './components/InputArea.vue'
 import VisualStateCanvas from './components/VisualStateCanvas.vue'
-import RuleArea from './components/RuleArea.vue'
 import CodeArea from './components/CodeArea.vue'
 
 export default {
@@ -51,7 +39,6 @@ export default {
     Toolbar,
     OutputArea,
     InputArea,
-    RuleArea,
     CodeArea,
     VisualStateCanvas
   },

@@ -32,7 +32,7 @@ export default {
             }
         },
         visualStateName() {
-            return globalStore.visualStates.indexOf(this.visualState) + 1
+            return this.visualState.name
         }
     },
     methods: {
