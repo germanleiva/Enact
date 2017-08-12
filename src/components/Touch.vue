@@ -12,7 +12,7 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import Distance from "./Distance.vue"
 // import Linea from "./Linea.vue"
-import {globalStore, RelevantPoint, MeasureModel} from '../store.js'
+import {globalStore, RelevantPoint, MeasureModel, ObjectLink} from '../store.js'
 
 export default {
     name: 'touch',
@@ -137,17 +137,19 @@ export default {
                 newDistanceVM.$mount()
                 window.document.body.appendChild(newDistanceVM.$el);
 
-                globalStore.currentLink = {object:this.touch,visualState:this.parentVisualState};
+                globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.shapeModel})
 
                 var moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY
+                    globalStore.currentLink.toggleObjectLink(true)
                 }.bind(this);
                 window.addEventListener('mousemove', moveHandler, false);
 
                 var upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
+                    globalStore.currentLink.toggleObjectLink(false)
                     globalStore.currentLink = undefined;
                     newMeasureModel.deleteYourself();
                     window.document.body.removeChild(newDistanceVM.$el);

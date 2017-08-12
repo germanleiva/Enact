@@ -1,4 +1,5 @@
 <template>
+    <!-- <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}<span class="tooltiptext">Tooltip text</span></span> -->
     <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}</span>
 </template>
 
@@ -73,6 +74,7 @@ export default {
 <style scoped>
 
 span {
+    position: relative;
     padding-left: 5px;
     padding-right: 5px;
     background-color: red;
@@ -82,5 +84,37 @@ span:hover {
     background-color: yellow;
 }
 
+/*span .tooltiptext {
+    visibility: hidden;
+    width: 120px;
+    background-color: #555;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px 0;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -60px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+span .tooltiptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #555 transparent transparent transparent;
+}
+
+span:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}*/
 
 </style>

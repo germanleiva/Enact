@@ -105,8 +105,7 @@ CodeMirror.hint.javascript = function(editor,options) {
 
     if (result) {
         CodeMirror.on(result, "select", function(textSelected,textDOM) {
-            if (textSelected == "pos") {
-                                debugger;
+            if (textSelected == "position") {
 
                 let cur = editor.getCursor()
                 cur.ch -= 1
@@ -121,7 +120,9 @@ CodeMirror.hint.javascript = function(editor,options) {
                   tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
                   context.push(tprop);
                 }
-                context
+                let path = context.reduce((acum,each) => acum + each.string+".", "")
+                                                debugger;
+
             }
         });
     }
@@ -378,7 +379,7 @@ export default {
                     let propertyName = match[3];
                     let extraPropertyName = match[4];
 
-                    if (!objectId || (extraPropertyName && validExtraProperties[propertyName].indexOf(extraPropertyName) < 0)) {
+                    if (!objectId || (!propertyName && extraPropertyName) || (extraPropertyName && validExtraProperties[propertyName].indexOf(extraPropertyName) < 0)) {
                         debugger;
                         continue;
                     }
