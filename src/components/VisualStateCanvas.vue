@@ -1,7 +1,7 @@
 <template>
     <div v-on:mousedown='actionStarted' :draggable="isMirror" v-on:dragstart="mirrorDragged" class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
         <component ref="shapes" v-for="aShapeModel in shapeModels" :is="aShapeModel.type + '-shape'" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="false"></component>
-        <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel"></component>
+        <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel" :parent-visual-state="visualStateModel"></component>
         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
         <component v-for="aShapeModel in visualStateModel.testShapes" :is="aShapeModel.type + '-shape'" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="true"></component>
         <input-event-mark ref="currentInputEventMarkVM" :visual-state="visualStateModel"></input-event-mark>

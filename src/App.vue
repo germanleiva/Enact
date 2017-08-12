@@ -118,6 +118,7 @@ export default {
             case 17:{
                 //Ctrl
                 e.preventDefault()
+                globalStore.isCtrlPressed = true;
                 break;
             }
             case 18:{
@@ -174,6 +175,7 @@ export default {
             case 17:{
                 //Ctrl
                 e.preventDefault()
+                globalStore.isCtrlPressed = false;
                 break;
             }
             case 18:{

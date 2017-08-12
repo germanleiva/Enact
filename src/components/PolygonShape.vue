@@ -257,7 +257,6 @@ export default {
             if (e.ctrlKey) {
                 e.preventDefault()
                 e.stopPropagation();
-
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
                 let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'shape',id:this.shapeModel.id,handler:undefined})
                 newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}

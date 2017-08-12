@@ -252,7 +252,6 @@ export default {
 
                 globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.shapeModel})
 
-
                 let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY

@@ -137,7 +137,7 @@ export default {
                 newDistanceVM.$mount()
                 window.document.body.appendChild(newDistanceVM.$el);
 
-                globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.shapeModel})
+                globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.touch})
 
                 var moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX

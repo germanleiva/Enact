@@ -41,6 +41,7 @@ export const globalStore = new Vue({
         transitionCounter: 1,
         functionCounter: 1,
         stateMachine: undefined,
+        isCtrlPressed: false,
         toolbarState: {
             rectangleMode: false,
             circleMode: false,
@@ -610,7 +611,7 @@ class VisualStateModel {
     }
 
     get name() {
-        return 'VS' + globalStore.visualStates.indexOf(this) + 1
+        return 'VS' + (globalStore.visualStates.indexOf(this) + 1)
     }
 
     get allObjectNames() {

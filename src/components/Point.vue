@@ -10,7 +10,7 @@ import {globalStore,globalBus,logger} from '../store.js'
 
 export default {
     name: 'point',
-    props: ['measureModel'],
+    props: ['measureModel','parentVisualState'],
     data: function() {
         return {
 

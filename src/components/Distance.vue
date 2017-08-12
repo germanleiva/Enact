@@ -11,7 +11,7 @@
               <path d="M0,0 L0,6 L9,3 z"/>
             </marker>
         </defs>
-        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut" :marker-start="markerStart" :marker-end="markerEnd"></line>
+        <line :style="lineStyle" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-width="strokeWidth" shape-rendering="geometricPrecision" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut" :marker-start="markerStart" :marker-end="markerEnd" @mousedown="mouseDownStartedOnMeasure"></line>
         <!-- Invisible line to account for the mouseover/out event -->
         <!-- <line :style="lineStyle" v-if="!isLinking" :x1="initialX" :y1="initialY" :x2="finalX" :y2="finalY" :stroke="measureColor" :stroke-opacity="0" :stroke-width="6" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></line> -->
         <circle v-for="eachRelevantPoint in measureModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + measureModel.id" :cx="initialX + eachRelevantPoint.centerX" :cy="initialY + eachRelevantPoint.centerY" :r="pointSize / 2" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)" v-on:mouseover="onMouseOver" v-on:mouseout="onMouseOut"></circle>
@@ -19,13 +19,18 @@
 </template>
 <script>
 
+import Vue from 'vue'
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,globalBus,logger} from '../store.js'
+import {globalStore,globalBus,logger,MeasureModel, ObjectLink} from '../store.js'
 
 export default {
     name: 'distance',
     props: {
+        parentVisualState: {
+            type: Object,
+            required: false
+        },
         measureModel: {
             type: Object,
             required: true
@@ -70,8 +75,12 @@ export default {
             }
         },
         lineStyle: function() {
+            let value = this.isLinking || !globalStore.toolbarState.measureMode ?'none':'auto'
+            if (globalStore.isCtrlPressed) {
+                value = 'auto'
+            }
             return {
-                'pointer-events': this.isLinking || !globalStore.toolbarState.measureMode ?'none':'auto'
+                'pointer-events': value
             }
         },
         initialX: function() {
@@ -152,8 +161,52 @@ export default {
         },
         mouseDownStartedOnRelevantPoint(e,aRelevantPoint){
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,'distance',this.measureModel.id)
+        },
+        mouseDownStartedOnMeasure(e) {
+            if (!this.isLink && e.ctrlKey) {
+                e.preventDefault()
+                e.stopPropagation();
+                //Let's draw a line to the rule, we can create a measure from this point to the mouse
+                let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'distance',id:this.measureModel.id,handler:undefined})
+                newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
+                newMeasureModel.cachedFinalPosition = {x:e.pageX,y:e.pageY}
+
+                const DistanceVM = Vue.extend(this.$options.components.Distance);
+                let newDistanceVM = new DistanceVM({propsData: {measureModel: newMeasureModel , isLink: true}})
+                newDistanceVM.measureColor = 'black';
+                newDistanceVM.$mount()
+                window.document.body.appendChild(newDistanceVM.$el);
+
+                globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.measureModel})
+
+                let moveHandler = function(e) {
+                    newMeasureModel.cachedFinalPosition.x = e.pageX
+                    newMeasureModel.cachedFinalPosition.y = e.pageY
+                    globalStore.currentLink.toggleObjectLink(true)
+                }.bind(this);
+                window.addEventListener('mousemove', moveHandler, false);
+
+                let upHandler
+                upHandler = function(e) {
+                    // This handler should be trigger AFTER the rule upHandler"
+                    globalStore.currentLink.toggleObjectLink(false)
+                    globalStore.currentLink = undefined;
+                    newMeasureModel.deleteYourself();
+                    window.document.body.removeChild(newDistanceVM.$el);
+                    newDistanceVM.$destroy();
+                    window.removeEventListener('mousemove', moveHandler, false);
+                    window.removeEventListener('mouseup', upHandler, false);
+                }.bind(this);
+                window.addEventListener('mouseup', upHandler, false);
+
+                return
+            }
         }
+    },
+    beforeCreate: function () {
+        this.$options.components.Distance = require('./Distance.vue')
     }
+
 }
 </script>
 <style scoped>
@@ -164,7 +217,7 @@ circle {
     fill: red;
     stroke-width: 1px;
 }
-/*circle:hover {
+line:hover {
     fill:gray;
-}*/
+}
 </style>
