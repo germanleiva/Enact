@@ -95,7 +95,7 @@ export default {
 
     // this.prepareCanvas()
     var that = this;
-    window.addEventListener('keydownxxx', function(e) {
+    window.addEventListener('keydown', function(e) {
         // e.preventDefault()
         if (e.target.tagName == "INPUT") {
             //ignore
@@ -110,6 +110,9 @@ export default {
                 //ShiftLeft & ShiftRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = true;
+                if (globalStore.currentLink) {
+                    globalStore.currentLink.shifted = true
+                }
                 break;
             }
             case 17:{
@@ -163,6 +166,9 @@ export default {
                 //ShiftLeft & ShiftRight
                 e.preventDefault()
                 globalStore.toolbarState.multiSelectionMode = false;
+                if (globalStore.currentLink) {
+                    globalStore.currentLink.shifted = false
+                }
                 break;
             }
             case 17:{

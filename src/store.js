@@ -25,7 +25,7 @@ let logger = function(text) {
     }
 }
 
-export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel,  MeasureModel, RelevantPoint, InputEvent, InputEventTouch, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, StateMachine, SMFunction}
+export { VisualStateModel, RectangleModel, PolygonModel, ShapeModel, MeasureModel, RelevantPoint, InputEvent, InputEventTouch, ObjectLink, RulePlaceholderModel, RuleSidePlaceholder, RuleModel, MeasureInput, TouchInput, ShapeInput, ShapeOutputRule, DiffModel, logger, StateMachine, SMFunction}
 
 export const globalBus = new Vue();
 
@@ -548,6 +548,38 @@ class MeasureModel {
     }
 }
 
+class ObjectLink {
+    constructor({visualState,object,shifted = false}) {
+        this.visualState = visualState
+        this.object = object
+        this._shifted = shifted
+    }
+    get shifted() {
+        return this._shifted;
+    }
+    set shifted(newValue) {
+        this.toggleObjectLink(false)
+        this._shifted = newValue;
+        this.toggleObjectLink(true)
+    }
+
+    toggleObjectLink(boolean) {
+        if (this.shifted) {
+            //toggle only the object
+            this.object.highlight = boolean
+        } else {
+            //toggle all the objects
+            for (let eachVS of globalStore.visualStates) {
+                let objectFound = eachVS.objectFor(this.object.id)
+                if (objectFound) {
+                    objectFound.highlight = boolean
+                }
+            }
+        }
+
+    }
+}
+
 class VisualStateModel {
     constructor() {
         this.shapesDictionary = {}
@@ -1060,7 +1092,7 @@ class ShapeModel {
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return ['pos','size','color']
+                return this.allProperties
             },
             getPrototypeOf(target) {
                 return null

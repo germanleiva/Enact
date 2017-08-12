@@ -16,7 +16,7 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import Vue from 'vue'
 import Distance from './Distance.vue'
-import {globalStore,globalBus,logger, MeasureModel, DiffModel} from '../store.js'
+import {globalStore,globalBus,logger, MeasureModel, DiffModel, ObjectLink} from '../store.js'
 
 // class Handler {
 //     constructor(namePrefix, left, top, right, bottom) {
@@ -257,6 +257,7 @@ export default {
             if (e.ctrlKey) {
                 e.preventDefault()
                 e.stopPropagation();
+
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
                 let newMeasureModel = new MeasureModel(this.parentVisualState,{type:'shape',id:this.shapeModel.id,handler:undefined})
                 newMeasureModel.cachedInitialPosition = {x:e.pageX,y:e.pageY}
@@ -268,17 +269,19 @@ export default {
                 newDistanceVM.$mount()
                 window.document.body.appendChild(newDistanceVM.$el);
 
-                globalStore.currentLink = {object:this.shapeModel,visualState:this.parentVisualState};
+                globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.shapeModel})
 
                 let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX
                     newMeasureModel.cachedFinalPosition.y = e.pageY
+                    globalStore.currentLink.toggleObjectLink(true)
                 }.bind(this);
                 window.addEventListener('mousemove', moveHandler, false);
 
                 let upHandler
                 upHandler = function(e) {
                     // This handler should be trigger AFTER the rule upHandler"
+                    globalStore.currentLink.toggleObjectLink(false)
                     globalStore.currentLink = undefined;
                     newMeasureModel.deleteYourself();
                     window.document.body.removeChild(newDistanceVM.$el);

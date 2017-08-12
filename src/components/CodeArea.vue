@@ -14,7 +14,7 @@
             <div style="background-color: yellow">
                 <codemirror ref="codeContainer" v-if="selectedFunction != undefined"
                   :code="selectedFunction.code"
-                  :options="transitionEditorOptions"
+                  :options="editorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
                   @change="onEditorCodeChange">
@@ -34,7 +34,7 @@
             <div style="background-color:rgba(255,100,0,50)">
                 <codemirror ref="transitionCodeMirror"
                   :code="''"
-                  :options="editorOptions"
+                  :options="transitionEditorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
                   @change="onTransitionEditorCodeChange">
@@ -101,7 +101,30 @@ const acceptedOutputTypes = ["text/diff-shape"]
 
 let orig = CodeMirror.hint.javascript;
 CodeMirror.hint.javascript = function(editor,options) {
-    var inner = orig(editor,options) || {from: cm.getCursor(), to: cm.getCursor(), list: []};
+    var result = orig(editor,options)// || {from: cm.getCursor(), to: cm.getCursor(), list: []};
+
+    if (result) {
+        CodeMirror.on(result, "select", function(textSelected,textDOM) {
+            if (textSelected == "pos") {
+                                debugger;
+
+                let cur = editor.getCursor()
+                cur.ch -= 1
+                let token = editor.getTokenAt(cur)
+
+                var tprop = token;
+                var context = [tprop];
+                // If it is a property, find out what it is a property of.
+                while (tprop.type == "property") {
+                  tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
+                  if (tprop.string != ".") return;
+                  tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
+                  context.push(tprop);
+                }
+                context
+            }
+        });
+    }
 
 // text: string
 //      The completion text. This is the only required property.
@@ -126,7 +149,7 @@ CodeMirror.hint.javascript = function(editor,options) {
     // inner.list.push("$S1");
     // inner.list.push("$S2");
     // inner.list.push("$S3");
-    return inner;
+    return result;
 }
 
 globalStore.stateMachine = new StateMachine({isServer:true});
@@ -151,7 +174,7 @@ export default {
                 line: true,
                 // keyMap: "sublime",
                 lineWrapping: true,
-                extraKeys: { "Ctrl-Space": "autocomplete" },
+                extraKeys: { "Ctrl-Space": "autocomplete"},
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
                 styleSelectedText: true,
@@ -292,7 +315,9 @@ export default {
 
           // <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
 
-
+          editor.on("select",function(x,y){
+            debugger;
+          })
 
           editor.on("mouseover", function(editor,e){
             if (globalStore.currentLink) {
@@ -334,7 +359,7 @@ export default {
             this.deleteAllTextMarkers();
 
             let allVSNames = globalStore.visualStates.map((vs) => vs.name).join("|")
-            let allObjects = "S1|S2|S3|T1|T2|D1|D2"
+            let allObjects = "S1|S2|S3|F0|F1|F2|D1|D2"
             let allProperties = "position|size|color|force|angularRotation"
             let allExtraProperties = "x|y|width|height"
             const validExtraProperties = {'position':['x','y'],'size':['width','height']}
