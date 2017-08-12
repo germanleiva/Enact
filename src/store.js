@@ -243,7 +243,7 @@ class ScalingDiff extends PropertyDiff {
         if (inversed) {
             sign = -1
         }
-        visualState.changeProperty(shapeModel,'size',shapeModel.size,{x:shapeModel.width+this.delta.x * sign,y:shapeModel.height+this.delta.y * sign})
+        visualState.changeProperty(shapeModel,'size',shapeModel.size,{width:shapeModel.width+this.delta.x * sign,height:shapeModel.height+this.delta.y * sign})
     }
     get name() {
         return "size"
@@ -539,7 +539,7 @@ class MeasureModel {
     valueForProperty(propertyName) {
         switch (propertyName) {
             case 'size': {
-                return {x: this.width, y: this.height}
+                return {width: this.width, height: this.height}
             }
             default: {
                 console.log("MeasureModel >> valueForProperty, Unrecognized property name: " + propertyName)
@@ -1041,7 +1041,7 @@ class InputEventTouch {
             changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "position" , before: { x: this.x, y: this.y }, after: { x: comparingTouch.x, y: comparingTouch.y } } })
         }
         if (this.radiusX != comparingTouch.radiusX || this.radiusY != comparingTouch.radiusY) {
-            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "size" , before: { x: this.radiusX, y: this.radiusY }, after: { x: comparingTouch.radiusX, y: comparingTouch.radiusY } } })
+            changes.push({id: this.id, name: this.name, type: 'touch', property: { name: "size" , before: { width: this.radiusX, height: this.radiusY }, after: { width: comparingTouch.radiusX, height: comparingTouch.radiusY } } })
         }
         return changes
     }
@@ -1051,7 +1051,7 @@ class InputEventTouch {
                 return {x:this.x, y:this.y}
             }
             case 'size': {
-                return {x: this.radiusX, y: this.radiusX}
+                return {width: this.radiusX, height: this.radiusX}
             }
             default: {
                 console.log("InputEventTouch >> valueForProperty, Unrecognized property name: " + propertyName)
@@ -1079,8 +1079,8 @@ class ShapeModel {
             y: top
         };
         this._size = {
-            x: width,
-            y: height
+            width: width,
+            height: height
         };
         this.masterVersion = aMasterVersion;
         this.highlight = false
@@ -1092,7 +1092,7 @@ class ShapeModel {
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return this.allProperties
+                return target.allProperties
             },
             getPrototypeOf(target) {
                 return null
@@ -1185,10 +1185,10 @@ class ShapeModel {
         return this.position.y
     }
     get width() {
-        return this.size.x
+        return this.size.width
     }
     get height() {
-        return this.size.y
+        return this.size.height
     }
     get color() {
         if (this.isFollowingMaster('color')) {
@@ -1215,10 +1215,10 @@ class ShapeModel {
         this._position.x = value;
     }
     set width(value) {
-        this._size.x = value;
+        this._size.width = value;
     }
     set height(value) {
-        this._size.y = value;
+        this._size.height = value;
     }
     set color(value) {
         this._color = value;
@@ -1233,8 +1233,8 @@ class ShapeModel {
                 this._position.y = null;
                 break;
             case 'size':
-                this._size.x = null;
-                this._size.y = null;
+                this._size.width = null;
+                this._size.height = null;
                 break;
         }
     }
@@ -1281,8 +1281,8 @@ class ShapeModel {
                 break;
             }
             case 'size': {
-                this.width = changedValue.x
-                this.height = changedValue.y
+                this.width = changedValue.width
+                this.height = changedValue.height
                 break;
             }
             case 'color': {
@@ -1303,7 +1303,7 @@ class ShapeModel {
                 return this._position.x == null && this._position.y == null;
             }
             case 'size':{
-                return this._size.x == null && this._size.y == null;
+                return this._size.width == null && this._size.height == null;
             }
         }
         // "check all properties" //TODO what about vertices???
@@ -1321,7 +1321,7 @@ class ShapeModel {
                 return value1.x == value2.x && value1.y == value2.y;
             }
             case 'size':{
-                return value1.x == value2.x && value1.y == value2.y;
+                return value1.width == value2.width && value1.height == value2.height;
             }
         }
     }

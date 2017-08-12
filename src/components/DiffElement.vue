@@ -27,9 +27,9 @@ export default {
                     'fa-arrows-h': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x != after.x) && (before.y == after.y),
                     'fa-arrows-v': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x == after.x) && (before.y != after.y),
                     'fa-arrows': (propertyName == 'position' ||  propertyName == 'vertex') && (before.x != after.x) && (before.y != after.y),
-                    'fa-sort': propertyName == 'size' && (before.x == after.x) && (before.y != after.y),
-                    'fa-sort fa-rotate-90': propertyName == 'size' && (before.x != after.x) && (before.y == after.y),
-                    'fa-arrows-alt': propertyName == 'size' && (before.x != after.x) && (before.y != after.y),
+                    'fa-sort': propertyName == 'size' && (before.width == after.width) && (before.height != after.height),
+                    'fa-sort fa-rotate-90': propertyName == 'size' && (before.width != after.width) && (before.height == after.height),
+                    'fa-arrows-alt': propertyName == 'size' && (before.width != after.width) && (before.height != after.height),
                     'fa-tint': propertyName == 'color',
                     'fa-plus': propertyName == 'added',
                     'fa-minus': propertyName == 'removed',
@@ -45,6 +45,8 @@ export default {
             // console.log("diffTooltipText >> " + JSON.stringify(this.diffData))
             let prevText = ''
             let nextText = ''
+
+            //TODO the size property does not have x,y instead width,height. Let's create a class Property
 
             if (this.diffData.property.before && this.diffData.property.after) {
                 prevText = `x:${this.diffData.property.after.x - this.diffData.property.before.x}`

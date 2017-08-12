@@ -210,8 +210,8 @@ export default {
 
             let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft();
             let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop();
-            let startingShapeWidth = this.shapeModel.size.x
-            let startingShapeHeight = this.shapeModel.size.y
+            let startingShapeWidth = this.shapeModel.size.width
+            let startingShapeHeight = this.shapeModel.size.height
 
             let mouseMoveHandler
 
@@ -355,7 +355,7 @@ export default {
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = { x: this.shapeModel.size.x, y: this.shapeModel.size.y };
+            let previousValue = { width: this.shapeModel.size.width, height: this.shapeModel.size.height };
 
             let currentWindowMousePositionX = e.pageX;
             let currentWindowMousePositionY = e.pageY;
@@ -364,8 +364,8 @@ export default {
             // let currentShapePositionYInWindowCoordinates = this.shapeModel.top + this.visualState.canvasOffsetTop();
 
             let newValue = {
-                x: previousValue.x,
-                y: previousValue.y,
+                width: previousValue.width,
+                height: previousValue.height,
             }
             this.shapeModel.isMoving = false;
             switch (handlerType) {
@@ -380,8 +380,8 @@ export default {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop()
                     }
-                    newValue.x = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
-                    newValue.y = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
+                    newValue.width = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
+                    newValue.height = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates);
                     break;
                 }
                 case 'southWest':{
@@ -392,9 +392,9 @@ export default {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.left = startingShapePositionX - offsetX;
 
-                        newValue.x = startingShapeWidth + offsetX;
+                        newValue.width = startingShapeWidth + offsetX;
                     } else {
-                        newValue.x = currentWindowMousePositionX - (this.shapeModel.left + this.$parent.canvasOffsetLeft());
+                        newValue.width = currentWindowMousePositionX - (this.shapeModel.left + this.$parent.canvasOffsetLeft());
                     }
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates) {
@@ -403,10 +403,10 @@ export default {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.top = startingShapePositionY - offsetY;
 
-                        newValue.y = offsetY;
+                        newValue.height = offsetY;
 
                     } else {
-                        newValue.y = currentWindowMousePositionY - (this.shapeModel.top + this.$parent.canvasOffsetTop());
+                        newValue.height = currentWindowMousePositionY - (this.shapeModel.top + this.$parent.canvasOffsetTop());
                     }
 
                     break;
@@ -416,14 +416,14 @@ export default {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.left = currentWindowMousePositionX - this.$parent.canvasOffsetLeft();
                     }
-                    newValue.x = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
+                    newValue.width = Math.abs(currentWindowMousePositionX - (startingShapePositionXInWindowCoordinates + startingShapeWidth));
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
 
-                    newValue.y = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
+                    newValue.height = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                     break;
                 }
@@ -432,23 +432,23 @@ export default {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.left = (currentWindowMousePositionX - this.$parent.canvasOffsetLeft());
                     }
-                    newValue.x = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
+                    newValue.width = Math.abs(currentWindowMousePositionX - startingShapePositionXInWindowCoordinates);
 
                     if (currentWindowMousePositionY < startingShapePositionYInWindowCoordinates + startingShapeHeight) {
                         this.shapeModel.isMoving = true;
                         this.shapeModel.top = currentWindowMousePositionY - this.$parent.canvasOffsetTop();
                     }
-                    newValue.y = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
+                    newValue.height = Math.abs(currentWindowMousePositionY - (startingShapePositionYInWindowCoordinates + startingShapeHeight));
 
                     break;
                 }
             }
 
-            if (this.shapeModel.isFollowingMaster('size') && previousValue.x == newValue.x && previousValue.y == newValue.y) {
+            if (this.shapeModel.isFollowingMaster('size') && previousValue.width == newValue.width && previousValue.height == newValue.height) {
                 //Don't do anything, keep following master and do not propagate
             } else {
-                this.shapeModel.width = newValue.x;
-                this.shapeModel.height = newValue.y;
+                this.shapeModel.width = newValue.width;
+                this.shapeModel.height = newValue.height;
                 if (this.visualState.nextState) {
                     this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'size');
                 }
