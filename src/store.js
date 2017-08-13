@@ -377,18 +377,43 @@ class MeasureModel {
         this.cachedFinalPosition = cachedFinalPosition
         this.highlight = false
         this._relevantPoints = [new RelevantPoint(this, 'center', 0.5, 0.5)];
-        this.nameCount = -1
+        this.idCount = -1
     }
-    get name() {
+
+    static get propertyMap() {
+        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"deltaX":[],"deltaY":[],"width":[],"height":[],"value":[]}
+    }
+    static get allProperties() {
+        return Object.keys(this.propertyMap)
+    }
+
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return MeasureModel.allProperties
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                return target[key]
+            }
+        })
+    }
+    get value() {
+        return Math.sqrt( Math.pow(this.deltaX,2) + Math.pow(this.deltaY,2) );
+    }
+
+    get id() {
         switch (this.type) {
             case "point":{
-                return "P"+this.nameCount
+                return "P"+this.idCount
             }
             case "distance":{
-                return "D"+this.nameCount
+                return "D"+this.idCount
             }
             default:{
-                console.log("Unrecognized nameCount for measure: "+ this.id);
+                console.log("Unrecognized type for measure with name: "+ this.name);
             }
         }
     }
@@ -404,7 +429,7 @@ class MeasureModel {
         }
         return []
     }
-    get id() {
+    get name() {
         let p3 = this.to.id,
             p4 = this.to.handler
 
@@ -614,27 +639,24 @@ class VisualStateModel {
         return 'VS' + (globalStore.visualStates.indexOf(this) + 1)
     }
 
-    get allObjectNames() {
-        let allObjectNames = []
+    get allObjects() {
+        let allObjects = []
         for (let eachShapeKey in this.shapesDictionary) {
-            let shapeName = this.shapesDictionary[eachShapeKey].name
-            if (allObjectNames.indexOf(shapeName) < 0) {//Unnecessary?
-                allObjectNames.push(shapeName)
-            }
+            allObjects.push(this.shapesDictionary[eachShapeKey])
         }
         for (let eachMeasure of this.measures) {
-            if (allObjectNames.indexOf(eachMeasure.name) < 0) {//Unnecessary?
-                allObjectNames.push(eachMeasure.name)
-            }
+            allObjects.push(eachMeasure)
         }
         if (this.currentInputEvent) {
             for (let eachTouch of this.currentInputEvent.touches) {
-                if (allObjectNames.indexOf(eachTouch.name) < 0) {//Unnecessary?
-                    allObjectNames.push(eachTouch.name)
-                }
+                allObjects.push(eachTouch)
             }
         }
-        return allObjectNames
+        return allObjects
+    }
+
+    get allObjectNames() {
+        return this.allObjects.map((o) => o.name)
     }
 
     objectFor(name) {
@@ -747,7 +769,7 @@ class VisualStateModel {
         let result = []
 
         let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
-        newMeasure.nameCount = globalStore.measureCounter++;
+        newMeasure.idCount = globalStore.measureCounter++;
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
@@ -802,6 +824,7 @@ class VisualStateModel {
         return this.measures.find(x => x.id == aMeasureKey)
     }
     measureFor(measureId) {
+        console.log("SEARCHING FOR MEASURE WITH ID = " + measureId)
         return this.measures.find(aMeasure => aMeasure.id === measureId)
     }
     touchFor(touchId) {
@@ -1000,7 +1023,7 @@ class InputEvent {
 class InputEventTouch {
     constructor({identifier:identifier,x:x,y:y,pageX:pageX,pageY:pageY,radiusX:radiusX,radiusY:radiusY,angularRotation:angularRotation,force:force}) {
         this.identifier = identifier;
-        this.id = 'F'+identifier
+        this.id = 'T'+identifier
         this.name = this.id
         //hack
         if (x!=undefined || y != undefined) {
@@ -1016,6 +1039,36 @@ class InputEventTouch {
         this.force = force
         this.highlight = false
     }
+
+    static get propertyMap() {
+        return {"position":["x","y"],"size":["width","height"],"force":[],"angularRotation":[]}
+    }
+    static get allProperties() {
+        return Object.keys(this.propertyMap)
+    }
+
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return InputEventTouch.allProperties
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                return target[key]
+            }
+        })
+    }
+
+    get position() {
+        return {x:this.x, y:this.y}
+    }
+
+    get size() {
+        return {width: this.radiusX, height: this.radiusX}
+    }
+
     get leanJSON() {
         console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
         //TODO check why angularRotation is not appearing, apparently when a value it is undefined cannot be added to the final JSON
@@ -1048,10 +1101,10 @@ class InputEventTouch {
     valueForProperty(propertyName) {
         switch (propertyName) {
             case 'position': {
-                return {x:this.x, y:this.y}
+                return this.position
             }
             case 'size': {
-                return {width: this.radiusX, height: this.radiusX}
+                return this.size
             }
             default: {
                 console.log("InputEventTouch >> valueForProperty, Unrecognized property name: " + propertyName)
@@ -1089,10 +1142,18 @@ class ShapeModel {
         this.isMoving = false
     }
 
+
+    static get propertyMap() {
+        return {"position":["x","y"],"size":["width","height"],"color":[]}
+    }
+    static get allProperties() {
+        return Object.keys(this.propertyMap)
+    }
+
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return target.allProperties
+                return ShapeModel.allProperties
             },
             getPrototypeOf(target) {
                 return null
@@ -2494,10 +2555,6 @@ class StateMachine {
         this.firstState = undefined;
 
         this.isServer = isServer
-
-        this.shapes = []
-        this.measures = []
-        this.touches = []
         // this.hardcodedValues = {}
 
         this.functions = []
@@ -2507,12 +2564,22 @@ class StateMachine {
             ownKeys(target) {
                 let allKeys = []
 
-                for (let eachArray of [globalStore.visualStates,self.shapes,self.measures,self.touches]) {
-                    for (let eachObject of eachArray) {
-                        if (allKeys.indexOf(eachObject.name) < 0) {
-                            allKeys.push(eachObject.name)
-                        }
+                let accumulatedObjects = []
+                for (let eachVS of globalStore.visualStates) {
+                    allKeys.push(eachVS.name)
+                    for (let eachObject of eachVS.allObjects) {
+                        accumulatedObjects.push(eachObject)
                     }
+                }
+
+                for (let eachObject of accumulatedObjects) {
+                    if (allKeys.indexOf(eachObject.name) < 0){
+                        allKeys.push(eachObject.name)
+                    }
+                }
+
+                for (let eachFunction of self.functions) {
+                    allKeys.push(eachFunction.name)
                 }
 
                 return allKeys
@@ -2526,24 +2593,17 @@ class StateMachine {
                     return vs.proxy;
                 }
 
-                let foundShape = self.shapes.find((s) => s.name == key)
-                if (foundShape) {
-                    return foundShape.proxy
+                for (let eachVS of globalStore.visualStates) {
+                    let objectFound = eachVS.allObjects.find((o) => o.name == key)
+                    if (objectFound) {
+                        return objectFound.proxy
+                    }
                 }
 
                 let foundFunction = self.functions.find((f) => f.name == key)
                 if (foundFunction) {
                     return foundFunction.func
                 }
-
-                // if (target.event) {
-                //     for (var i = 0; i < target.event.touches.length; i++) {
-                //         let aTouch = target.event.touches[i];
-                //         if (aTouch.id == key) {
-                //             return aTouch
-                //         }
-                //     }
-                // }
 
                 return target[key]
             }
@@ -2558,7 +2618,7 @@ class StateMachine {
     }
 
     addShape(aShape) {
-        this.shapes.push(aShape);
+        // this.shapes.push(aShape);
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: aShape.toJSON() })
@@ -2566,7 +2626,7 @@ class StateMachine {
     }
 
     addMeasure(aMeasure) {
-        this.measures.push(aMeasure);
+        // this.measures.push(aMeasure);
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: aMeasure.from ,to: aMeasure.to} });

@@ -99,31 +99,45 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
+
+globalStore.stateMachine = new StateMachine({isServer:true});
+
+let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
+let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
+idleState.isSelected = true;
+globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
+globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
+globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
+
+
 let orig = CodeMirror.hint.javascript;
 CodeMirror.hint.javascript = function(editor,options) {
     var result = orig(editor,options)// || {from: cm.getCursor(), to: cm.getCursor(), list: []};
 
     if (result) {
         CodeMirror.on(result, "select", function(textSelected,textDOM) {
-            if (textSelected == "position") {
+            // if (textSelected == "position") {
 
-                let cur = editor.getCursor()
-                cur.ch -= 1
-                let token = editor.getTokenAt(cur)
+            //     let cur = editor.getCursor()
+            //     cur.ch -= 1
+            //     let token = editor.getTokenAt(cur)
 
-                var tprop = token;
-                var context = [tprop];
-                // If it is a property, find out what it is a property of.
-                while (tprop.type == "property") {
-                  tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
-                  if (tprop.string != ".") return;
-                  tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
-                  context.push(tprop);
-                }
-                let path = context.reduce((acum,each) => acum + each.string+".", "")
-                                                debugger;
+            //     var tprop = token;
+            //     var context = [tprop];
+            //     // If it is a property, find out what it is a property of.
+            //     while (tprop.type == "property") {
+            //       tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
+            //       if (tprop.string != ".") return;
+            //       tprop = editor.getTokenAt(CodeMirror.Pos(cur.line, tprop.start));
+            //       context.push(tprop);
+            //     }
+            //     let path = context.reduce((acum,each) => acum + each.string+".", "")
+            //                                     debugger;
 
-            }
+            // }
+        });
+        CodeMirror.on(result, "pick", function(textSelected){
+
         });
     }
 
@@ -150,17 +164,42 @@ CodeMirror.hint.javascript = function(editor,options) {
     // inner.list.push("$S1");
     // inner.list.push("$S2");
     // inner.list.push("$S3");
+    for (let i=0; i < result.list.length; i++) {
+        let currentText = result.list[i]
+        let stateMachineFunction = globalStore.stateMachine.functions.find((f) => f.name == currentText)
+        if (stateMachineFunction) {
+            let match = /function\s(\w+)\(\s*(\{[\s\S]*\})\s*\)/.exec(stateMachineFunction.code)
+            if (match) {
+                let functionName = match[1]
+                let jsonParameter = match[2].replace(/\n/g, "");
+
+                //ASSERT
+                if (functionName != currentText) {
+                    abort("THIS SHOULDNT HAPPEN")
+                }
+
+               jsonParameter = jsonParameter.replace(/{|}|\n|\s*/g,'')
+                                            .split(',')
+                                            .reduce(function(acum,each,index,list,z){
+                                                let cleanedArgName = each
+                                                let defaultValueStart = cleanedArgName.indexOf('=')
+                                                if (defaultValueStart >= 0) {
+                                                    cleanedArgName = cleanedArgName.substr(0,defaultValueStart)
+                                                }
+                                                let suffix = ':'
+                                                if (index < list.length - 1) {
+                                                    suffix = ':,'
+                                                }
+                                                return acum + cleanedArgName + suffix
+                                            },'')
+
+               result.list[i] = {text:`${functionName}({${jsonParameter}})`,displayText:currentText}
+            }
+        }
+    }
+
     return result;
 }
-
-globalStore.stateMachine = new StateMachine({isServer:true});
-
-let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
-let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
-idleState.isSelected = true;
-globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
 
 export default {
     name: 'code-area',
@@ -226,15 +265,17 @@ export default {
         },
         onEditorMouseUp(editor,event) {
             if (globalStore.currentLink) {
-                let {object,visualState} = globalStore.currentLink
+                console.log(globalStore.currentLink)
+                let object = globalStore.currentLink.object
+                let visualState = globalStore.currentLink.visualState
 
                 let newCoordinates = this.setEditorCursorAt(editor,event)
 
                 let codeToInsert
                 if (event.shiftKey) {
-                    codeToInsert = `$.${visualState.name}.${object.name}`
+                    codeToInsert = `$.${visualState.name}.${object.id}`
                 } else {
-                    codeToInsert = `$.${object.name}`
+                    codeToInsert = `$.${object.id}`
                 }
 
                 editor.doc.replaceSelection(codeToInsert)
@@ -359,16 +400,11 @@ export default {
         onEditorCodeChange(newCode) {
             this.deleteAllTextMarkers();
 
-            let allVSNames = globalStore.visualStates.map((vs) => vs.name).join("|")
-            let allObjects = "S1|S2|S3|F0|F1|F2|D1|D2"
-            let allProperties = "position|size|color|force|angularRotation"
-            let allExtraProperties = "x|y|width|height"
-            const validExtraProperties = {'position':['x','y'],'size':['width','height']}
-
-            var regex = new RegExp(`\\$(?:\\.(${allVSNames}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(${allExtraProperties}))?`, "g");
+            let {objects,allVS,allObjects,allProperties} = this.parsingData
+            var regex = new RegExp(`\\$(?:\\.(${allVS}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(\\w+))?`, "g");
 
             var match;
-
+// debugger;
             let linesOfCode = newCode.split('\n');
             for (let lineNumber=0;lineNumber<linesOfCode.length;lineNumber++) {
                 let code = linesOfCode[lineNumber];
@@ -379,15 +415,36 @@ export default {
                     let propertyName = match[3];
                     let extraPropertyName = match[4];
 
-                    if (!objectId || (!propertyName && extraPropertyName) || (extraPropertyName && validExtraProperties[propertyName].indexOf(extraPropertyName) < 0)) {
-                        debugger;
+                    let matchStartingCh = match.index;
+                    let from = {line:lineNumber,ch:matchStartingCh}
+                    let to = {line:lineNumber,ch:matchStartingCh + match[0].length}
+
+                    if (!objectId) {
+                        //It was not a valid objectId
                         continue;
                     }
-                    let matchStartingCh = match.index;
+
+                    if (propertyName) {
+                        let validExtraProperties = objects[objectId].propertyMap[propertyName]
+
+                        if (!validExtraProperties) {
+                            //It was not a valid propertyName
+                            continue;
+                        }
+                        if (!validExtraProperties && validExtraProperties.indexOf(extraPropertyName) < 0) {
+                            //It was not a valid extraPropertyName
+                            continue;
+                        }
+                    } else {
+                        if (extraPropertyName) {
+                            //I shouldn't count the extraProperty if I don't have a property
+                            to.ch -= extraPropertyName.length + 1 //We need to count the .
+                        }
+                    }
+
                     // let foundShape = this.stateMachine.shapes.find((aShape) => aShape.id === id)
                     // if (foundShape) {
-                        let from = {line:lineNumber,ch:matchStartingCh}
-                        let to = {line:lineNumber,ch:matchStartingCh + match[0].length}
+
 
                         var markSpan = document.createElement('span')
                         // markSpan.className = "locura";
@@ -445,6 +502,32 @@ export default {
 
     },
     computed: {
+        parsingData() {
+            let objects = {}
+            let allVSNames = []
+            let allObjectNames = []
+            let allPropertyNames = []
+            for (let eachVS of globalStore.visualStates) {
+                allVSNames.push(eachVS.name)
+
+                for (let eachObject of eachVS.allObjects) {
+                    objects[eachObject.id] = eachObject.constructor
+                    for (let eachPropertyName of eachObject.constructor.allProperties) {
+                        if (allPropertyNames.indexOf(eachPropertyName) < 0) {
+                            allPropertyNames.push(eachPropertyName)
+                        }
+                    }
+                    if (allObjectNames.indexOf(eachObject.id) < 0) {
+                        allObjectNames.push(eachObject.id)
+                    }
+                }
+            }
+
+            let allVS = allVSNames.join("|")
+            let allObjects = allObjectNames.join("|")
+            let allProperties = allPropertyNames.join("|")
+            return {objects,allVS,allObjects,allProperties}
+        },
         codeEditor() {
           return this.$refs.codeContainer.editor
         },
