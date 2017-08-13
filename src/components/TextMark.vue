@@ -29,7 +29,6 @@ export default {
             if (this.visualStateId) {
                 //Hardcoded value
                 let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
-                console.log("TextMark >> codeToShow, objectFor: " + this.objectId)
                 let object = parentVisualState.objectFor(this.objectId)
                 if (object) {
                     if (this.propertyName) {

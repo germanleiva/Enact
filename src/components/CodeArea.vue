@@ -182,7 +182,10 @@ CodeMirror.hint.javascript = function(editor,options) {
                                             .split(',')
                                             .reduce(function(acum,each,index,list,z){
                                                 let cleanedArgName = each
-                                                let defaultValueStart = cleanedArgName.indexOf('=')
+                                                let defaultValueStart = cleanedArgName.indexOf(':')
+                                                if (defaultValueStart < 0) {
+                                                    defaultValueStart = cleanedArgName.indexOf('=')
+                                                }
                                                 if (defaultValueStart >= 0) {
                                                     cleanedArgName = cleanedArgName.substr(0,defaultValueStart)
                                                 }
