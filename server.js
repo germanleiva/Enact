@@ -2,6 +2,8 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var ip = require("ip");
+console.dir ( "CHACKINGASF => "+ ip.address() );
 
 // var path    = require("path");
 // app.get('/', function (req, res) {
@@ -49,6 +51,19 @@ io.on('connection', function(socket){
     socket.broadcast.emit('message-from-server',data);
   })
 });
+
+// const execFile = require('child_process').execFile;
+
+// function launchHeadlessChrome(url, callback) {
+//   // Assuming MacOSx.
+//   const CHROME = '/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome';
+//   execFile(CHROME, ['--headless', '--disable-gpu', '--remote-debugging-port=9222', url], callback);
+// }
+
+// launchHeadlessChrome(`http://${ip.address()}:3000/mobile.html`, (err, stdout, stderr) => {
+//   console.log("launchHeadlessChrome >>>>")
+//   console.log(stdout)
+// });
 
 // io.sockets.on('connection', function (socket) {
 //     // socket.emit('message', { message: 'welcome to the chat' });
