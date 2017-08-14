@@ -41,7 +41,7 @@ export const globalStore = new Vue({
         transitionCounter: 1,
         functionCounter: 1,
         stateMachine: undefined,
-        isCtrlPressed: false,
+        isMetaPressed: false,
         toolbarState: {
             rectangleMode: false,
             circleMode: false,

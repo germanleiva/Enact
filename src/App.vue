@@ -118,7 +118,6 @@ export default {
             case 17:{
                 //Ctrl
                 e.preventDefault()
-                globalStore.isCtrlPressed = true;
                 break;
             }
             case 18:{
@@ -159,6 +158,12 @@ export default {
                 that.$refs.outputArea.deleteSelectedShapes()
                 break;
             }
+            case 91: {
+                // MAC Cmd Key
+                e.preventDefault()
+                globalStore.isCtrlPressed = true;
+                break;
+            }
         }
     });
     window.addEventListener('keyup', function(e) {
@@ -175,13 +180,17 @@ export default {
             case 17:{
                 //Ctrl
                 e.preventDefault()
-                globalStore.isCtrlPressed = false;
                 break;
             }
             case 18:{
                 //AltLeft & AltRight
                 e.preventDefault()
                 break;
+            }
+            case 91: {
+                // MAC Cmd Key
+                e.preventDefault()
+                globalStore.isCtrlPressed = false;
             }
         }
     });

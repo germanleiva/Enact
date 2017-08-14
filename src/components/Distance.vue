@@ -163,7 +163,7 @@ export default {
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,'distance',this.measureModel.id)
         },
         mouseDownStartedOnMeasure(e) {
-            if (!this.isLink && e.ctrlKey) {
+            if (!this.isLink && e.metaKey) {
                 e.preventDefault()
                 e.stopPropagation();
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse

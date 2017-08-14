@@ -118,7 +118,7 @@ export default {
         }
         function dragstarted() {
             let e = this.$d3.event
-            if (e.sourceEvent.ctrlKey) {
+            if (e.sourceEvent.metaKey) {
                 this.startState = e.subject
                 // debugger;
                 this.dragLineEnd = {x:e.x ,y:e.y}

@@ -217,7 +217,13 @@ export default {
                 line: true,
                 // keyMap: "sublime",
                 lineWrapping: true,
-                extraKeys: { "Ctrl-Space": "autocomplete"},
+                extraKeys: {
+                    "Ctrl-Space": "autocomplete",
+                    // "'.'": function(cm) {
+                    //    setTimeout(function(){cm.execCommand("autocomplete");}, 50);
+                    //    throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
+                    // }
+                },
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
                 styleSelectedText: true,
@@ -445,30 +451,23 @@ export default {
                         }
                     }
 
-                    // let foundShape = this.stateMachine.shapes.find((aShape) => aShape.id === id)
-                    // if (foundShape) {
+                    const TextMarkVM = Vue.extend(TextMark);
+                    var newTextMarkVM = new TextMarkVM({
+                        propsData: {
+                            visualStateId: visualStateId,
+                            objectId: objectId,
+                            propertyName: propertyName,
+                            extraPropertyName: extraPropertyName
+                        }
+                    }).$mount();
 
+                    window.document.body.appendChild(newTextMarkVM.$el);
 
-                        var markSpan = document.createElement('span')
-                        // markSpan.className = "locura";
-                        // markSpan.innerHTML = "CHAN";
-                        let newTextMarkerModel = this.codeEditor.doc.markText(from, to, {replacedWith: markSpan,atomic:false});
+                    let textMarker = this.codeEditor.doc.markText(from, to, {insertLeft:true,replacedWith: newTextMarkVM.$el});
 
-                        // create component constructor
-                        const TextMarkConstructor = Vue.extend(TextMark);
-                        var textMarkComponent = new TextMarkConstructor({
-                            el: markSpan, // define the el of component
-                            parent: this, // define parent of component
-                            propsData: {
-                                textMarkerModel: newTextMarkerModel,
-                                visualStateId: visualStateId,
-                                objectId: objectId,
-                                propertyName: propertyName,
-                                extraPropertyName: extraPropertyName
-                            }
-                        }).$mount();
-                    // }
-                    this.textMarkers.push(textMarkComponent)
+                    newTextMarkVM.textMarkerModel = textMarker
+
+                    this.textMarkers.push(newTextMarkVM)
                 }
             }
 

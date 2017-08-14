@@ -1,6 +1,6 @@
 <template>
     <!-- <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}<span class="tooltiptext">Tooltip text</span></span> -->
-    <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}</span>
+    <span class="something">{{codeToShow}}</span>
 </template>
 
 <script>
@@ -11,9 +11,11 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'text-mark',
-    props: ['textMarkerModel','visualStateId','objectId','propertyName','extraPropertyName'],
+    props: ['visualStateId','objectId','propertyName','extraPropertyName'],
     data: function() {
-        return {}
+        return {
+            textMarkerModel: undefined
+        }
     },
     computed: {
         markedSpan() {
@@ -71,16 +73,17 @@ export default {
 }
 </script>
 
-<style scoped>
+<style>
 
-span {
+.something {
+    display: inline-block;
     position: relative;
-    padding-left: 5px;
-    padding-right: 5px;
+/*    padding-left: 5px;
+    padding-right: 5px;*/
     background-color: red;
 }
 
-span:hover {
+.something:hover {
     background-color: yellow;
 }
 

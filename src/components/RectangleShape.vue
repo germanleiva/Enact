@@ -236,7 +236,7 @@ export default {
                 return
             }
 
-            if (e.ctrlKey) {
+            if (e.metaKey) {
                 e.preventDefault()
                 e.stopPropagation();
                 //Let's draw a line to the rule, we can create a measure from this point to the mouse
