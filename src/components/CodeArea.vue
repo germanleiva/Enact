@@ -31,16 +31,6 @@
                 @diagramNewLink="addNewTransition">
             </state-diagram>
         </div>
-        <div class="column is-2" >
-            <aside class="menu">
-                <p class="menu-label" style="user-select: none">Functions</p>
-                <ul class="menu-list" style="height:240px;overflow:scroll">
-                    <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
-                </ul>
-            </aside>
-            <a class="button" @click="createNewFunction()">New</a>
-            <a class="button" @click="">Delete</a>
-        </div>
     </div>
 </template>
 
