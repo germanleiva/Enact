@@ -11,6 +11,16 @@
                 </codemirror>
             </div>
         </div>
+        <div class="column is-2" >
+            <aside class="menu">
+                <p class="menu-label">Functions</p>
+                <ul class="menu-list" style="height:240px;overflow:scroll">
+                    <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
+                </ul>
+            </aside>
+            <a class="button" @click="createNewFunction()">New</a>
+            <a class="button" @click="">Delete</a>
+        </div>
         <div class="column">
             <state-diagram
                 :nodes="stateMachine.states"
@@ -202,7 +212,7 @@ export default {
                 // codemirror options
                 tabSize: 4,
                 mode: 'text/javascript',
-                // theme: 'default',
+                //theme: 'default',
                 lineNumbers: true,
                 line: true,
                 // keyMap: "sublime",
@@ -542,14 +552,16 @@ export default {
 /*.CodeMirror {
     height: 100% !important;
 }*/
-.codeArea {
+#codeArea {
 /*    width: 100%;
     background-color: #eeeeee;
     display: flex;
     flex-wrap: wrap;
     align-content:flex-start;*/
     /*width: 70%;*/
-    padding-top: 10px;
+    background-color: #ffffff;
+    padding-left: 3px;
+    padding-right: 3px;
     /*height: 550px;*/
 }
 
