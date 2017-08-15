@@ -2704,9 +2704,16 @@ class StateMachine {
             stateDescription.id = ""+globalStore.stateCounter
             globalStore.stateCounter += 1
         }
-        let newState = new State(this,stateDescription);
 
-        this.states.push(newState);
+        let newState = this.findStateId(stateDescription.id)
+        if (newState) {
+            //update
+            newState.fromJSON(stateDescription)
+        } else {
+            //create
+            newState = new State(this,stateDescription);
+            this.states.push(newState);
+        }
 
         if (!this.firstState) {
             this.firstState = newState;
@@ -2732,9 +2739,15 @@ class StateMachine {
             globalStore.transitionCounter += 1
         }
 
-        let newTransition = new Transition(this,transitionDescription);
-
-        this.transitions.push(newTransition);
+        let newTransition = this.findTransitionId(transitionDescription.id)
+        if (newTransition) {
+            //update
+            newTransition.fromJSON(transitionDescription)
+        } else {
+            //create
+            newTransition = new Transition(this,transitionDescription);
+            this.transitions.push(newTransition);
+        }
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "NEW_TRANSITION", message:  newTransition.toJSONString() });

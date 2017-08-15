@@ -23,7 +23,7 @@
         </div>
         <div class="column is-2" >
             <aside class="menu">
-                <p class="menu-label">Functions</p>
+                <p class="menu-label" style="user-select: none">Functions</p>
                 <ul class="menu-list" style="height:240px;overflow:scroll">
                     <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
                 </ul>
@@ -209,10 +209,10 @@ export default {
                 lineWrapping: true,
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
-                    "'.'": function(cm) {
-                       setTimeout(function(){cm.execCommand("autocomplete");}, 50);
-                       throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
-                    }
+                    // "'.'": function(cm) {
+                    //    setTimeout(function(){cm.execCommand("autocomplete");}, 50);
+                    //    throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
+                    // }
                 },
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
