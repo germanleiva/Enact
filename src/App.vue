@@ -1,12 +1,16 @@
 <template>
   <div id="app">
-    <toolbar></toolbar>
-    <div id="upperArea" style="display:flex">
-        <visual-state-canvas :visual-state-model="deviceVisualState" class="mirror" style="position:relative" draggable="true" :is-mirror="true">
-        </visual-state-canvas>
-        <output-area ref="outputArea"></output-area>
+    <div id="upperArea">
+        <div id="StateTimelineArea">
+            <toolbar></toolbar>
+            <output-area class="visual-state" ref="outputArea"></output-area>
+            <input-area></input-area>
+        </div>
+        <div id="mirrorContainer">
+            <visual-state-canvas :visual-state-model="deviceVisualState" class="mirror" style="position:relative" draggable="true" :is-mirror="true">
+            </visual-state-canvas>
+        </div>
     </div>
-    <input-area></input-area>
     <code-area></code-area>
   </div>
 </template>
@@ -261,14 +265,23 @@ export default {
 
 <style>
 .visualStateCanvas {
-    /*width: 375px;
-    min-width: 375px; We are using flexbox so we shouldn't shrink below this width size
-    height: 667px;*/
+    min-width: 375px;
     background-color:white;
     border: 1px solid #333333;
     float:left;
     margin: 6px;
     position: relative;
+}
+#mirrorContainer{
+    background-image: url("new_phone2.png");
+    background-repeat: no-repeat;
+    background-size: 100% 100%;
+    margin: 3px;
+}
+
+.mirror{
+    margin-top: 50px;
+    flex-shrink: 0;
 }
 
 .mirror:hover{
@@ -373,5 +386,17 @@ export default {
 
 #lowerArea{
     background-color: #eeeeee;
+}
+
+#upperArea{
+    display: flex;
+    justify-content: flex-end;
+}
+
+#StateTimelineArea{
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    overflow-x : scroll;
 }
 </style>

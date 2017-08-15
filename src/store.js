@@ -56,8 +56,8 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410 * 0.95, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660 * 0.9//iPhone 667 Nexus 5X 660
+        mobileWidth: 410 , //iPhone 375 Nexus 5X 410
+        mobileHeight: 660 //iPhone 667 Nexus 5X 660
     },
     computed: {
         isDrawMode() {

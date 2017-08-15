@@ -531,13 +531,14 @@ export default {
 /*.CodeMirror {
     height: 100% !important;
 }*/
-.codeArea {
+#codeArea {
 /*    width: 100%;
     background-color: #eeeeee;
     display: flex;
     flex-wrap: wrap;
     align-content:flex-start;*/
     /*width: 70%;*/
+    background-color: #eeeeee;
     padding-top: 10px;
     /*height: 550px;*/
 }
