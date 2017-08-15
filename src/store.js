@@ -2250,7 +2250,7 @@ class State {
         }
     }
 
-    get sourceCode() {
+    get code() {
         let enterFn = eval(JSONfn.stringify(this.enter))
         let exitFn = eval(JSONfn.stringify(this.exit))
 
@@ -2262,7 +2262,7 @@ class State {
 }`;
     }
 
-    set sourceCode(newCode) {
+    set code(newCode) {
         try {
             let actualValues
 
@@ -2273,7 +2273,7 @@ class State {
             }
         } catch (e) {
             if (e instanceof SyntaxError) {
-                console.log("SyntaxError in State >> set sourceCode, ignoring until the code is fixed")
+                console.log("SyntaxError in State >> set code, ignoring until the code is fixed")
             }
         }
     }
@@ -2356,7 +2356,7 @@ return true;
         this.machine.notifyChange("TRANSITION",this,"action");
     }
 
-    get sourceCode() {
+    get code() {
         let guardFn = eval(JSONfn.stringify(this.guard))
         let actionFn = eval(JSONfn.stringify(this.action))
 
@@ -2368,7 +2368,7 @@ return true;
 }`;
     }
 
-    set sourceCode(newCode) {
+    set code(newCode) {
         try {
             let actualValues
 
@@ -2379,7 +2379,7 @@ return true;
             }
         } catch (e) {
             if (e instanceof SyntaxError) {
-                console.log("SyntaxError in Transition >> sourceCode, ignoring until the code is fixed")
+                console.log("SyntaxError in Transition >> code, ignoring until the code is fixed")
             }
         }
 
@@ -2615,6 +2615,22 @@ class StateMachine {
             }
             this.functions[0].isSelected = true;
         }
+    }
+
+    get selectedElement() {
+        let selectedFunction = this.functions.find((f) => f.isSelected)
+        if (selectedFunction) {
+            return selectedFunction
+        }
+        let selectedNode = this.states.find((s) => s.isSelected)
+        if (selectedNode) {
+            return selectedNode
+        }
+        let selectedTransition = this.transitions.find((s) => s.isSelected)
+        if (selectedTransition) {
+            return selectedTransition
+        }
+        return undefined
     }
 
     addShape(aShape) {

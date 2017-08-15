@@ -3,17 +3,17 @@
         <div class="column is-2" >
             <aside class="menu">
                 <p class="menu-label">Functions</p>
-                <ul class="menu-list" style="height:475px;overflow:scroll">
+                <ul class="menu-list" style="height:240px;overflow:scroll">
                     <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
                 </ul>
             </aside>
             <a class="button" @click="createNewFunction()">New</a>
             <a class="button" @click="">Delete</a>
         </div>
-        <div class="column is-4">
+        <div class="column is-6">
             <div style="background-color: yellow">
-                <codemirror ref="codeContainer" v-if="selectedFunction != undefined"
-                  :code="selectedFunction.code"
+                <codemirror ref="codeContainer" v-if="selectedElement != undefined"
+                  :code="selectedElement.code"
                   :options="editorOptions"
                   @ready="onEditorReady"
                   @focus="onEditorFocus"
@@ -25,21 +25,11 @@
             <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
-                style="height:250px"
                 @selectedNode="onSelectedState"
                 @selectedLink="onSelectedEdge"
                 @diagramNewNode="addNewState"
                 @diagramNewLink="addNewTransition">
             </state-diagram>
-            <div style="background-color:rgba(255,100,0,50)">
-                <codemirror ref="transitionCodeMirror"
-                  :code="''"
-                  :options="transitionEditorOptions"
-                  @ready="onEditorReady"
-                  @focus="onEditorFocus"
-                  @change="onTransitionEditorCodeChange">
-                </codemirror>
-            </div>
         </div>
     </div>
 </template>
@@ -233,25 +223,6 @@ export default {
                     globalScope: {$:globalStore.stateMachine.globalScope},
                 }
             },
-            transitionEditorOptions: {
-                // codemirror options
-                tabSize: 4,
-                mode: 'text/javascript',
-                // theme: 'default',
-                lineNumbers: true,
-                line: true,
-                // keyMap: "sublime",
-                lineWrapping: true,
-                extraKeys: { "Ctrl-Space": "autocomplete" },
-                foldGutter: true,
-                gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
-                styleSelectedText: true,
-                highlightSelectionMatches: { showToken: /\w/, annotateScrollbar: true },
-                // more codemirror config...
-                hintOptions: {
-                    globalScope: {$:globalStore.stateMachine.globalScope},
-                }
-            },
             textMarkers: [],
         }
     },
@@ -399,14 +370,17 @@ export default {
         },
         onEditorFocus(editor) {
           console.log('the editor is focus!', editor)
-          if (editor == this.$refs.transitionCodeMirror.editor) {
+          // if (editor == this.$refs.transitionCodeMirror.editor) {
             let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
             if (currentlySelectedItem) {
                 // editor.options.hintOptions.globalScope = {"this":{arriba:'up',pepe:3}}
             }
-          }
+          // }
         },
         onEditorCodeChange(newCode) {
+            // let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
+            // currentlySelectedItem.code = newCode
+
             this.deleteAllTextMarkers();
 
             let {objects,allVS,allObjects,allProperties} = this.parsingData
@@ -472,24 +446,24 @@ export default {
                 }
             }
 
-            if (this.selectedFunction) {
-                this.selectedFunction.code = newCode
+            if (this.selectedElement) {
+                this.selectedElement.code = newCode
             }
         },
-        onTransitionEditorCodeChange(newCode) {
-            let currentlySelectedItem = this.currentlySelectedEdge || this.currentlySelectedState ||  undefined
-            currentlySelectedItem.sourceCode = newCode
-        },
         onSelectedState(aNode) {
-            this.$refs.transitionCodeMirror.editor.setValue(aNode.sourceCode)
+            this.unselectAllFunctions()
+            // this.codeEditor.setValue(aNode.code)
         },
         onSelectedEdge(aLink) {
-            this.$refs.transitionCodeMirror.editor.setValue(aLink.sourceCode)
-
+            this.unselectAllFunctions()
+            // this.codeEditor.setValue(aLink.code)
         },
         createNewFunction(){
             let newFunction = this.stateMachine.addNewFunction("unnamed")
             this.toggleFunction(newFunction)
+        },
+        unselectAllFunctions(){
+            this.toggleFunction(undefined)
         },
         toggleFunction(aSMFunction) {
             for (let eachFunction of this.stateMachine.functions) {
@@ -543,8 +517,8 @@ export default {
         stateMachine() {
             return globalStore.stateMachine;
         },
-        selectedFunction() {
-            return this.stateMachine.functions.find((f) => f.isSelected)
+        selectedElement() {
+            return this.stateMachine.selectedElement
         }
     },
     mounted: function() {
@@ -565,7 +539,7 @@ export default {
     align-content:flex-start;*/
     /*width: 70%;*/
     padding-top: 10px;
-    height: 550px;
+    /*height: 550px;*/
 }
 
 </style>
