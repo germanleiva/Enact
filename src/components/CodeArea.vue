@@ -1,15 +1,5 @@
 <template>
     <div id="codeArea" class="columns">
-        <div class="column is-2" >
-            <aside class="menu">
-                <p class="menu-label">Functions</p>
-                <ul class="menu-list" style="height:240px;overflow:scroll">
-                    <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
-                </ul>
-            </aside>
-            <a class="button" @click="createNewFunction()">New</a>
-            <a class="button" @click="">Delete</a>
-        </div>
         <div class="column is-6">
             <div style="background-color: yellow">
                 <codemirror ref="codeContainer" v-if="selectedElement != undefined"
@@ -30,6 +20,16 @@
                 @diagramNewNode="addNewState"
                 @diagramNewLink="addNewTransition">
             </state-diagram>
+        </div>
+        <div class="column is-2" >
+            <aside class="menu">
+                <p class="menu-label">Functions</p>
+                <ul class="menu-list" style="height:240px;overflow:scroll">
+                    <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
+                </ul>
+            </aside>
+            <a class="button" @click="createNewFunction()">New</a>
+            <a class="button" @click="">Delete</a>
         </div>
     </div>
 </template>
@@ -452,10 +452,12 @@ export default {
         },
         onSelectedState(aNode) {
             this.unselectAllFunctions()
+            this.codeEditor.focus()
             // this.codeEditor.setValue(aNode.code)
         },
         onSelectedEdge(aLink) {
             this.unselectAllFunctions()
+            this.codeEditor.focus()
             // this.codeEditor.setValue(aLink.code)
         },
         createNewFunction(){
@@ -468,7 +470,16 @@ export default {
         toggleFunction(aSMFunction) {
             for (let eachFunction of this.stateMachine.functions) {
                 eachFunction.isSelected = eachFunction == aSMFunction
+                if (eachFunction.isSelected) {
+                    this.codeEditor.focus()
+                    this.unselectStateMachine()
+                }
             }
+        },
+        unselectStateMachine(){
+            let unselect = (x) => x.isSelected = false
+            this.stateMachine.states.forEach(unselect)
+            this.stateMachine.transitions.forEach(unselect)
         },
         addNewState() {
             this.stateMachine.insertNewState({name:'New State'});

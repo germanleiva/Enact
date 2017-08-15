@@ -2255,10 +2255,10 @@ class State {
         let exitFn = eval(JSONfn.stringify(this.exit))
 
         return `{
-        description: '${this.description}',
-        name: '${this.name}',
-        enter: ${enterFn},
-        exit: ${exitFn}
+  description: '${this.description}',
+  name: '${this.name}',
+  enter: ${enterFn},
+  exit: ${exitFn}
 }`;
     }
 
@@ -2478,9 +2478,6 @@ class SMFunctionIsInside extends SMFunction {
     constructor({machine}) {
         super({machine,name:"isInside"});
         this.code = `function isInside(touch, shape) {
-            console.log("isInside >> ")
-            console.log(touch);
-            console.log(shape);
   return shape.left < touch.x && shape.top < touch.y && shape.left + shape.width > touch.x && shape.top + shape.height > touch.y;
 }`
     }
@@ -2503,12 +2500,12 @@ class SMFunctionRecordDelta extends SMFunction {
     constructor({machine}) {
         super({machine,name:"recordDelta"});
         this.code = `function recordDelta(event) {
-    var info = event.info;
-    info.delta = {
-        x: info.cur.x - info.prev.x,
-        y: info.cur.y - info.prev.y,
-        t: info.cur.t - info.prev.t
-    }
+  var info = event.info;
+  info.delta = {
+    x: info.cur.x - info.prev.x,
+    y: info.cur.y - info.prev.y,
+    t: info.cur.t - info.prev.t
+  }
 }`
     }
 }
@@ -2564,15 +2561,11 @@ class StateMachine {
             ownKeys(target) {
                 let allKeys = []
 
-                let accumulatedObjects = []
                 for (let eachVS of globalStore.visualStates) {
                     allKeys.push(eachVS.name)
-                    for (let eachObject of eachVS.allObjects) {
-                        accumulatedObjects.push(eachObject)
-                    }
                 }
 
-                for (let eachObject of accumulatedObjects) {
+                for (let eachObject of self.accumulatedObjects) {
                     if (allKeys.indexOf(eachObject.name) < 0){
                         allKeys.push(eachObject.name)
                     }
@@ -2593,10 +2586,9 @@ class StateMachine {
                     return vs.proxy;
                 }
 
-                for (let eachVS of globalStore.visualStates) {
-                    let objectFound = eachVS.allObjects.find((o) => o.name == key)
-                    if (objectFound) {
-                        return objectFound.proxy
+                for (let eachObject of self.accumulatedObjects) {
+                    if (eachObject.name == key) {
+                        return eachObject.proxy
                     }
                 }
 
@@ -2609,12 +2601,25 @@ class StateMachine {
             }
         });
 
-        if (this.isServer) {
+        // if (this.isServer) {
             for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this}),new SMFunctionRecordDelta({machine:this}), new SMFunctionMoveShape1({machine:this}), new SMFunctionChangeColorShape1({machine:this}), new SMFunctionIsTouch1InsideShape1({machine:this})]) {
                 this.addFunction(newFunction)
             }
             this.functions[0].isSelected = true;
+        // }
+    }
+
+    get accumulatedObjects() {
+        if (!this.isServer) {
+            return mobileCanvasVM.allObjects
         }
+        let accumulatedObjects = []
+        for (let eachVS of globalStore.visualStates) {
+            for (let eachObject of eachVS.allObjects) {
+                accumulatedObjects.push(eachObject)
+            }
+        }
+        return accumulatedObjects
     }
 
     get selectedElement() {
@@ -2631,6 +2636,10 @@ class StateMachine {
             return selectedTransition
         }
         return undefined
+    }
+
+    sendToMobile(){
+        //TODO We need to send the shapes, the measures, the touches and the functions (the functions should include the hardcoded values)
     }
 
     addShape(aShape) {
@@ -2667,12 +2676,18 @@ class StateMachine {
         }
     }
 
-    updateFunction(aFunctionJSON) {
+    updateFunction(aFunctionJSON,shouldCreate=false) {
         let foundFunction = this.functions.find((f) => f.id == aFunctionJSON.id)
         if (foundFunction) {
            foundFunction.fromJSON(aFunctionJSON)
         } else {
-            console.log("Couldn't find function to update with id: " + aFunctionJSON.id)
+            if (shouldCreate) {
+                aFunctionJSON.machine = this
+                let newFunction = new SMFunction(aFunctionJSON);
+                this.addFunction(newFunction)
+            } else {
+                console.log("Couldn't find function to update with id: " + aFunctionJSON.id)
+            }
         }
     }
 

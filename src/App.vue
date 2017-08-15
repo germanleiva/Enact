@@ -43,6 +43,10 @@ export default {
     VisualStateCanvas
   },
   mounted: function() {
+    globalBus.$on('message-from-device-MOBILE_INIT', function(data) {
+        // console.log("TYPE OF EVENT " + data.message.type + " data: " + JSON.stringify(data))
+    }.bind(this));
+
     globalBus.$on('message-from-device-CURRENT_EVENT', function(data) {
         // console.log("TYPE OF EVENT " + data.message.type + " data: " + JSON.stringify(data))
         this.deviceVisualState.currentInputEvent = new InputEvent(data.message)

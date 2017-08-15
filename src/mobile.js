@@ -13,7 +13,8 @@ let socket = io.connect(window.location.href.split('/')[2]);
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
     data: {
-        isRecording: false,        interactiveShapes: {},
+        isRecording: false,
+        interactiveShapes: {},
         measures: []
     },
     computed: {
@@ -43,7 +44,7 @@ var stateMachineHandler = {
     return ['peras','bananas']
   },
   get (target, key) {
-    console.log("stateMachineHandler >> get")
+    console.log("stateMachineHandler >> get " + key)
     if (key in target) {
         return target[key]
     }
@@ -77,6 +78,8 @@ let stateMachine = proxyStateMachine
 window.stateMachine = proxyStateMachine //For debugging in the developer tools
 
 var $ = stateMachine.globalScope
+
+socket.emit('message-from-device', { type:"MOBILE_INIT" });
 
 let RectangleVM = Vue.extend({
     template: `<div :id="id" class="shape" v-bind:style="styleObject"></div>`,
@@ -275,10 +278,7 @@ socket.on('message-from-server', function(data) {
         }
         case "NEW_FUNCTION":{
             let functionDescription = JSON.parse(data.message)
-            functionDescription.machine = stateMachine
-
-            let newFunction = new SMFunction(functionDescription);
-            stateMachine.addFunction(newFunction);
+            stateMachine.updateFunction(newFunction,true);
 
             break;
         }
