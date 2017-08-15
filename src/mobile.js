@@ -5,7 +5,6 @@ import CSSJSON from 'cssjson'
 // import App from './App.vue'
 
 require('./mobile.css')
-
 import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
 
 let socket = io.connect(window.location.href.split('/')[2]);
@@ -23,6 +22,17 @@ let mobileCanvasVM = new Vue({
                 width: globalStore.mobileWidth +'px',
                 height: globalStore.mobileHeight + 'px'
             }
+        },
+        allObjects: {
+            cache: false,
+            get: function() {
+                let result = []
+                for (let eachShapeVM of Object.values(this.interactiveShapes)) {
+                    result.push(eachShapeVM.shapeModel)
+                }
+                result = result.concat(this.currentInputEvent.touches)
+                return result
+            }
         }
     },
     methods: {
@@ -39,45 +49,47 @@ let mobileCanvasVM = new Vue({
     }
 })
 
-var stateMachineHandler = {
-  ownKeys(target) {
-    return ['peras','bananas']
-  },
-  get (target, key) {
-    console.log("stateMachineHandler >> get " + key)
-    if (key in target) {
-        return target[key]
-    }
+globalStore.mobileCanvasVM = mobileCanvasVM
 
-    let foundShape = mobileCanvasVM.interactiveShapes[key]
-    if (foundShape) {
-        return foundShape.shapeModel
-    }
+// var stateMachineHandler = {
+//   ownKeys(target) {
+//     return ['peras','bananas']
+//   },
+//   get (target, key) {
+//     console.log("stateMachineHandler >> get " + key)
+//     if (key in target) {
+//         return target[key]
+//     }
 
-    let foundFunction = target.functions.find((f) => f.name == key)
-    if (foundFunction) {
-        return foundFunction.func
-    }
+//     let foundShape = mobileCanvasVM.interactiveShapes[key]
+//     if (foundShape) {
+//         return foundShape.shapeModel
+//     }
 
-    if (target.event) {
-        for (var i = 0; i < target.event.touches.length; i++) {
-            let aTouch = target.event.touches[i];
-            if (aTouch.id == key) {
-                return aTouch
-            }
-        }
-    }
+//     let foundFunction = target.functions.find((f) => f.name == key)
+//     if (foundFunction) {
+//         return foundFunction.func
+//     }
 
-    return target[key] //Just to send the typical error
-  }
-}
+//     if (target.event) {
+//         for (var i = 0; i < target.event.touches.length; i++) {
+//             let aTouch = target.event.touches[i];
+//             if (aTouch.id == key) {
+//                 return aTouch
+//             }
+//         }
+//     }
 
-var proxyStateMachine = new Proxy(new StateMachine({isServer:false}), stateMachineHandler)
+//     return target[key] //Just to send the typical error
+//   }
+// }
 
-let stateMachine = proxyStateMachine
-window.stateMachine = proxyStateMachine //For debugging in the developer tools
+// var proxyStateMachine = new Proxy(new StateMachine({isServer:false}), stateMachineHandler)
 
-var $ = stateMachine.globalScope
+let stateMachine = new StateMachine({isServer:false})//proxyStateMachine
+window.stateMachine = stateMachine //For debugging in the developer tools
+
+$ = stateMachine.globalScope
 
 socket.emit('message-from-device', { type:"MOBILE_INIT" });
 
@@ -86,7 +98,8 @@ let RectangleVM = Vue.extend({
     props: ['shapeModel'],
     data: function() {
         return {
-            id: this.shapeModel.id
+            id: this.shapeModel.id,
+            name: this.shapeModel.name
             // color: 'white',
             // left: 0,
             // top: 0,
@@ -155,7 +168,8 @@ let PolygonVM = Vue.extend({
     props: ['shapeModel'],
     data: function() {
         return {
-            id: this.shapeModel.id
+            id: this.shapeModel.id,
+            name: this.shapeModel.name
         }
     },
     computed: {

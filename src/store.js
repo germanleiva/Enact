@@ -31,6 +31,7 @@ export const globalBus = new Vue();
 
 export const globalStore = new Vue({
     data: {
+        mobileCanvasVM: undefined,
         visualStates: [],
         inputEvents: [],
         isRecording: false,
@@ -2255,10 +2256,10 @@ class State {
         let exitFn = eval(JSONfn.stringify(this.exit))
 
         return `{
-    description: '${this.description}',
-    name: '${this.name}',
-    enter: ${enterFn},
-    exit: ${exitFn}
+        description: '${this.description}',
+        name: '${this.name}',
+        enter: ${enterFn},
+        exit: ${exitFn}
 }`;
     }
 
@@ -2361,10 +2362,10 @@ return true;
         let actionFn = eval(JSONfn.stringify(this.action))
 
         return `{
-    description: '${this.description}',
-    name: '${this.name}',
-    guard: ${guardFn},
-    action: ${actionFn}
+        description: '${this.description}',
+        name: '${this.name}',
+        guard: ${guardFn},
+        action: ${actionFn}
 }`;
     }
 
@@ -2477,8 +2478,8 @@ class SMFunction {
 class SMFunctionIsInside extends SMFunction {
     constructor({machine}) {
         super({machine,name:"isInside"});
-        this.code = `function isInside(touch, shape) {
-  return shape.left < touch.x && shape.top < touch.y && shape.left + shape.width > touch.x && shape.top + shape.height > touch.y;
+        this.code = `function isInside({touch, shape}) {
+        return shape.left < touch.x && shape.top < touch.y && shape.left + shape.width > touch.x && shape.top + shape.height > touch.y;
 }`
     }
 }
@@ -2491,7 +2492,7 @@ class SMFunctionMap extends SMFunction {
               min = Number.NEGATIVE_INFINITY,
               max = Number.POSITIVE_INFINITY,
               ratio = 1}) {
-  output.applyDelta(input,min,max,ratio)
+        output.applyDelta(input,min,max,ratio)
 }`
     }
 }
@@ -2500,12 +2501,12 @@ class SMFunctionRecordDelta extends SMFunction {
     constructor({machine}) {
         super({machine,name:"recordDelta"});
         this.code = `function recordDelta(event) {
-  var info = event.info;
-  info.delta = {
-    x: info.cur.x - info.prev.x,
-    y: info.cur.y - info.prev.y,
-    t: info.cur.t - info.prev.t
-  }
+        var info = event.info;
+        info.delta = {
+            x: info.cur.x - info.prev.x,
+            y: info.cur.y - info.prev.y,
+            t: info.cur.t - info.prev.t
+        }
 }`
     }
 }
@@ -2514,12 +2515,12 @@ class SMFunctionMoveShape1 extends SMFunction {
     constructor({machine}) {
         super({machine,name:"moveShape1"});
         this.code = `function moveShape1(event) {
-  this.S1.color = '#00ff00'
-  this.recordDelta(event);
-  // this.shape1().left += this.touch1(event).info.delta.x;
-  // this.shape1().top += this.touch1(event).info.delta.y;
-  this.S1.left += event.info.delta.x;
-  this.S1.top += event.info.delta.y;
+        $.S1.color = '#00ff00'
+        this.recordDelta(event);
+        // this.shape1().left += this.touch1(event).info.delta.x;
+        // this.shape1().top += this.touch1(event).info.delta.y;
+        $.S1.left += event.info.delta.x;
+        $.S1.top += event.info.delta.y;
 }`
     }
 }
@@ -2528,7 +2529,7 @@ class SMFunctionChangeColorShape1 extends SMFunction {
     constructor({machine}) {
         super({machine,name:"changeColorShape1"});
         this.code = `function changeColorShape1() {
-  this.S1.color = '#ff0000';
+        this.S1.color = '#ff0000';
 }`
     }
 }
@@ -2537,7 +2538,7 @@ class SMFunctionIsTouch1InsideShape1 extends SMFunction {
     constructor({machine}) {
         super({machine,name:"isTouch1InsideShape1"});
         this.code = `function isTouch1InsideShape1(event) {
-  return this.isInside(this.F0,this.S1);
+        return this.isInside(this.F0,this.S1);
 }`
     }
 }
@@ -2581,6 +2582,10 @@ class StateMachine {
                 return null
             },
             get (target, key) {
+                if (!isServer) {
+                    // Mobile debugging
+                    // debugger;
+                }
                 let vs = globalStore.visualStates.find((vs) => vs.name == key)
                 if (vs) {
                     return vs.proxy;
@@ -2611,7 +2616,7 @@ class StateMachine {
 
     get accumulatedObjects() {
         if (!this.isServer) {
-            return mobileCanvasVM.allObjects
+            return globalStore.mobileCanvasVM.allObjects
         }
         let accumulatedObjects = []
         for (let eachVS of globalStore.visualStates) {
@@ -2764,7 +2769,6 @@ class StateMachine {
     processEvent(type, event) {
         var machine = this;
         var state = this.currentState;
-
 
         this.event = new InputEvent(event)
 
