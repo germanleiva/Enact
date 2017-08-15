@@ -1,5 +1,5 @@
 <template>
-    <svg id="svg" @dblclick.prevent="canvasDoubleClick" width="100%" height="100%" style="background:#384d54;padding-top:0px">
+    <svg id="svg" @dblclick.prevent="canvasDoubleClick" width="100%" height="100%" style="background:#333333;padding-top:0px">
         <!--define arrow markers for graph links-->
         <defs>
              <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
