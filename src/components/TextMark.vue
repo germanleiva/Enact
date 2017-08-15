@@ -1,6 +1,7 @@
 <template>
-    <!-- <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick">{{codeToShow}}<span class="tooltiptext">Tooltip text</span></span> -->
-    <span class="something">{{codeToShow}}</span>
+    <!-- <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick" class="marker">{{codeToShow}}<span class="tooltiptext">Tooltip text</span></span> -->
+    <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick" class="marker">{{codeToShow}}</span>
+
 </template>
 
 <script>
@@ -73,9 +74,9 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 
-.something {
+.marker {
     display: inline-block;
     position: relative;
 /*    padding-left: 5px;
@@ -83,11 +84,11 @@ export default {
     background-color: red;
 }
 
-.something:hover {
+.marker:hover {
     background-color: yellow;
 }
 
-/*span .tooltiptext {
+/*.marker .tooltiptext {
     visibility: hidden;
     width: 120px;
     background-color: #555;
@@ -104,7 +105,7 @@ export default {
     transition: opacity 0.3s;
 }
 
-span .tooltiptext::after {
+.marker .tooltiptext::after {
     content: "";
     position: absolute;
     top: 100%;
@@ -115,7 +116,7 @@ span .tooltiptext::after {
     border-color: #555 transparent transparent transparent;
 }
 
-span:hover .tooltiptext {
+.marker:hover .tooltiptext {
     visibility: visible;
     opacity: 1;
 }*/

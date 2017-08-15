@@ -76,7 +76,7 @@ export default {
         },
         lineStyle: function() {
             let value = this.isLinking || !globalStore.toolbarState.measureMode ?'none':'auto'
-            if (globalStore.isCtrlPressed) {
+            if (globalStore.isMetaPressed) {
                 value = 'auto'
             }
             return {

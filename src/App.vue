@@ -161,7 +161,7 @@ export default {
             case 91: {
                 // MAC Cmd Key
                 e.preventDefault()
-                globalStore.isCtrlPressed = true;
+                globalStore.isMetaPressed = true;
                 break;
             }
         }
@@ -190,7 +190,7 @@ export default {
             case 91: {
                 // MAC Cmd Key
                 e.preventDefault()
-                globalStore.isCtrlPressed = false;
+                globalStore.isMetaPressed = false;
             }
         }
     });

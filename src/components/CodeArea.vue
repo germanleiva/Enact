@@ -219,10 +219,10 @@ export default {
                 lineWrapping: true,
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
-                    // "'.'": function(cm) {
-                    //    setTimeout(function(){cm.execCommand("autocomplete");}, 50);
-                    //    throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
-                    // }
+                    "'.'": function(cm) {
+                       setTimeout(function(){cm.execCommand("autocomplete");}, 50);
+                       throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
+                    }
                 },
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],
@@ -434,13 +434,14 @@ export default {
                     }
 
                     if (propertyName) {
+                        debugger;
                         let validExtraProperties = objects[objectId].propertyMap[propertyName]
 
                         if (!validExtraProperties) {
                             //It was not a valid propertyName
                             continue;
                         }
-                        if (!validExtraProperties && validExtraProperties.indexOf(extraPropertyName) < 0) {
+                        if (extraPropertyName && validExtraProperties.indexOf(extraPropertyName) < 0) {
                             //It was not a valid extraPropertyName
                             continue;
                         }
