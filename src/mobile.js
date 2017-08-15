@@ -278,7 +278,7 @@ socket.on('message-from-server', function(data) {
         }
         case "NEW_FUNCTION":{
             let functionDescription = JSON.parse(data.message)
-            stateMachine.updateFunction(newFunction,true);
+            stateMachine.updateFunction(functionDescription,true);
 
             break;
         }
