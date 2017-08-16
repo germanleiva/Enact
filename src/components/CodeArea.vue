@@ -1,21 +1,19 @@
 <template>
     <div id="codeArea" class="columns">
         <div class="column is-6">
-            <div style="background-color: yellow">
-                <codemirror ref="codeContainer" v-if="selectedElement != undefined"
-                  :code="selectedElement.code"
-                  :options="editorOptions"
-                  @ready="onEditorReady"
-                  @focus="onEditorFocus"
-                  @change="onEditorCodeChange">
-                </codemirror>
-            </div>
+            <codemirror ref="codeContainer" v-if="selectedElement != undefined"
+              :code="selectedElement.code"
+              :options="editorOptions"
+              @ready="onEditorReady"
+              @focus="onEditorFocus"
+              @change="onEditorCodeChange">
+            </codemirror>
         </div>
         <div class="column is-2" >
-            <aside class="menu">
+            <aside class="menu" >
                 <p class="menu-label">Functions</p>
                 <a class="button buttonmenuleft" @click="createNewFunction()">New</a>
-                <a class="button" @click="">Delete</a>
+                <a class="button" @click="deleteSelectedFunctions()" :class="{'is-disabled':stateMachine.functions.every((f) => !f.isSelected)}">Delete</a>
                 <ul class="menu-list" style="height:232px;overflow:scroll">
                     <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
                 </ul>
@@ -463,6 +461,16 @@ export default {
             let newFunction = this.stateMachine.addNewFunction("unnamed")
             this.toggleFunction(newFunction)
         },
+        deleteSelectedFunctions() {
+            for (let eachFunction of Array.from(this.stateMachine.functions)) {
+                if (eachFunction.isSelected) {
+                    this.stateMachine.functions.remove(eachFunction)
+                }
+            }
+            if (this.stateMachine.functions.length > 0) {
+                this.stateMachine.functions[0].isSelected = true
+            }
+        },
         unselectAllFunctions(){
             this.toggleFunction(undefined)
         },
@@ -558,7 +566,7 @@ export default {
     background-color: #ffffff;
     padding-top: 6px;
     font-family: futura;
-
+    user-select:none
 }
 .menu-label{
     font-size: 1em !important;

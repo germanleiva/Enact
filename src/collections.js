@@ -15,6 +15,14 @@ function extendArray(arrayConstructor)
             return this.splice(0, this.length);
         }
     }
+    if (!arrayConstructor.prototype.remove) {
+        arrayConstructor.prototype.remove = function(x) {
+            let i = this.indexOf(x)
+            if (i >= 0) {
+                return this.splice(i,1);
+            }
+        }
+    }
     if (!arrayConstructor.prototype.includes) {
         arrayConstructor.prototype.includes = function(element) {
             return this.indexOf(element) >= 0

@@ -2581,52 +2581,6 @@ class SMFunctionMap extends SMFunction {
     }
 }
 
-class SMFunctionRecordDelta extends SMFunction {
-    constructor({machine}) {
-        super({machine,name:"recordDelta"});
-        this.code = `function recordDelta(event) {
-        var info = event.info;
-        info.delta = {
-            x: info.cur.x - info.prev.x,
-            y: info.cur.y - info.prev.y,
-            t: info.cur.t - info.prev.t
-        }
-}`
-    }
-}
-
-class SMFunctionMoveShape1 extends SMFunction {
-    constructor({machine}) {
-        super({machine,name:"moveShape1"});
-        this.code = `function moveShape1(event) {
-        $.S1.color = '#00ff00'
-        this.recordDelta(event);
-        // this.shape1().left += this.touch1(event).info.delta.x;
-        // this.shape1().top += this.touch1(event).info.delta.y;
-        $.S1.left += event.info.delta.x;
-        $.S1.top += event.info.delta.y;
-}`
-    }
-}
-
-class SMFunctionChangeColorShape1 extends SMFunction {
-    constructor({machine}) {
-        super({machine,name:"changeColorShape1"});
-        this.code = `function changeColorShape1() {
-        this.S1.color = '#ff0000';
-}`
-    }
-}
-
-class SMFunctionIsTouch1InsideShape1 extends SMFunction {
-    constructor({machine}) {
-        super({machine,name:"isTouch1InsideShape1"});
-        this.code = `function isTouch1InsideShape1(event) {
-        return this.isInside(this.F0,this.S1);
-}`
-    }
-}
-
 class StateMachine {
     constructor({isServer}) {
         this.states = []
@@ -2691,7 +2645,7 @@ class StateMachine {
         });
 
         // if (this.isServer) {
-            for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this}),new SMFunctionRecordDelta({machine:this}), new SMFunctionMoveShape1({machine:this}), new SMFunctionChangeColorShape1({machine:this}), new SMFunctionIsTouch1InsideShape1({machine:this})]) {
+            for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this})]) {
                 this.addFunction(newFunction)
             }
             this.functions[0].isSelected = true;
