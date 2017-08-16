@@ -1028,8 +1028,7 @@ class InputEventTouch {
         this.name = this.id
         this.position = new Position(x || pageX, y || pageY)
 
-        this.radiusX = radiusX
-        this.radiusY = radiusY
+        this.size = new Size(radiusX,radiusY)
         this.angularRotation = angularRotation
         this.force = force
         this.highlight = false
@@ -1047,6 +1046,13 @@ class InputEventTouch {
     }
     set y(value) {
         return this.position.y = value
+    }
+
+    get radiusX() {
+        return this.size.width
+    }
+    get radiusY() {
+        return this.size.height
     }
 
     static get propertyMap() {
@@ -1068,10 +1074,6 @@ class InputEventTouch {
                 return target[key]
             }
         })
-    }
-
-    get size() {
-        return {width: this.radiusX, height: this.radiusX}
     }
 
     get leanJSON() {
@@ -1150,7 +1152,6 @@ class Position extends Property {
     }
 
     applyDelta(input,max,min,ratio) {
-        debugger;
         let {x:deltaX,y:deltaY} = input.delta
         let ratioX = 1
         let ratioY = 1
@@ -1191,8 +1192,61 @@ class Position extends Property {
 class Size extends Property {
     constructor(width,height) {
         super()
-        this.width = width
-        this.height = height
+        this._width = width
+        this._height = height
+        this.previousWidth = width
+        this.previousHeight = height
+    }
+    get width(){
+        return this._width
+    }
+    set width(value) {
+        this.previousX = this._width
+        this._width = value
+    }
+    get height(){
+        return this._height
+    }
+    set height(value) {
+        this.previousHeight = this._height
+        this._height = value
+    }
+
+    applyDelta(input,max,min,ratio) {
+        let {x:deltaX,y:deltaY} = input.delta
+        let ratioX = 1
+        let ratioY = 1
+        if (typeof ratio == "number") {
+            ratioX = ratioY = ratio
+        } else {
+            let {ratioX,ratioY} = ratio
+        }
+
+        let maxX = Number.POSITIVE_INFINITY
+        let maxY = Number.POSITIVE_INFINITY
+        if (typeof max == "number") {
+            maxX = maxY = max
+        } else {
+            let {maxX,maxY} = max
+        }
+
+        let minX = Number.NEGATIVE_INFINITY
+        let minY = Number.NEGATIVE_INFINITY
+        if (typeof min == "number") {
+            minX = minY = min
+        } else {
+            let {minX,minY} = min
+        }
+
+        // this.x = Math.max(Math.min((this.x + deltaX) * ratioX, maxX), minX)
+        // this.y = Math.max(Math.min((this.y + deltaY) * ratioY, maxY), minY)
+
+        this.width += deltaX
+        this.height += deltaY
+    }
+
+    get delta() {
+        return {width:this.width - this.previousWidth,height:this.height-this.previousHeight}
     }
 }
 
