@@ -280,7 +280,8 @@ export default {
     background-image: url("new_phone2.png");
     background-repeat: no-repeat;
     background-size: 100% 100%;
-    margin: 3px;
+    background-color: white;
+    margin: 1%;
 }
 
 .mirror{
@@ -323,12 +324,12 @@ export default {
     in order to get the scrolling to work*/
     overflow-x : scroll;
     white-space: nowrap;
+    padding-left: 1%;
 }
 
 #toolbar{
   display: block;
-  padding-top: 5px;
-    padding-bottom: 5px;
+  padding: 1%;
 
 }
 
@@ -385,11 +386,8 @@ export default {
 #inputArea {
     display: flex;
     justify-content:center;
-    padding: 8px;
-}
-
-#lowerArea{
-    background-color: #eeeeee;
+    padding: 1%;
+    background-color: #ffffff;
 }
 
 #upperArea{
@@ -402,5 +400,6 @@ export default {
     flex-direction: column;
     flex-grow: 1;
     overflow-x : scroll;
+    background-color: white;
 }
 </style>

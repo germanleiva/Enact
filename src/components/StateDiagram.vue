@@ -1,21 +1,21 @@
 <template>
-    <svg id="svg" @dblclick.prevent="canvasDoubleClick" width="100%" height="100%" style="background:#333333;padding-top:0px">
+    <svg id="svg" @dblclick.prevent="canvasDoubleClick" width="100%" height="100%" style="background:#ffffff;padding-top:0px;">
         <!--define arrow markers for graph links-->
         <defs>
              <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#333">
                 </path>
             </marker>
              <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
                 </path>
             </marker>
              <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ccc">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#333">
                 </path>
             </marker>
              <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="red">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
                 </path>
             </marker>
         </defs>
@@ -294,8 +294,8 @@ export default {
 <style scoped>
 
 text {
-    fill: white;
-    font-family: 'Open Sans';
+    fill: #333333;
+    font-family: futura;
     user-select: none;
 }
 
@@ -304,25 +304,25 @@ text {
 }
 
 .node circle {
-    stroke: white;
+    stroke: #333333;
     stroke-width: 1.5px;
-    fill:#0db7ed;
+    fill:#A2C1CC;
 }
 
 .node.selected circle {
-    fill:red;
+    fill:#00d1b2;
     cursor:default;
 }
 
 path.link, path.textpath {
     fill: none;
-    stroke: #cccccc;
+    stroke: #333333;
     stroke-width: 1px;
 }
 
 path.link.selected{
     stroke-width: 4px;
-    stroke: red
+    stroke: #00d1b2;
 }
 
 path.invis {
@@ -331,27 +331,34 @@ path.invis {
 }
 
 .nodeTextClass {
-    font-size: 20px;
+    font-size: 1.3em;
     cursor: pointer;
 }
+.nodeTextClass:hover {
+    fill: #00d1b2;
+}
 .selected > .nodeTextClass {
-    font-size: 30px;
-    fill: red;
+    font-size: 1.8em;
+    fill: #00d1b2;
     cursor: default;
 }
 
 .linkLabel {
-    font-size: 20px;
+    font-size: 1.3em;
     cursor: pointer;
 }
+.linkLabel:hover{
+    fill: #00d1b2;
+}
+
 .linkLabel.selected {
-    font-size: 30px;
-    fill: red;
+    font-size: 1.8em;
+    fill: #00d1b2;
     cursor: default;
 }
 .dragline {
     fill: none;
-    stroke: #000;
+    stroke: #333;
     stroke-width: 1px;
 }
 

@@ -14,12 +14,12 @@
         <div class="column is-2" >
             <aside class="menu">
                 <p class="menu-label">Functions</p>
-                <ul class="menu-list" style="height:240px;overflow:scroll">
+                <a class="button buttonmenuleft" @click="createNewFunction()">New</a>
+                <a class="button" @click="">Delete</a>
+                <ul class="menu-list" style="height:232px;overflow:scroll">
                     <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
                 </ul>
             </aside>
-            <a class="button" @click="createNewFunction()">New</a>
-            <a class="button" @click="">Delete</a>
         </div>
         <div class="column">
             <state-diagram
@@ -548,10 +548,30 @@ export default {
     flex-wrap: wrap;
     align-content:flex-start;*/
     /*width: 70%;*/
-    background-color: #ffffff;
-    padding-left: 3px;
-    padding-right: 3px;
+    background-color: #eeeeee;
+    margin-top: 0px;
+    padding: 1%;
     /*height: 550px;*/
+}
+
+.menu{
+    background-color: #ffffff;
+    padding-top: 6px;
+    font-family: futura;
+
+}
+.menu-label{
+    font-size: 1em !important;
+    padding-left: 6px;
+    margin-bottom: 3px !important;
+}
+.menu-list{
+    margin-top: 5px;
+    border-top: 1px solid #eee;
+}
+
+.buttonmenuleft{
+    margin-left: 6px !important;
 }
 
 </style>
