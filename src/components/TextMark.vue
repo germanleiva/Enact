@@ -81,11 +81,13 @@ export default {
     position: relative;
 /*    padding-left: 5px;
     padding-right: 5px;*/
-    background-color: red;
+    background-color: #00d1b2;
+    color: white;
 }
 
 .marker:hover {
-    background-color: yellow;
+    background-color: #eee;
+    color: #333;
 }
 
 /*.marker .tooltiptext {

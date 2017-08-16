@@ -306,7 +306,7 @@ text {
 .node circle {
     stroke: #333333;
     stroke-width: 1.5px;
-    fill:#7FB7D2;
+    fill:#A2C1CC;
 }
 
 .node.selected circle {
