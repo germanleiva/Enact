@@ -462,6 +462,10 @@ export default {
             this.toggleFunction(newFunction)
         },
         deleteSelectedFunctions() {
+            let isConfirmed = confirm("Are you sure you want to delete the function?");
+            if (!isConfirmed) {
+                return
+            }
             for (let eachFunction of Array.from(this.stateMachine.functions)) {
                 if (eachFunction.isSelected) {
                     this.stateMachine.functions.remove(eachFunction)
