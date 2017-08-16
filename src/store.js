@@ -1026,19 +1026,27 @@ class InputEventTouch {
         this.identifier = identifier;
         this.id = 'T'+identifier
         this.name = this.id
-        //hack
-        if (x!=undefined || y != undefined) {
-            this.x = x
-            this.y = y
-        } else if (pageX!=undefined || pageY != undefined) {
-            this.x = pageX
-            this.y = pageY
-        }
+        this.position = new Position(x || pageX, y || pageY)
+
         this.radiusX = radiusX
         this.radiusY = radiusY
         this.angularRotation = angularRotation
         this.force = force
         this.highlight = false
+    }
+
+    get x() {
+        return this.position.x
+    }
+    get y() {
+        return this.position.y
+    }
+
+    set x(value) {
+        return this.position.x = value
+    }
+    set y(value) {
+        return this.position.y = value
     }
 
     static get propertyMap() {
@@ -1062,10 +1070,6 @@ class InputEventTouch {
         })
     }
 
-    get position() {
-        return {x:this.x, y:this.y}
-    }
-
     get size() {
         return {width: this.radiusX, height: this.radiusX}
     }
@@ -1083,9 +1087,11 @@ class InputEventTouch {
         }
     }
     get deltaX() {
+        debugger;
         return this.radiusX * 2
     }
     get deltaY() {
+        debugger;
         return this.radiusY * 2
     }
     diffArray(comparingTouch) {
@@ -1114,6 +1120,82 @@ class InputEventTouch {
     }
 }
 
+class Property {
+    constructor() {
+
+    }
+}
+
+class Position extends Property {
+    constructor(x,y) {
+        super()
+        this._x = x
+        this._y = y
+        this.previousX = x
+        this.previousY = x
+    }
+    get x(){
+        return this._x
+    }
+    set x(value) {
+        this.previousX = this._x
+        this._x = value
+    }
+    get y(){
+        return this._y
+    }
+    set y(value) {
+        this.previousY = this._y
+        this._y = value
+    }
+
+    applyDelta(input,max,min,ratio) {
+        debugger;
+        let {x:deltaX,y:deltaY} = input.delta
+        let ratioX = 1
+        let ratioY = 1
+        if (typeof ratio == "number") {
+            ratioX = ratioY = ratio
+        } else {
+            let {ratioX,ratioY} = ratio
+        }
+
+        let maxX = Number.POSITIVE_INFINITY
+        let maxY = Number.POSITIVE_INFINITY
+        if (typeof max == "number") {
+            maxX = maxY = max
+        } else {
+            let {maxX,maxY} = max
+        }
+
+        let minX = Number.NEGATIVE_INFINITY
+        let minY = Number.NEGATIVE_INFINITY
+        if (typeof min == "number") {
+            minX = minY = min
+        } else {
+            let {minX,minY} = min
+        }
+
+        // this.x = Math.max(Math.min((this.x + deltaX) * ratioX, maxX), minX)
+        // this.y = Math.max(Math.min((this.y + deltaY) * ratioY, maxY), minY)
+
+        this.x += deltaX
+        this.y += deltaY
+    }
+
+    get delta() {
+        return {x:this.x - this.previousX,y:this.y-this.previousY}
+    }
+}
+
+class Size extends Property {
+    constructor(width,height) {
+        super()
+        this.width = width
+        this.height = height
+    }
+}
+
 class ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null, cornerRadius = '') {
         this.id = id;
@@ -1128,14 +1210,16 @@ class ShapeModel {
         }
 
         this._color = aColor
-        this._position = {
-            x: left,
-            y: top
-        };
-        this._size = {
-            width: width,
-            height: height
-        };
+        // this._position = {
+        //     x: left,
+        //     y: top
+        // };
+        this._position = new Position(left,top)
+        // this._size = {
+        //     width: width,
+        //     height: height
+        // };
+        this._size = new Size(width,height)
         this.masterVersion = aMasterVersion;
         this.highlight = false
         this.isSelected = false
@@ -2612,6 +2696,29 @@ class StateMachine {
             }
             this.functions[0].isSelected = true;
         // }
+
+        /***
+    Utility functions to keep track of the touches.
+    touchInfo[i] is an info record for the i-th finger being put down:
+        The first finger is #0, the second #0, etc.
+        When lifting fingers, the corresponding entries are cleared.
+        When putting down a finger, the first free entry is used.
+    The properties of the info record are:
+        id: unique identifier (from touch object)
+        index: finger number (i.e., index in touchInfo)
+        first.x, first.y, first.t: position and time at touchdown
+        prev.x, prev.y, prev.t: previous position and time
+        cur.x, cur.y, cur.t: current position and time
+    The application can add its own properties if needed
+
+    The utility function manage the info records, and add a property 'info'
+    to each event, holding the info record.
+    **/
+
+    this.touchId2Index = {}; // maps a touch identifier to an index in touchInfo
+    this.touchInfo = [];     // stores touch information
+    this.numTouches = 0;     // number of non-null entries in touchInfo
+    this.firstIndex = -1;    // index of first non-null entry in touchInfo
     }
 
     get accumulatedObjects() {
@@ -2779,11 +2886,110 @@ class StateMachine {
         }
     }
 
+    // A touch event contains one or more touches that have changed.
+    // For example, when putting down two fingers at the same time, the event may contain two changed touches.
+    // This function calls the bookkeeping functions above for each changed touches of a give event
+    // and then passes the modified event to the state machine.
+    processTouchEvent(type, event, preFn, postFn) {
+        // console.log(">> processTouchEvent " + type + " - " + event.touches.length + " touches, " + event.changedTouches.length + " changed touches");
+        event.preventDefault(); // avoid event bubbling
+        // process each change
+        for (var i = 0; i < event.changedTouches.length; i++) {
+            // console.log("  process touch #"+i);
+            // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
+            let touchBeingProcessed = event.changedTouches[i];
+            // console.log("  preFn ");
+            if (preFn){
+                // preFn(event, event.touch); // adds / modifies event.info
+                preFn(event, touchBeingProcessed); // adds / modifies event.info
+            }
+
+            this.processEvent(type, globalStore.mobileCanvasVM.currentInputEvent);
+
+            if (postFn) {
+                // postFn(event, event.touch);
+                postFn(event, touchBeingProcessed);
+            }
+        }
+    }
+
+    // Find the first available slot in touchInfo, initialize the info record
+    // and add it to the event
+    recordTouchStart(event, touch) {
+        // console.log("-- recordTouchStart id "+touch.identifier);
+        var index = 0;
+        this.firstIndex = 0;
+        this.numTouches++;
+        while (this.touchInfo[index])
+            index++;
+        // console.log("-- index="+index);
+
+        this.touchId2Index[touch.identifier] = index;
+        // this.touchInfo[index] = {
+        //     id: touch.identifier,
+        //     index: index,
+        //     first: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+        //     prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+        //     cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+        // };
+
+        this.touchInfo[index] = new InputEventTouch(touch)
+
+            //hack
+            globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+            globalStore.mobileCanvasVM.currentInputEvent.touches = [this.touchInfo[index]]
+
+        // console.log("-- done");
+    }
+
+    // Update the info record and add it to the event
+    recordTouchMove(event, touch) {
+        // console.log("-- recordTouchMove id "+touch.identifier);
+        // console.log("-- index="+touchId2Index[touch.identifier]);
+        let myInputEventTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
+        myInputEventTouch.x = touch.pageX
+        myInputEventTouch.y = touch.pageY
+
+            //hack
+            globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+            globalStore.mobileCanvasVM.currentInputEvent.touches = [myInputEventTouch]
+        // console.log("-- done");
+    }
+
+    // Add the info record to the event
+    recordTouchEnd(event, touch) {
+        let endedTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
+
+            //hack
+            globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+            globalStore.mobileCanvasVM.currentInputEvent.touches = [endedTouch]
+    }
+
+    // Remove the info record corresponding to a touch that is now gone
+    clearTouch(event, touch) {
+        // console.log("-- clearTouch id "+touch.identifier);
+        var index = this.touchId2Index[touch.identifier];
+        delete this.touchInfo[index];
+        delete this.touchId2Index[touch.identifier];
+
+        this.numTouches--;
+        if (this.numTouches == 0)
+            this.firstIndex = -1;
+        else {
+            this.firstIndex = 0;
+            while (!this.touchInfo[this.firstIndex])
+                this.firstIndex++;
+        }
+
+        globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+        // console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
+    }
+
     processEvent(type, event) {
         var machine = this;
         var state = this.currentState;
 
-        this.event = new InputEvent(event)
+        this.event = event
 
         if (!state) {
             return false;
@@ -2792,9 +2998,11 @@ class StateMachine {
         var transition = this.findTransitionsFrom(state,type);
         //logSM('inprocessEvent '+type+' in state '+ state.name);
         if (! transition) {
-            console.log('['+state.name+'] -- '+type+' -> no transition');
+            console.log('['+state.name+'] -- '+type+' -> NO transition');
             return false;
         }
+
+        console.log('['+state.name+'] -- '+type+' -> transition');
 
         return this.processTransition(state,event,transition,this);
     }

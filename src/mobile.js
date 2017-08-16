@@ -132,8 +132,8 @@ let RectangleVM = Vue.extend({
                     'backgroundColor': this.shapeModel.color,
                     'borderRadius': this.shapeModel.cornerRadius,
                     // 'translation': 'absolute',
-                    'left': this.shapeModel.left + 'px',
-                    'top': this.shapeModel.top + 'px',
+                    'left': this.shapeModel.position.x + 'px',
+                    'top': this.shapeModel.position.y + 'px',
                     'width': this.shapeModel.width + 'px',
                     'height': this.shapeModel.height + 'px',
                     'border': '1px solid gray',
@@ -298,7 +298,6 @@ socket.on('message-from-server', function(data) {
         }
         case "EDIT_FUNCTION":{
             let functionDescription = JSON.parse(data.message)
-            console.log(functionDescription)
             stateMachine.updateFunction(functionDescription)
 
             break;
@@ -621,110 +620,11 @@ socket.on('message-from-server', function(data) {
     }
 });
 
-/***
-    Utility functions to keep track of the touches.
-    touchInfo[i] is an info record for the i-th finger being put down:
-        The first finger is #0, the second #0, etc.
-        When lifting fingers, the corresponding entries are cleared.
-        When putting down a finger, the first free entry is used.
-    The properties of the info record are:
-        id: unique identifier (from touch object)
-        index: finger number (i.e., index in touchInfo)
-        first.x, first.y, first.t: position and time at touchdown
-        prev.x, prev.y, prev.t: previous position and time
-        cur.x, cur.y, cur.t: current position and time
-    The application can add its own properties if needed
 
-    The utility function manage the info records, and add a property 'info'
-    to each event, holding the info record.
-    **/
 
-    var touchId2Index = {}; // maps a touch identifier to an index in touchInfo
-    var touchInfo = [];     // stores touch information
-    var numTouches = 0;     // number of non-null entries in touchInfo
-    var firstIndex = -1;    // index of first non-null entry in touchInfo
 
-    // Find the first available slot in touchInfo, initialize the info record
-    // and add it to the event
-    function recordTouchStart(event, touch) {
-        // console.log("-- recordTouchStart id "+touch.identifier);
-        var index = 0;
-        firstIndex = 0;
-        numTouches++;
-        while (touchInfo[index])
-            index++;
-        // console.log("-- index="+index);
 
-        touchId2Index[touch.identifier] = index;
-        event.info = touchInfo[index] = {
-            id: touch.identifier,
-            index: index,
-            first: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-            prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-            cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-        };
-        // console.log("-- done");
-    };
 
-    // Update the info record and add it to the event
-    function recordTouchMove(event, touch) {
-        // console.log("-- recordTouchMove id "+touch.identifier);
-        // console.log("-- index="+touchId2Index[touch.identifier]);
-        event.info = touchInfo[touchId2Index[touch.identifier]];
-        event.info.prev = event.info.cur;
-        event.info.cur = {x: touch.pageX, y: touch.pageY, t: event.timeStamp};
-        // console.log("-- done");
-    }
-
-    // Add the info record to the event
-    function recordTouchEnd(event, touch) {
-        event.info = touchInfo[touchId2Index[touch.identifier]];
-    }
-
-    // Remove the info record corresponding to a touch that is now gone
-    function clearTouch(event, touch) {
-        // console.log("-- clearTouch id "+touch.identifier);
-        var index = touchId2Index[touch.identifier];
-        delete touchInfo[index];
-        delete touchId2Index[touch.identifier];
-
-        numTouches--;
-        if (numTouches == 0)
-            firstIndex = -1;
-        else {
-            firstIndex = 0;
-            while (!touchInfo[firstIndex])
-                firstIndex++;
-        }
-        // console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
-    }
-
-    // A touch event contains one or more touches that have changed.
-    // For example, when putting down two fingers at the same time, the event may contain two changed touches.
-    // This function calls the bookkeeping functions above for each changed touches of a give event
-    // and then passes the modified event to the state machine.
-    function processEvent(machine, type, event, preFn, postFn) {
-        // console.log(">> processEvent " + type + " - " + event.touches.length + " touches, " + event.changedTouches.length + " changed touches");
-        event.preventDefault(); // avoid event bubbling
-        // process each change
-        for (var i = 0; i < event.changedTouches.length; i++) {
-            // console.log("  process touch #"+i);
-            // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
-            let touchBeingProcessed = event.changedTouches[i];
-            // console.log("  preFn ");
-            if (preFn){
-                // preFn(event, event.touch); // adds / modifies event.info
-                preFn(event, touchBeingProcessed); // adds / modifies event.info
-            }
-
-            machine.processEvent(type, event);
-
-            if (postFn) {
-                // postFn(event, event.touch);
-                postFn(event, touchBeingProcessed);
-            }
-        }
-    }
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
@@ -788,12 +688,9 @@ document.getElementById('mobileCanvas').addEventListener("touchstart", function(
 
         sendEvent(event);
     } else {
-        console.log(`==> touchstart EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
+        // console.log(`==> touchstart EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
-        //hack
-        mobileCanvasVM.currentInputEvent = new InputEvent(event)
-
-        processEvent(stateMachine, 'touchstart', event, recordTouchStart, null);
+        stateMachine.processTouchEvent('touchstart', event, stateMachine.recordTouchStart.bind(stateMachine), null);
 
         sendEvent(event,"CURRENT_EVENT")
     }
@@ -804,12 +701,9 @@ document.getElementById('mobileCanvas').addEventListener("touchmove", function(e
     if (mobileCanvasVM.isRecording) {
         sendEvent(event);
     } else {
-        console.log(`==> touchmove EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
+        // console.log(`==> touchmove EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
-        //hack
-        mobileCanvasVM.currentInputEvent = new InputEvent(event)
-
-        processEvent(stateMachine, 'touchmove', event, recordTouchMove, null);
+        stateMachine.processTouchEvent('touchmove', event, stateMachine.recordTouchMove.bind(stateMachine), null);
 
         sendEvent(event,"CURRENT_EVENT")
     }
@@ -821,9 +715,9 @@ document.getElementById('mobileCanvas').addEventListener("touchend", function(ev
         sendEvent(event);
     } else {
         // We are interacting
-        console.log(`==> touchend EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
+        // console.log(`==> touchend EVENT, changedTouches: ${event.changedTouches.length}, touches: ${event.touches.length}`)
 
-        processEvent(stateMachine, 'touchend', event, recordTouchEnd, clearTouch);
+        stateMachine.processTouchEvent('touchend', event, stateMachine.recordTouchEnd.bind(stateMachine), stateMachine.clearTouch.bind(stateMachine));
 
         sendEvent(event,"CURRENT_EVENT")
     }

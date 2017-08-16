@@ -387,7 +387,7 @@ export default {
             var regex = new RegExp(`\\$(?:\\.(${allVS}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(\\w+))?`, "g");
 
             var match;
-// debugger;
+
             let linesOfCode = newCode.split('\n');
             for (let lineNumber=0;lineNumber<linesOfCode.length;lineNumber++) {
                 let code = linesOfCode[lineNumber];
@@ -408,7 +408,6 @@ export default {
                     }
 
                     if (propertyName) {
-                        debugger;
                         let validExtraProperties = objects[objectId].propertyMap[propertyName]
 
                         if (!validExtraProperties) {
