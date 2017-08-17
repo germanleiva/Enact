@@ -370,7 +370,9 @@ path.invis {
 }
 
 .linkLabel {
+    transition: fill linear 1s;
     font-size: 1.3em;
+    fill:#333;
     cursor: pointer;
 }
 .linkLabel:hover{

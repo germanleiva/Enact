@@ -2445,6 +2445,8 @@ return true;
 };
 
         this.isReadyToServe = false;
+
+        this.isActiveTimer = undefined
     }
 
     get functions() {
@@ -2483,7 +2485,9 @@ return true;
     }
     set isActive(value) {
         this._isActive = value
-        this.machine.notifyChange("TRANSITION",this,"isActive");
+        clearTimeout(this.isActiveTimer);
+        this.isActiveTimer = setTimeout(() => this._isActive = false, 300)
+        // this.machine.notifyChange("TRANSITION",this,"isActive");
     }
 
     get guard() {
@@ -2923,15 +2927,8 @@ class StateMachine {
     }
 
     activateTransition(transitionId,boolean=true) {
-        for (let eachTransition of this.transitions) {
-            if (eachTransition.id == transitionId) {
-                eachTransition.isActive = boolean
-            } else {
-                if (eachTransition.isActive) {
-                    eachTransition.isActive = false
-                }
-            }
-        }
+        let transition = this.findTransitionId(transitionId)
+        transition.isActive = boolean
     }
 
     // A touch event contains one or more touches that have changed.
