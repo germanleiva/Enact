@@ -178,6 +178,9 @@ export default {
                 window.document.body.appendChild(newDistanceVM.$el);
 
                 globalStore.currentLink = new ObjectLink({visualState:this.parentVisualState,object:this.measureModel})
+                if (e.shiftKey) {
+                    globalStore.currentLink.shifted = true
+                }
 
                 let moveHandler = function(e) {
                     newMeasureModel.cachedFinalPosition.x = e.pageX

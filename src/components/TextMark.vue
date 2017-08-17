@@ -69,14 +69,30 @@ export default {
         },
         toggleObjects: function(boolean) {
             if (this.visualStateId) {
-                this.object.highlight = boolean
+                this.toggleOneObject(this.object,boolean)
             } else {
                 for (let eachVS of globalStore.visualStates) {
-                    eachVS.objectFor(this.objectId).highlight = boolean
+                    this.toggleOneObject(eachVS.objectFor(this.objectId),boolean)
+                }
+            }
+        },
+        toggleOneObject: function(anObject,boolean) {
+            anObject.highlight = boolean
+
+            switch(this.propertyName) {
+                case "position": {
+                    anObject.isMoving = boolean
+                    anObject.isResizing = false
+                    break;
+                }
+                case "size": {
+                    anObject.isMoving = false
+                    anObject.isResizing = boolean
                 }
             }
         },
         doubleClick: function(e) {
+            this.toggleObjects(false)
             this.textMarkerModel.clear()
         }
     },
