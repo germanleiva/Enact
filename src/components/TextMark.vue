@@ -31,9 +31,7 @@ export default {
         codeToShow() {
             if (this.visualStateId) {
                 //Hardcoded value
-                let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
-                let object = parentVisualState.objectFor(this.objectId)
-                if (object) {
+                if (this.object) {
                     if (this.propertyName) {
                         if (this.extraPropertyName) {
                             return `${object[this.propertyName][this.extraPropertyName]}`
@@ -50,18 +48,33 @@ export default {
                 return `$.${this.objectId}.${this.propertyName}`
             }
             return `$.${this.objectId}`
+        },
+        object() {
+            let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
+            return parentVisualState.objectFor(this.objectId)
         }
     },
     methods: {
         mouseOver: function(e) {
             e.preventDefault()
             e.stopPropagation();
-            // this.object.highlight = true
+
+            this.toggleObjects(true)
         },
         mouseOut: function(e) {
             e.preventDefault()
             e.stopPropagation();
-            // this.object.highlight = false
+
+            this.toggleObjects(false)
+        },
+        toggleObjects: function(boolean) {
+            if (this.visualStateId) {
+                this.object.highlight = boolean
+            } else {
+                for (let eachVS of globalStore.visualStates) {
+                    eachVS.objectFor(this.objectId).highlight = boolean
+                }
+            }
         },
         doubleClick: function(e) {
             this.textMarkerModel.clear()

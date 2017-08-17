@@ -545,6 +545,17 @@ export default {
     },
     mounted: function() {
         this.onSelectedState(this.currentlySelectedState)
+
+        globalBus.$on('message-from-device-STATE_MACHINE_STATE',function(data) {
+            console.log("STATE_MACHINE_STATE json: " + JSON.stringify(data))
+            let {stateId,transitionId} = data
+            if (stateId) {
+                this.stateMachine.activateState(stateId)
+            }
+            if (transitionId) {
+                this.stateMachine.activateTransition(transitionId)
+            }
+        }.bind(this));
     }
 }
 </script>

@@ -65,11 +65,18 @@ export const globalStore = new Vue({
             return this.toolbarState.rectangleMode || this.toolbarState.circleMode || this.toolbarState.polygonMode
         },
         socket() {
+            let address = window.location.href.split('/')[2]
+
             //TODO check if putting this as a computed property is legit
-            let newSocket = io.connect('http://localhost:3000')
-            newSocket.on('message-from-device', function(data) {
-                globalBus.$emit('message-from-device-'+data.type,data)
-            });
+            // let newSocket = io.connect('http://localhost:3000')
+            let newSocket = io.connect(address)
+
+            if (address.includes("localhost")) {
+                //isServer
+                newSocket.on('message-from-device', function(data) {
+                    globalBus.$emit('message-from-device-'+data.type,data)
+                });
+            }
             return newSocket
         }
     },
@@ -2641,7 +2648,7 @@ class StateMachine {
         this.transitions = []
 
         this.event = undefined; //This is the event that we are currently processing
-        this.currentState = undefined;
+        this._currentState = undefined;
         this.firstState = undefined;
 
         this.isServer = isServer
@@ -2727,6 +2734,15 @@ class StateMachine {
     this.touchInfo = [];     // stores touch information
     this.numTouches = 0;     // number of non-null entries in touchInfo
     this.firstIndex = -1;    // index of first non-null entry in touchInfo
+    }
+
+    get currentState() {
+        return this._currentState
+    }
+
+    set currentState(value) {
+        this._currentState = value
+        globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", stateId: value.id });
     }
 
     get accumulatedObjects() {
@@ -2894,6 +2910,14 @@ class StateMachine {
         }
     }
 
+    activateState(stateId,boolean=true) {
+        this.findStateId(stateId).isActive = boolean
+    }
+
+    activateTransition(transitionId,boolean=true) {
+        this.findTransitionId(transitionId).isActive = boolean
+    }
+
     // A touch event contains one or more touches that have changed.
     // For example, when putting down two fingers at the same time, the event may contain two changed touches.
     // This function calls the bookkeeping functions above for each changed touches of a give event
@@ -3011,6 +3035,8 @@ class StateMachine {
         }
 
         console.log('['+state.name+'] -- '+type+' -> transition');
+
+        globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", transitionId: transition.id });
 
         return this.processTransition(state,event,transition,this);
     }

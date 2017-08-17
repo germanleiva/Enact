@@ -7,8 +7,6 @@ import CSSJSON from 'cssjson'
 require('./mobile.css')
 import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
 
-let socket = io.connect(window.location.href.split('/')[2]);
-
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
     data: {
@@ -91,7 +89,7 @@ window.stateMachine = stateMachine //For debugging in the developer tools
 
 $ = stateMachine.globalScope
 
-socket.emit('message-from-device', { type:"MOBILE_INIT" });
+globalStore.socket.emit('message-from-device', { type:"MOBILE_INIT" });
 
 let RectangleVM = Vue.extend({
     template: `<div :id="id" class="shape" v-bind:style="styleObject"></div>`,
@@ -146,18 +144,18 @@ let RectangleVM = Vue.extend({
     },
     created: function() {
         console.log("Rectangle created");
-        socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
+        globalStore.socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
         shapeModel: {
             deep: true,
             handler: function(newValue,oldValue) {
-                socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
+                globalStore.socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
     },
     destroyed: function() {
-        socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
+        globalStore.socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
     }
 })
 
@@ -208,18 +206,18 @@ let PolygonVM = Vue.extend({
         }
     },
     created: function() {
-        socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
+        globalStore.socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
         shapeModel: {
             deep: true,
             handler: function(newValue,oldValue) {
-                socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
+                globalStore.socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
     },
     destroyed: function() {
-        socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
+        globalStore.socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
     }
 })
 
@@ -256,7 +254,7 @@ function createShapeVM(id, message) {
 
 }
 
-socket.on('message-from-server', function(data) {
+globalStore.socket.on('message-from-server', function(data) {
     // console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
         case "CLEAN":{
@@ -412,7 +410,7 @@ socket.on('message-from-server', function(data) {
                         if (currentEventIndex == eventsCache.length - 1) {
                             // send result to the desktop because this is the last event
                             console.log("Sending result to the desktop")
-                            socket.emit('message-from-device', { type:"TEST_RESULT", message: savedShapesStatesPerEvent });
+                            globalStore.socket.emit('message-from-device', { type:"TEST_RESULT", message: savedShapesStatesPerEvent });
                         }
                     });
 
@@ -663,7 +661,7 @@ function sendEvent(anEvent,messageType="INPUT_EVENT") {
     }
 
     // console.log(messageType + " >> " + JSON.stringify({ type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }}))
-    socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
+    globalStore.socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
 }
 
 //To prevent scrolling - not working
@@ -679,11 +677,11 @@ function sendEvent(anEvent,messageType="INPUT_EVENT") {
 document.getElementById('mobileCanvas').addEventListener("touchstart", function(event) {
     event.preventDefault();
     if (mobileCanvasVM.isRecording) {
-        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchstart", touches: [{identifier: 0, x: 300, y: 100, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
-        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 250, y: 200, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
-        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 200, y: 300, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
-        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 150, y: 400, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
-        // socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchend", touches: [{identifier: 0, x: 100, y: 500, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // globalStore.socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchstart", touches: [{identifier: 0, x: 300, y: 100, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // globalStore.socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 250, y: 200, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // globalStore.socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 200, y: 300, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // globalStore.socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchmove", touches: [{identifier: 0, x: 150, y: 400, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
+        // globalStore.socket.emit('message-from-device', { type:"INPUT_EVENT", message: { type: "touchend", touches: [{identifier: 0, x: 100, y: 500, radiusX: 20, radiusY: 20, rotationAngle: 0, force: 5 }], timeStamp: Date.now() } });
         // return;
 
         sendEvent(event);
