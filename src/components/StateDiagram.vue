@@ -10,6 +10,10 @@
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
                 </path>
             </marker>
+             <marker id="arrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ff0000">
+                </path>
+            </marker>
              <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#333">
                 </path>
@@ -18,16 +22,20 @@
                 <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
                 </path>
             </marker>
+             <marker id="selfarrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ff0000">
+                </path>
+            </marker>
         </defs>
         <!--line displayed when dragging new nodes-->
-        <path v-for="eachLink in links" class="link" :class="{selected:eachLink.isSelected,activated:eachLink.isActive}" :marker-end="arrowHeadMaker(eachLink)" :d="arcPath(true, eachLink)" @click.prevent="toggleLink(eachLink)"></path>
+        <path v-for="eachLink in links" class="link" :class="{activated:eachLink.isActive}" :marker-end="arrowHeadMaker(eachLink)" :d="arcPath(true, eachLink)" @click.prevent="toggleLink(eachLink)"></path>
         <path v-for="eachLink in links" :id="invisiblePath(eachLink)" class="invis" :d="arcPath(eachLink.source.x < eachLink.target.x,eachLink)"></path>
         <g v-for="eachLink in links">
-            <text class="linkLabel" :class="{selected:eachLink.isSelected,activated:eachLink.isActive}" dy="-5" @click.prevent="toggleLink(eachLink)">
+            <text class="linkLabel" :class="{activated:eachLink.isActive}" dy="-5" @click.prevent="toggleLink(eachLink)">
                 <textPath startOffset="50%" text-anchor="middle" :href="'#'+invisiblePath(eachLink)" syle="fill:#cccccc;font-size:50px">{{eachLink.name}}</textPath>
             </text>
         </g>
-        <g v-for="eachNode in nodes" :key="eachNode.id" :transform="'translate(' + eachNode.x + ',' + eachNode.y + ')'" class="node" :class="{selected:eachNode.isSelected,activated:eachNode.isActive}">
+        <g v-for="eachNode in nodes" :key="eachNode.id" :transform="'translate(' + eachNode.x + ',' + eachNode.y + ')'" class="node" :class="{activated:eachNode.isActive}">
             <!-- <circle r="50" class="outer" @mousedown="mouseDownOnOuterCircle(eachNode)"></circle> -->
 
             <!-- <circle r="40" class="inner" @mousedown="mouseDownOnInnerCircle(eachNode,$event)" @mouseup="mouseUpOnInnerCircle(eachNode,$event)" @mouseover="eachNode.isHovered = true" @mouseout="eachNode.isHovered = false"></circle> -->
@@ -198,6 +206,8 @@ export default {
             let suffix = ""
             if (eachLink.isSelected) {
                 suffix = "-selected"
+            } else if (eachLink.isActive) {
+                suffix = "-activated"
             }
             return `url(${name}${suffix})`
         },
@@ -330,7 +340,7 @@ path.link.selected{
     stroke: #00d1b2;
 }
 
-path.link.selected{
+path.link.activated{
     stroke-width: 4px;
     stroke: #ff0000;
 }
@@ -370,6 +380,12 @@ path.invis {
 .linkLabel.selected {
     font-size: 1.8em;
     fill: #00d1b2;
+    cursor: default;
+}
+
+.linkLabel.activated {
+    font-size: 1.8em;
+    fill: #ff0000;
     cursor: default;
 }
 .dragline {

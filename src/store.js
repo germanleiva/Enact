@@ -2911,11 +2911,27 @@ class StateMachine {
     }
 
     activateState(stateId,boolean=true) {
-        this.findStateId(stateId).isActive = boolean
+        for (let eachState of this.states) {
+            if (eachState.id == stateId) {
+                eachState.isActive = boolean
+            } else {
+                if (eachState.isActive) {
+                    eachState.isActive = false
+                }
+            }
+        }
     }
 
     activateTransition(transitionId,boolean=true) {
-        this.findTransitionId(transitionId).isActive = boolean
+        for (let eachTransition of this.transitions) {
+            if (eachTransition.id == transitionId) {
+                eachTransition.isActive = boolean
+            } else {
+                if (eachTransition.isActive) {
+                    eachTransition.isActive = false
+                }
+            }
+        }
     }
 
     // A touch event contains one or more touches that have changed.
