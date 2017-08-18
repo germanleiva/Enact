@@ -2560,7 +2560,7 @@ return true;
     set isActive(value) {
         this._isActive = value
         clearTimeout(this.isActiveTimer);
-        this.isActiveTimer = setTimeout(() => this._isActive = false, 300)
+        this.isActiveTimer = setTimeout(() => this._isActive = false, 200)
         // this.machine.notifyChange("TRANSITION",this,"isActive");
     }
 

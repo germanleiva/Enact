@@ -28,14 +28,14 @@
             </marker>
         </defs>
         <!--line displayed when dragging new nodes-->
-        <path v-for="eachLink in links" class="link" :class="{activated:eachLink.isActive}" :marker-end="arrowHeadMaker(eachLink)" :d="arcPath(true, eachLink)" @click.prevent="toggleLink(eachLink)"></path>
+        <path v-for="eachLink in links" class="link" :class="{selected:eachLink.isSelected, activated:eachLink.isActive}" :marker-end="arrowHeadMaker(eachLink)" :d="arcPath(true, eachLink)" @click.prevent="toggleLink(eachLink)"></path>
         <path v-for="eachLink in links" :id="invisiblePath(eachLink)" class="invis" :d="arcPath(eachLink.source.x < eachLink.target.x,eachLink)"></path>
         <g v-for="eachLink in links">
-            <text class="linkLabel" :class="{activated:eachLink.isActive}" dy="-5" @click.prevent="toggleLink(eachLink)">
+            <text class="linkLabel" :class="{selected:eachLink.isSelected, activated:eachLink.isActive}" dy="-5" @click.prevent="toggleLink(eachLink)">
                 <textPath startOffset="50%" text-anchor="middle" :href="'#'+invisiblePath(eachLink)" syle="fill:#cccccc;font-size:50px">{{eachLink.name}}</textPath>
             </text>
         </g>
-        <g v-for="eachNode in nodes" :key="eachNode.id" :transform="'translate(' + eachNode.x + ',' + eachNode.y + ')'" class="node" :class="{activated:eachNode.isActive}">
+        <g v-for="eachNode in nodes" :key="eachNode.id" :transform="'translate(' + eachNode.x + ',' + eachNode.y + ')'" class="node" :class="{selected:eachNode.isSelected, activated:eachNode.isActive}">
             <!-- <circle r="50" class="outer" @mousedown="mouseDownOnOuterCircle(eachNode)"></circle> -->
 
             <!-- <circle r="40" class="inner" @mousedown="mouseDownOnInnerCircle(eachNode,$event)" @mouseup="mouseUpOnInnerCircle(eachNode,$event)" @mouseover="eachNode.isHovered = true" @mouseout="eachNode.isHovered = false"></circle> -->
@@ -330,6 +330,7 @@ text {
 }
 
 path.link, path.textpath {
+    transition: fill, stroke-width linear 0.2s;
     fill: none;
     stroke: #333333;
     stroke-width: 1px;
@@ -351,27 +352,27 @@ path.invis {
 }
 
 .nodeTextClass {
-    font-size: 1.3em;
+    margin-left-left: 10px;
+    font-size: 1.2em;
     cursor: pointer;
 }
 .nodeTextClass:hover {
     fill: #00d1b2;
 }
 .selected > .nodeTextClass {
-    font-size: 1.8em;
+    font-size: 1.3em;
     fill: #00d1b2;
     cursor: default;
 }
 
 .activated > .nodeTextClass {
-    font-size: 1.8em;
-    fill: #ff0000 ;
-    cursor: default;
+    font-size: 1.3em;
+    cursor: pointer;
 }
 
 .linkLabel {
-    transition: fill linear 1s;
-    font-size: 1.3em;
+    transition: fill, font-size linear 0.2s;
+    font-size: 1.2em;
     fill:#333;
     cursor: pointer;
 }
@@ -380,15 +381,15 @@ path.invis {
 }
 
 .linkLabel.selected {
-    font-size: 1.8em;
+    font-size: 1.3em;
     fill: #00d1b2;
     cursor: default;
 }
 
 .linkLabel.activated {
-    font-size: 1.8em;
+    font-size: 1.3em;
     fill: #ff0000;
-    cursor: default;
+    cursor: pointer;
 }
 .dragline {
     fill: none;

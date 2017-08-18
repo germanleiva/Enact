@@ -115,8 +115,8 @@ export default {
 }
 
 .marker:hover {
-    background-color: #eee;
-    color: #333;
+    background-color: #00BD9E;
+    color: white;
 }
 
 /*.marker .tooltiptext {
