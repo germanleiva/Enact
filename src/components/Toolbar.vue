@@ -9,7 +9,7 @@
                 <a class="button" title="Create Polygon" v-on:click="polygonSelected" :class="{'is-active':toolbarState.polygonMode}"><span class="icon is-small"><i class="fa fa-star-o"></i></span> </a>
                 <a class="button" title="Create Line" v-on:click="lineSelected" :class="{'is-active':toolbarState.lineMode}"><span class="icon is-small"><i class="fa fa-pencil"></i></span> </a>
             </p>
-            <a class="button is-alone" title="Create Measure" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon is-small"><i class="fa fa-link"></i></span> </a>
+            <a class="button is-alone" title="Create Measure" v-on:click="measureSelected" :class="{'is-active':toolbarState.measureMode}"><span class="icon-ruler"></span></a>
 
             <input type="color" title="Color Picker" v-on:change="changeColor()" id="color-picker" class="button" v-model="currentColor">
         </div>

@@ -268,4 +268,7 @@ export default {
     border: 1px solid #ffffff !important;
     box-shadow: 0 4px 3px rgba(100, 200, 100, 0.1), 0 0 0 1px rgba(100, 100, 100, 0.4) !important;
 }
+.addVisualStateButton{
+    padding-right: 4px;
+}
 </style>
