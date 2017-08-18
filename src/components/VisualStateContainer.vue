@@ -2,7 +2,10 @@
     <div class='visualStateContainer'>
         <visual-state-canvas :visual-state-model="visualStateModel" :is-mirror="false"></visual-state-canvas>
         <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
-            <div v-if="nextState != undefined" class='diffBox'>
+        <div v-if="nextState == undefined" class='addVisualStateButton'>
+            <a class="button" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+        </div>
+            <!--<div v-if="nextState != undefined" class='diffBox'>
                 <div class="inputDiffBox">
                     <div class='box inputDiffElement' v-for="(diffArray,touchName) in inputDifferencesWithNextState">
                         <div v-if="diffArray.length > 0"> {{touchName}} <diff-element v-for="diff in diffArray" :diff-data="diff" :visual-state-model="visualStateModel"></diff-element>
@@ -21,7 +24,7 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </div>-->
         </div>
     </div>
 </template>
@@ -205,7 +208,7 @@ export default {
             if ([...dataType].includes("text/visual-state")) {
                 event.preventDefault()
             }
-        }
+        },
     }
 }
 </script>

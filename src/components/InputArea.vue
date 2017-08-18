@@ -1,7 +1,8 @@
 <template>
     <div id='inputArea'>
-       <a class="button is-warning is-medium" v-on:click="startTesting"><span class="icon is-medium"><i class="fa fa-bug"></i></span></a><span>&nbsp;</span>
-       <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
+        <a class="button is-medium is-info" id="reset-button" title="Reset" v-on:click="SyncWithMobile()"><span class="icon is-small"><i class="fa fa-refresh"></i></span></a><span>&nbsp;</span>
+        <a class="button is-warning is-medium" v-on:click="startTesting"><span class="icon is-medium"><i class="fa fa-bug"></i></span></a><span>&nbsp;</span>
+        <!--<a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>-->
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :visual-state="vs"></visual-state-mark>
         </div>
@@ -191,4 +192,7 @@ export default {
 </script>
 
 <style >
+#reset-button{
+    margin-left: 6px;
+}
 </style>
