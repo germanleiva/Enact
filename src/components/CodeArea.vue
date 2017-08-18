@@ -207,10 +207,10 @@ export default {
                 lineWrapping: true,
                 extraKeys: {
                     "Ctrl-Space": "autocomplete",
-                    // "'.'": function(cm) {
-                    //    setTimeout(function(){cm.execCommand("autocomplete");}, 50);
-                    //    throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
-                    // }
+                    "'.'": function(cm) {
+                       setTimeout(function(){cm.execCommand("autocomplete");}, 50);
+                       throw CodeMirror.Pass; // tell CodeMirror we didn't handle the key
+                    }
                 },
                 foldGutter: true,
                 gutters: ["CodeMirror-linenumbers", "CodeMirror-foldgutter"],

@@ -6,12 +6,12 @@
         </div>
         <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
         </div>
-        <div :style="positionStyleObject" v-if="shouldShowHandlers">
+        <div :style="positionStyleObject" v-if="shouldShowHandlers || shapeModel.isMoving">
             <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
             <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
-        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999" v-if="shouldShowHandlers">{{shapeModel.width}}px</div>
-        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999" v-if="shouldShowHandlers">{{shapeModel.height}}px</div>
+        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999" v-if="shouldShowHandlers || shapeModel.isResizing">{{shapeModel.width}}px</div>
+        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999" v-if="shouldShowHandlers || shapeModel.isResizing">{{shapeModel.height}}px</div>
     </div>
 
 </template>

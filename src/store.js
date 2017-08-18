@@ -1217,19 +1217,7 @@ class Position extends Property {
     }
 
     shifted(xShift,yShift) {
-        let x1 = this.x + xShift
-        let y1 = this.y + yShift
-        let x2 = this.previousX + xShift
-        let y2 = this.previousY + yShift
-
-        if (Number.isNaN(x2) || Number.isNaN(y2)) {
-            debugger;
-        }
-
-        let shiftedPosition = new Position(x1,y1,x2,y2)
-        console.log("POSITION >> shifted")
-        console.log(shiftedPosition)
-        return shiftedPosition
+        return new Position(this.x + xShift,this.y + yShift,this.previousX + xShift,this.previousY + yShift)
     }
 }
 
@@ -1251,8 +1239,8 @@ class Size extends Property {
         return this._width
     }
     set width(value) {
-        if (Number.isNaN(value)) {
-            debugger;
+        if (value < 0) {
+            value = 0
         }
         this.previousWidth = !Number.isNaN(this._width)?this._width:value
         this._width = value
@@ -1261,8 +1249,8 @@ class Size extends Property {
         return this._height
     }
     set height(value) {
-        if (Number.isNaN(value)) {
-            debugger;
+        if (value < 0) {
+            value = 0
         }
         this.previousHeight = !Number.isNaN(this._height)?this._height:value
         this._height = value
@@ -1318,15 +1306,11 @@ class Distance extends Property {
     }
 
     calculateDistance({x:x1,y:y1},{x:x2,y:y2}) {
-        let a = (x1-x2)
-        let b = (y1-y2)
-        return Math.sqrt( a * a + b * b)
+        return Math.sqrt( Math.pow(x1-x2,2) + Math.pow(y1-y2,2))
     }
 
     get delta() {
         let previousDistance = this.calculateDistance(this._initialPoint.previous,this._finalPoint.previous)
-        console.log("Previous: " + previousDistance)
-        console.log("Current: " + this.distance)
         return this.distance - previousDistance
     }
 }
