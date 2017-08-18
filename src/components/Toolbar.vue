@@ -20,7 +20,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,globalBus,VisualStateModel} from '../store.js'
+import {globalStore,globalBus} from '../store.js'
 
 export default {
   name: 'toolbar',
@@ -52,35 +52,10 @@ export default {
         },
         changeColor(e) {
             globalBus.$emit('changeColorOfSelectedShapes',this.currentColor)
-        },
-        addVisualState() {
-            var newVisualState = new VisualStateModel()
-
-            if (globalStore.visualStates.length > 0) {
-                let previousVisualState = globalStore.visualStates.last();
-
-                for (let shapeKey in previousVisualState.shapesDictionary) {
-                    let shape = previousVisualState.shapesDictionary[shapeKey]
-                    newVisualState.addNewShape(shape.type,shapeKey,previousVisualState.shapesDictionary[shapeKey]);
-                }
-
-                newVisualState.importMeasuresFrom(previousVisualState);
-
-                //TODO: Should we send didCreateShape?
-
-                previousVisualState.nextState = newVisualState;
-                newVisualState.previousState = previousVisualState;
-            }
-            globalStore.visualStates.push(newVisualState);
-
-            //TODO DRY
-            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
-            newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
-
         }
     },
     created: function() {
-        this.addVisualState();
+        globalStore.addVisualState();
     }
 }
 </script>

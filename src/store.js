@@ -81,6 +81,36 @@ export const globalStore = new Vue({
         }
     },
     methods: {
+        refreshMobile() {
+            let firstStateShapes = globalStore.visualStates[0].shapesDictionary
+            for (let eachShapeId in firstStateShapes) {
+                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
+            }
+        },
+        addVisualState(){
+            var newVisualState = new VisualStateModel()
+
+            if (globalStore.visualStates.length > 0) {
+                let previousVisualState = globalStore.visualStates.last();
+
+                for (let shapeKey in previousVisualState.shapesDictionary) {
+                    let shape = previousVisualState.shapesDictionary[shapeKey]
+                    newVisualState.addNewShape(shape.type,shapeKey,previousVisualState.shapesDictionary[shapeKey]);
+                }
+
+                newVisualState.importMeasuresFrom(previousVisualState);
+
+                //TODO: Should we send didCreateShape?
+
+                previousVisualState.nextState = newVisualState;
+                newVisualState.previousState = previousVisualState;
+            }
+            globalStore.visualStates.push(newVisualState);
+
+            //TODO DRY
+            let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
+            newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+        },
         newShapeCreated(aShapeModel) {
             this.stateMachine.addShape(aShapeModel)
         },

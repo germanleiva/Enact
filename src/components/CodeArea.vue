@@ -1,14 +1,5 @@
 <template>
     <div id="codeArea" class="columns">
-        <div class="column is-6">
-            <codemirror ref="codeContainer" v-if="selectedElement != undefined"
-              :code="selectedElement.code"
-              :options="editorOptions"
-              @ready="onEditorReady"
-              @focus="onEditorFocus"
-              @change="onEditorCodeChange">
-            </codemirror>
-        </div>
         <div class="column is-2" >
             <aside class="menu" >
                 <p class="menu-label">Functions</p>
@@ -18,6 +9,15 @@
                     <li v-for="aSMFunction in stateMachine.functions" :class="{'is-active': aSMFunction.isSelected}"><a @click="toggleFunction(aSMFunction)">{{aSMFunction.name}}</a></li>
                 </ul>
             </aside>
+        </div>
+        <div class="column is-5">
+            <codemirror ref="codeContainer" v-if="selectedElement != undefined"
+              :code="selectedElement.code"
+              :options="editorOptions"
+              @ready="onEditorReady"
+              @focus="onEditorFocus"
+              @change="onEditorCodeChange">
+            </codemirror>
         </div>
         <div class="column">
             <state-diagram

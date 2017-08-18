@@ -209,6 +209,9 @@ export default {
                 event.preventDefault()
             }
         },
+        addVisualState() {
+            globalStore.addVisualState()
+        }
     }
 }
 </script>

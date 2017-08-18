@@ -1,6 +1,6 @@
 <template>
     <div id='inputArea'>
-        <a class="button is-medium is-info" id="reset-button" title="Reset" v-on:click="SyncWithMobile()"><span class="icon is-small"><i class="fa fa-refresh"></i></span></a><span>&nbsp;</span>
+        <a class="button is-medium is-info" id="reset-button" title="Reset" v-on:click="refreshMobile"><span class="icon is-small"><i class="fa fa-refresh"></i></span></a><span>&nbsp;</span>
         <a class="button is-warning is-medium" v-on:click="startTesting"><span class="icon is-medium"><i class="fa fa-bug"></i></span></a><span>&nbsp;</span>
         <!--<a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>-->
         <div class="inputTimeline">
@@ -107,6 +107,9 @@ export default {
         }
     },
     methods: {
+        refreshMobile() {
+            globalStore.refreshMobile()
+        },
         toggleRecording() {
             this.isRecording = !this.isRecording;
             if (this.isRecording) {
@@ -180,10 +183,7 @@ export default {
 
             //First we send the shapes as they look on the first visualState
 
-            let firstStateShapes = globalStore.visualStates[0].shapesDictionary
-            for (let eachShapeId in firstStateShapes) {
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
-            }
+            globalStore.refreshMobile()
 
             globalStore.socket.emit('message-from-desktop', { type: "TEST_EVENTS", message: globalStore.inputEvents.map(eachInputEvent => eachInputEvent.leanJSON), eventIndexes: relevantEventsIndex })
         }
