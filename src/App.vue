@@ -300,7 +300,7 @@ export default {
 
 .diffContainer{
     margin-top: 5px;
-    width: 126px;
+    width: 30px;
     display: flex; /*This is to align the diff button and the diff box*/
     flex-direction: row; /*To have the child vertically align*/
 }
