@@ -172,7 +172,7 @@ export default {
         handlerFor: function(mouseEvent) {
             let x = mouseEvent.pageX - this.canvasOffsetLeft()
             let y = mouseEvent.pageY - this.canvasOffsetTop()
-            console.log("X: "+x+  " Y: "+y)
+            // console.log("X: "+x+  " Y: "+y)
 
             if (this.$refs.shapes) {
                 for (var i = 0; i < this.$refs.shapes.length; i++) {

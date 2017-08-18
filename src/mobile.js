@@ -24,12 +24,11 @@ let mobileCanvasVM = new Vue({
         allObjects: {
             cache: false,
             get: function() {
-                let result = []
+                let shapes = []
                 for (let eachShapeVM of Object.values(this.interactiveShapes)) {
-                    result.push(eachShapeVM.shapeModel)
+                    shapes.push(eachShapeVM.shapeModel)
                 }
-                result = result.concat(this.currentInputEvent.touches)
-                return result
+                return shapes.concat(this.measures).concat(this.currentInputEvent.touches)
             }
         }
     },
@@ -86,6 +85,7 @@ globalStore.mobileCanvasVM = mobileCanvasVM
 
 let stateMachine = new StateMachine({isServer:false})//proxyStateMachine
 window.stateMachine = stateMachine //For debugging in the developer tools
+window.mobileCanvasVM = mobileCanvasVM //For debugging in the developer tools
 
 $ = stateMachine.globalScope
 
@@ -132,8 +132,8 @@ let RectangleVM = Vue.extend({
                     // 'translation': 'absolute',
                     'left': this.shapeModel.position.x + 'px',
                     'top': this.shapeModel.position.y + 'px',
-                    'width': this.shapeModel.width + 'px',
-                    'height': this.shapeModel.height + 'px',
+                    'width': this.shapeModel.size.width + 'px',
+                    'height': this.shapeModel.size.height + 'px',
                     'border': '1px solid gray',
                     'overflow': 'visible',
                     'opacity': this.shapeModel.opacity,
@@ -278,6 +278,7 @@ globalStore.socket.on('message-from-server', function(data) {
         }
         case "NEW_MEASURE":{
             let newMeasure = new MeasureModel(mobileCanvasVM,data.message.from, data.message.to, undefined);
+            newMeasure.idCount = data.message.idCount;
             mobileCanvasVM.measures.push(newMeasure);
             break;
         }

@@ -389,7 +389,7 @@ class MeasureModel {
     }
 
     static get propertyMap() {
-        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"deltaX":[],"deltaY":[],"width":[],"height":[],"value":[]}
+        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"]}
     }
     static get allProperties() {
         return Object.keys(this.propertyMap)
@@ -408,8 +408,14 @@ class MeasureModel {
             }
         })
     }
-    get value() {
-        return Math.sqrt( Math.pow(this.deltaX,2) + Math.pow(this.deltaY,2) );
+    get distance() {
+        // return Math.sqrt( Math.pow(this.deltaX,2) + Math.pow(this.deltaY,2) );
+        console.log("MeasureModel >> distance")
+        console.log("initial: ")
+        console.log(this.initialPoint)
+        console.log("final: ")
+        console.log(this.finalPoint)
+        return new Distance(this.initialPoint, this.finalPoint)
     }
 
     get id() {
@@ -438,6 +444,7 @@ class MeasureModel {
         return []
     }
     get name() {
+        return this.id
         let p3 = this.to.id,
             p4 = this.to.handler
 
@@ -1090,7 +1097,7 @@ class InputEventTouch {
     }
     positionOfHandler(handlerName) {
         if (handlerName == 'center') {
-            return {x: this.x,y:this.y}
+            return this.position
         } else {
             console.log("Unrecognized handlerName in InputEventTouch: " + handlerName)
         }
@@ -1136,26 +1143,40 @@ class Property {
 }
 
 class Position extends Property {
-    constructor(x,y) {
+    constructor(x,y,previousX,previousY) {
         super()
+
+        // if (Number.isNaN(x) || Number.isNaN(y)) {
+        //     debugger;
+        // }
+
         this._x = x
         this._y = y
-        this.previousX = x
-        this.previousY = x
+        this.previousX = previousX == undefined || Number.isNaN(previousX)?x:previousX
+        this.previousY = previousY == undefined || Number.isNaN(previousY)?y:previousY
     }
     get x(){
         return this._x
     }
     set x(value) {
-        this.previousX = this._x
+        if (Number.isNaN(value)) {
+            debugger;
+        }
+        this.previousX = !Number.isNaN(this._x)?this._x:value
         this._x = value
     }
     get y(){
         return this._y
     }
     set y(value) {
-        this.previousY = this._y
+        if (value == NaN) {
+            debugger;
+        }
+        this.previousY = !Number.isNaN(this._y)?this._y:value
         this._y = value
+    }
+    get previous() {
+        return {x: this.previousX,y:this.previousY}
     }
 
     applyDelta(input,max,min,ratio) {
@@ -1194,32 +1215,61 @@ class Position extends Property {
     get delta() {
         return {x:this.x - this.previousX,y:this.y-this.previousY}
     }
+
+    shifted(xShift,yShift) {
+        let x1 = this.x + xShift
+        let y1 = this.y + yShift
+        let x2 = this.previousX + xShift
+        let y2 = this.previousY + yShift
+
+        if (Number.isNaN(x2) || Number.isNaN(y2)) {
+            debugger;
+        }
+
+        let shiftedPosition = new Position(x1,y1,x2,y2)
+        console.log("POSITION >> shifted")
+        console.log(shiftedPosition)
+        return shiftedPosition
+    }
 }
 
 class Size extends Property {
-    constructor(width,height) {
+    constructor(width,height,previousWidth,previousHeight) {
         super()
+
+
+        // if (width == NaN || height == NaN) {
+        //     debugger;
+        // }
+
         this._width = width
         this._height = height
-        this.previousWidth = width
-        this.previousHeight = height
+        this.previousWidth = previousWidth == undefined || Number.isNaN(previousWidth)?width:previousWidth
+        this.previousHeight = previousHeight == undefined || Number.isNaN(previousHeight)?height:previousHeight
     }
     get width(){
         return this._width
     }
     set width(value) {
-        this.previousX = this._width
+        if (Number.isNaN(value)) {
+            debugger;
+        }
+        this.previousWidth = !Number.isNaN(this._width)?this._width:value
         this._width = value
     }
     get height(){
         return this._height
     }
     set height(value) {
-        this.previousHeight = this._height
+        if (Number.isNaN(value)) {
+            debugger;
+        }
+        this.previousHeight = !Number.isNaN(this._height)?this._height:value
         this._height = value
     }
 
     applyDelta(input,max,min,ratio) {
+        debugger;
         let {x:deltaX,y:deltaY} = input.delta
         let ratioX = 1
         let ratioY = 1
@@ -1254,6 +1304,30 @@ class Size extends Property {
 
     get delta() {
         return {width:this.width - this.previousWidth,height:this.height-this.previousHeight}
+    }
+}
+
+class Distance extends Property {
+    constructor(initialPoint,finalPoint) {
+        super()
+        this._initialPoint = initialPoint
+        this._finalPoint = finalPoint
+    }
+    get distance() {
+        return this.calculateDistance(this._initialPoint,this._finalPoint)
+    }
+
+    calculateDistance({x:x1,y:y1},{x:x2,y:y2}) {
+        let a = (x1-x2)
+        let b = (y1-y2)
+        return Math.sqrt( a * a + b * b)
+    }
+
+    get delta() {
+        let previousDistance = this.calculateDistance(this._initialPoint.previous,this._finalPoint.previous)
+        console.log("Previous: " + previousDistance)
+        console.log("Current: " + this.distance)
+        return this.distance - previousDistance
     }
 }
 
@@ -1319,19 +1393,19 @@ class ShapeModel {
                 if (protoShape) {
                     return new RectangleModel(shapeId, protoShape)
                 }
-                return new RectangleModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+                return new RectangleModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
             }
             case 'circle': {
                 if (protoShape) {
                     return new RectangleModel(shapeId, protoShape)
                 }
-                return new RectangleModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0, '50%')
+                return new RectangleModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN, '50%')
             }
             case 'polygon': {
                 if (protoShape) {
                     return new PolygonModel(shapeId, protoShape)
                 }
-                return new PolygonModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+                return new PolygonModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
             }
             default: {
                 console.log("Unrecognized shapeType in static ShapeModel.createShape :" + shapeType)
@@ -1554,31 +1628,31 @@ class ShapeModel {
     positionOfHandler(handlerName) {
         switch (handlerName) {
             case 'northEast':{
-                return { x: this.left + this.width, y: this.top }
+                return this.position.shifted(this.width,0)
             }
             case 'northWest':{
-                return { x: this.left, y: this.top }
+                return this.position.shifted(0,0)
             }
             case 'southWest':{
-                return { x: this.left, y: this.top + this.height }
+                return this.position.shifted(0,this.height)
             }
             case 'southEast':{
-                return { x: this.left + this.width, y: this.top + this.height }
+                return this.position.shifted(this.width,this.height)
             }
             case 'middleRight':{
-                return { x: this.left + this.width, y: this.top + this.height / 2 }
+                return this.position.shifted(this.width,this.height / 2)
             }
             case 'middleLeft':{
-                return { x: this.left, y: this.top + this.height / 2 }
+                return this.position.shifted(0,this.height / 2)
             }
             case 'middleTop':{
-                return { x: this.left + this.width / 2, y: this.top }
+                return this.position.shifted(this.width / 2,0)
             }
             case 'middleBottom':{
-                return { x: this.left + this.width / 2, y: this.top + this.height }
+                return this.position.shifted(this.width / 2,this.height)
             }
             case 'center':{
-                return { x: this.left + this.width / 2, y: this.top + this.height / 2 }
+                return this.position.shifted(this.width / 2,this.height / 2)
             }
         }
         console.log("WERIDDDDDDDDDD")
@@ -2794,7 +2868,7 @@ class StateMachine {
         // this.measures.push(aMeasure);
 
         if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {from: aMeasure.from ,to: aMeasure.to} });
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {idCount: aMeasure.idCount, from: aMeasure.from ,to: aMeasure.to} });
         }
     }
 

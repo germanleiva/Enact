@@ -34,9 +34,9 @@ export default {
                 if (this.object) {
                     if (this.propertyName) {
                         if (this.extraPropertyName) {
-                            return `${object[this.propertyName][this.extraPropertyName]}`
+                            return `${this.object[this.propertyName][this.extraPropertyName]}`
                         }
-                        return `${JSON.stringify(object[this.propertyName])}`
+                        return `${JSON.stringify(this.object[this.propertyName])}`
                     }
                     return `$.${this.visualStateId}.${this.objectId}`
                 }
