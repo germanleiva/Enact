@@ -12,7 +12,9 @@ let mobileCanvasVM = new Vue({
     data: {
         isRecording: false,
         interactiveShapes: {},
-        measures: []
+        measures: [],
+        currentInputEvent: undefined,
+        hardcodedValues: {}
     },
     computed: {
         styleObject() {
@@ -28,7 +30,13 @@ let mobileCanvasVM = new Vue({
                 for (let eachShapeVM of Object.values(this.interactiveShapes)) {
                     shapes.push(eachShapeVM.shapeModel)
                 }
-                return shapes.concat(this.measures).concat(this.currentInputEvent.touches)
+                let result = shapes.concat(this.measures)
+
+                if (this.currentInputEvent) {
+                    result = result.concat(this.currentInputEvent.touches)
+                }
+
+                return result
             }
         }
     },
@@ -174,9 +182,9 @@ let PolygonVM = Vue.extend({
         pathData: function() {
             let dataString = ""
             if (this.shapeModel.amountOfVertices > 0) {
-                dataString += `M${this.shapeModel.vertexFor(0).x} ${this.shapeModel.vertexFor(0).y} `
+                dataString += `M${this.shapeModel.vertexFor('V0').x} ${this.shapeModel.vertexFor('V0').y} `
                 for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
-                    let otherVertex = this.shapeModel.vertexFor(i)
+                    let otherVertex = this.shapeModel.vertexFor('V'+i)
                     dataString += `L ${otherVertex.x} ${otherVertex.y} `
                 }
                 dataString += "Z"
@@ -292,6 +300,34 @@ globalStore.socket.on('message-from-server', function(data) {
         case "NEW_FUNCTION":{
             let functionDescription = JSON.parse(data.message)
             stateMachine.updateFunction(functionDescription,true);
+
+            break;
+        }
+        case "NEW_HARDCODED_VALUE":{
+            console.log(`NEW_HARDCODED_VALUE: ${data.message}`);
+            let {visualStateId,path,value} = JSON.parse(data.message)
+
+            let hardcodedValue = mobileCanvasVM.hardcodedValues[visualStateId]
+            if (!hardcodedValue) {
+                hardcodedValue = {}
+                Vue.set(mobileCanvasVM.hardcodedValues,visualStateId,hardcodedValue)
+            }
+
+            let keys = path.split('.')
+            let currentObject = hardcodedValue
+            for (var i = 0; i < keys.length; i++) {
+                let key = keys[i]
+
+                if (i == keys.length - 1) {
+                    //Last key in the path, let's insert the value
+                    Vue.set(currentObject,key,value)
+                } else {
+                    //We always clean the existing or non-existing object @ key
+                    let newObject = {}
+                    Vue.set(currentObject,key,newObject)
+                    currentObject = newObject
+                }
+            }
 
             break;
         }

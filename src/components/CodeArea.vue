@@ -10,7 +10,7 @@
                 </ul>
             </aside>
         </div>
-        <div class="column is-5">
+        <div class="column is-6">
             <codemirror ref="codeContainer" v-if="selectedElement != undefined"
               :code="selectedElement.code"
               :options="editorOptions"
@@ -382,7 +382,7 @@ export default {
             this.deleteAllTextMarkers();
 
             let {objects,allVS,allObjects,allProperties} = this.parsingData
-            var regex = new RegExp(`\\$(?:\\.(${allVS}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(\\w+))?`, "g");
+            var regex = new RegExp(`\\$(?:\\.(${allVS}))?(?:\\.(${allObjects}))(?:\\.(${allProperties}))?(?:\\.(\\w+))?(?:\\.(\\w+))?`, "g");
 
             var match;
 
@@ -395,6 +395,7 @@ export default {
                     let objectId = match[2];
                     let propertyName = match[3];
                     let extraPropertyName = match[4];
+                    let subExtraPropertyName = match[5];
 
                     let matchStartingCh = match.index;
                     let from = {line:lineNumber,ch:matchStartingCh}
@@ -406,20 +407,42 @@ export default {
                     }
 
                     if (propertyName) {
-                        let validExtraProperties = objects[objectId].propertyMap[propertyName]
+                        let validExtraProperties = objects[objectId].propertyMap()[propertyName]
 
                         if (!validExtraProperties) {
                             //It was not a valid propertyName
                             continue;
                         }
-                        if (extraPropertyName && validExtraProperties.indexOf(extraPropertyName) < 0) {
-                            //It was not a valid extraPropertyName
-                            continue;
+
+                        if (Array.isArray(validExtraProperties)) {
+                            //It is a direct property
+                            if (extraPropertyName && validExtraProperties.indexOf(extraPropertyName) < 0) {
+                                //It was not a valid extraPropertyName
+                                continue;
+                            }
+                        } else {
+                            //The propertyName is a vertex, so the validExtraProperties is a key-value object not an array
+
+                            if (extraPropertyName) {
+                                let validSubExtraProperties = validExtraProperties[extraPropertyName]
+                                if (!validSubExtraProperties) {
+                                    //It was not a valid extraPropertyName
+                                    continue;
+                                }
+
+                                if (subExtraPropertyName && validSubExtraProperties.indexOf(subExtraPropertyName) < 0) {
+                                    continue;
+                                }
+                            }
                         }
+
                     } else {
                         if (extraPropertyName) {
                             //I shouldn't count the extraProperty if I don't have a property
                             to.ch -= extraPropertyName.length + 1 //We need to count the .
+                        }
+                        if (subExtraPropertyName) {
+                            to.ch -= subExtraPropertyName.length + 1
                         }
                     }
 
@@ -429,7 +452,8 @@ export default {
                             visualStateId: visualStateId,
                             objectId: objectId,
                             propertyName: propertyName,
-                            extraPropertyName: extraPropertyName
+                            extraPropertyName: extraPropertyName,
+                            subExtraPropertyName: subExtraPropertyName
                         }
                     }).$mount();
 
@@ -510,8 +534,8 @@ export default {
                 allVSNames.push(eachVS.name)
 
                 for (let eachObject of eachVS.allObjects) {
-                    objects[eachObject.id] = eachObject.constructor
-                    for (let eachPropertyName of eachObject.constructor.allProperties) {
+                    objects[eachObject.id] = eachObject
+                    for (let eachPropertyName of eachObject.allProperties) {
                         if (allPropertyNames.indexOf(eachPropertyName) < 0) {
                             allPropertyNames.push(eachPropertyName)
                         }

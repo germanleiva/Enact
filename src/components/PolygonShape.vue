@@ -58,9 +58,9 @@ export default {
         pathData: function() {
             let dataString = ""
             if (this.shapeModel.amountOfVertices > 0) {
-                dataString += `M${this.shapeModel.vertexFor(0).x} ${this.shapeModel.vertexFor(0).y} `
+                dataString += `M${this.shapeModel.vertexFor("V0").x} ${this.shapeModel.vertexFor("V0").y} `
                 for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
-                    let otherVertex = this.shapeModel.vertexFor(i)
+                    let otherVertex = this.shapeModel.vertexFor("V"+i)
                     dataString += `L ${otherVertex.x} ${otherVertex.y} `
                 }
                 dataString += "Z"
@@ -217,7 +217,7 @@ export default {
             e.preventDefault();
             e.stopPropagation();
 
-            let vertexIndex = parseInt(e.target.id.split('-')[0]);
+            let vertexId = e.target.id.split('-')[0];
 
             let previousMousePosition = {x: e.pageX, y: e.pageY}
 
@@ -228,13 +228,13 @@ export default {
                 let deltaX = e.pageX - previousMousePosition.x
                 let deltaY = e.pageY - previousMousePosition.y
 
-                let movedVertex = this.shapeModel.vertexFor(vertexIndex)
+                let movedVertex = this.shapeModel.vertexFor(vertexId)
                 let previousValue = {x: movedVertex.x, y: movedVertex.y}
                 let newValue = {x: previousValue.x + deltaX, y: previousValue.y + deltaY}
                 previousMousePosition.x = e.pageX
                 previousMousePosition.y = e.pageY
 
-                this.visualState.changeProperty(this.shapeModel,vertexIndex,previousValue,newValue)
+                this.visualState.changeProperty(this.shapeModel,vertexId,previousValue,newValue)
 
             }.bind(this)
             let visualStateElement = this.$parent.canvasElement();

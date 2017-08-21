@@ -12,7 +12,7 @@ import {globalStore} from '../store.js'
 
 export default {
     name: 'text-mark',
-    props: ['visualStateId','objectId','propertyName','extraPropertyName'],
+    props: ['visualStateId','objectId','propertyName','extraPropertyName','subExtraPropertyName'],
     data: function() {
         return {
             textMarkerModel: undefined
@@ -34,15 +34,21 @@ export default {
                 if (this.object) {
                     if (this.propertyName) {
                         if (this.extraPropertyName) {
-                            return `${this.object[this.propertyName][this.extraPropertyName]}`
+                            if (this.subExtraPropertyName) {
+                                return `${this.hardcodedValue}`
+                            }
+                            return `${this.hardcodedValue}`
                         }
-                        return `${JSON.stringify(this.object[this.propertyName])}`
+                        return `${this.hardcodedValue}`
                     }
                     return `$.${this.visualStateId}.${this.objectId}`
                 }
             }
             if (this.propertyName) {
                 if (this.extraPropertyName) {
+                    if (this.subExtraPropertyName) {
+                        return `$.${this.objectId}.${this.propertyName}.${this.extraPropertyName}.${this.subExtraPropertyName}`
+                    }
                     return `$.${this.objectId}.${this.propertyName}.${this.extraPropertyName}`
                 }
                 return `$.${this.objectId}.${this.propertyName}`
@@ -52,6 +58,19 @@ export default {
         object() {
             let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
             return parentVisualState.objectFor(this.objectId)
+        },
+        hardcodedValue() {
+            if (this.object && this.propertyName) {
+                if (this.extraPropertyName) {
+                    if (this.subExtraPropertyName) {
+                        return JSON.stringify(this.object[this.propertyName][this.extraPropertyName][this.subExtraPropertyName])
+                    }
+                    return JSON.stringify(this.object[this.propertyName][this.extraPropertyName])
+                }
+                return JSON.stringify(this.object[this.propertyName])
+            }
+
+            abort()
         }
     },
     methods: {
@@ -94,6 +113,34 @@ export default {
         doubleClick: function(e) {
             this.toggleObjects(false)
             this.textMarkerModel.clear()
+        },
+        sendToMobileHardcodedValue: _.debounce(
+            function () {
+                debugger;
+                if (this.propertyName) {
+                    let path = this.propertyName
+                    if (this.extraPropertyName) {
+                        path += "." + this.extraPropertyName
+                    }
+                    if (this.subExtraPropertyName) {
+                        path += "." + this.subExtraPropertyName
+                    }
+
+                    let dataToSend = {visualStateId:this.visualStateId, path: path, value: this.hardcodedValue}
+
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_HARDCODED_VALUE", message: JSON.stringify(dataToSend) })
+                }
+            },
+        // This is the number of milliseconds we wait for the
+        // user to stop typing.
+        300)
+    },
+    watch: {
+        codeToShow: function() {
+            if (this.visualStateId) {
+                debugger;
+                this.sendToMobileHardcodedValue()
+            }
         }
     },
     destroyed: function(){

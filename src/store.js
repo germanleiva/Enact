@@ -418,17 +418,18 @@ class MeasureModel {
         this.idCount = -1
     }
 
-    static get propertyMap() {
+    propertyMap() {
         return {"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"]}
     }
-    static get allProperties() {
-        return Object.keys(this.propertyMap)
+
+    get allProperties() {
+        return Object.keys(this.propertyMap())
     }
 
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return MeasureModel.allProperties
+                return target.allProperties
             },
             getPrototypeOf(target) {
                 return null
@@ -438,6 +439,7 @@ class MeasureModel {
             }
         })
     }
+
     get distance() {
         // return Math.sqrt( Math.pow(this.deltaX,2) + Math.pow(this.deltaY,2) );
         console.log("MeasureModel >> distance")
@@ -1099,17 +1101,18 @@ class InputEventTouch {
         return this.size.height
     }
 
-    static get propertyMap() {
+    propertyMap() {
         return {"position":["x","y"],"size":["width","height"],"force":[],"angularRotation":[]}
     }
-    static get allProperties() {
-        return Object.keys(this.propertyMap)
+
+    get allProperties() {
+        return Object.keys(this.propertyMap())
     }
 
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return InputEventTouch.allProperties
+                return target.allProperties
             },
             getPrototypeOf(target) {
                 return null
@@ -1186,7 +1189,27 @@ class Position extends Property {
         this.previousY = previousY == undefined || Number.isNaN(previousY)?y:previousY
     }
     get x(){
-        return this._x
+        let algo = this._x
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          applyDelta: (input,max,min,ratio) => {
+            let deltaValue = input.delta()
+            let {x:deltaX,y:deltaY} = deltaValue
+            if (deltaX || deltaY) {
+                abort()
+            }
+
+            this.x += deltaValue
+          },
+          delta: () => this.x - this.previousX
+        }
+
     }
     set x(value) {
         if (Number.isNaN(value)) {
@@ -1196,7 +1219,26 @@ class Position extends Property {
         this._x = value
     }
     get y(){
-        return this._y
+        let algo = this._y
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          applyDelta: (input,max,min,ratio) => {
+            let deltaValue = input.delta()
+            let {x:deltaX,y:deltaY} = deltaValue
+            if (deltaX || deltaY) {
+                abort()
+            }
+
+            this.y += deltaValue
+          },
+          delta: () => this.y - this.previousY
+        }
     }
     set y(value) {
         if (value == NaN) {
@@ -1209,8 +1251,13 @@ class Position extends Property {
         return {x: this.previousX,y:this.previousY}
     }
 
-    applyDelta(input,max,min,ratio) {
-        let {x:deltaX,y:deltaY} = input.delta
+    applyDelta(input,max,min,ratio,onlyToX=false,onlyToY=false) {
+        let {x:deltaX,y:deltaY} = input.delta()
+
+        if (!deltaX || !deltaY) {
+            abort()
+        }
+
         let ratioX = 1
         let ratioY = 1
         if (typeof ratio == "number") {
@@ -1242,12 +1289,16 @@ class Position extends Property {
         this.y += deltaY
     }
 
-    get delta() {
+    delta() {
         return {x:this.x - this.previousX,y:this.y-this.previousY}
     }
 
     shifted(xShift,yShift) {
         return new Position(this.x + xShift,this.y + yShift,this.previousX + xShift,this.previousY + yShift)
+    }
+
+    toJSON() {
+        return {x:this.x,y:this.y}
     }
 }
 
@@ -1288,7 +1339,7 @@ class Size extends Property {
 
     applyDelta(input,max,min,ratio) {
         debugger;
-        let {x:deltaX,y:deltaY} = input.delta
+        let {x:deltaX,y:deltaY} = input.delta()
         let ratioX = 1
         let ratioY = 1
         if (typeof ratio == "number") {
@@ -1320,27 +1371,31 @@ class Size extends Property {
         this.height += deltaY
     }
 
-    get delta() {
+    delta() {
         return {width:this.width - this.previousWidth,height:this.height-this.previousHeight}
+    }
+
+    toJSON() {
+        return {width:this.x,height:this.height}
     }
 }
 
 class Distance extends Property {
     constructor(initialPoint,finalPoint) {
         super()
-        this._initialPoint = initialPoint
-        this._finalPoint = finalPoint
+        this.initialPoint = initialPoint
+        this.finalPoint = finalPoint
     }
     get distance() {
-        return this.calculateDistance(this._initialPoint,this._finalPoint)
+        return this.calculateDistance(this.initialPoint,this.finalPoint)
     }
 
     calculateDistance({x:x1,y:y1},{x:x2,y:y2}) {
         return Math.sqrt( Math.pow(x1-x2,2) + Math.pow(y1-y2,2))
     }
 
-    get delta() {
-        let previousDistance = this.calculateDistance(this._initialPoint.previous,this._finalPoint.previous)
+    delta() {
+        let previousDistance = this.calculateDistance(this.initialPoint.previous,this.finalPoint.previous)
         return this.distance - previousDistance
     }
 }
@@ -1376,26 +1431,33 @@ class ShapeModel {
         this.isMoving = false
     }
 
-
-    static get propertyMap() {
+    propertyMap() {
         return {"position":["x","y"],"size":["width","height"],"color":[]}
     }
-    static get allProperties() {
-        return Object.keys(this.propertyMap)
+
+    get allProperties() {
+        return Object.keys(this.propertyMap())
     }
 
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return ShapeModel.allProperties
+                return target.allProperties
             },
             getPrototypeOf(target) {
                 return null
             },
             get(target,key) {
+                if (target.isVertexProperty(key)) {
+                    return target.vertexFor(key)
+                }
                 return target[key]
             }
         })
+    }
+
+    isVertexProperty(prop) {
+        return false
     }
 
     static createShape(shapeType,shapeId,protoShape) {
@@ -1419,7 +1481,8 @@ class ShapeModel {
                 if (protoShape) {
                     return new PolygonModel(shapeId, protoShape)
                 }
-                return new PolygonModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
+                // return new PolygonModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
+                return new PolygonModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
             }
             default: {
                 console.log("Unrecognized shapeType in static ShapeModel.createShape :" + shapeType)
@@ -1557,9 +1620,6 @@ class ShapeModel {
                 break;
             }
         }
-    }
-    get allProperties() {
-        return ['color','position','size']
     }
     unfollowMaster(property) {
         if (this.masterVersion) {
@@ -1728,14 +1788,19 @@ class RectangleModel extends ShapeModel {
 class PolygonModel extends ShapeModel {
     constructor(id, aMasterVersion, aColor = '', left = null, top = null, width = null, height = null) {
         super(id, aMasterVersion, aColor, left, top, width, height)
-        this._vertices = []
+        this._vertices = {}
         if (aMasterVersion) {
             for (let i=0;i<aMasterVersion.amountOfVertices;i++) {
-                Vue.set(this._vertices,i,undefined)
+                Vue.set(this._vertices,"V"+i,undefined)
             }
         }
         // this.relevantPoints = [new RelevantPoint(this, 'northWest', 0, 0), new RelevantPoint(this, 'northEast', 1, 0), new RelevantPoint(this, 'southEast', 1, 1), new RelevantPoint(this, 'southWest', 0, 1), new RelevantPoint(this, 'middleRight', 1, 0.5), new RelevantPoint(this, 'middleLeft', 0, 0.5), new RelevantPoint(this, 'middleTop', 0.5, 0), new RelevantPoint(this, 'middleBottom', 0.5, 1), new RelevantPoint(this, 'center', 0.5, 0.5)];
     }
+
+    // Defined in the superclass, I couldn't figure out how to do inheritance of getters/setters
+    // get proxy() {
+    // }
+
     prepareForDeletion() {
         //Nothing to clean, the vertex doesn't know the Polygon
 
@@ -1769,13 +1834,18 @@ class PolygonModel extends ShapeModel {
         return changes
     }
     get vertexIndexes() {
-        return [...Array(this.amountOfVertices).keys()]
+        return [...Array(this.amountOfVertices).keys()].map((i) => "V"+i)
     }
     get vertices() {
-        return this.vertexIndexes.map(i => this.vertexFor(i))
+        let result = {}
+        for (let vertexKey of this.vertexIndexes) {
+            result[vertexKey] = this.vertexFor(vertexKey)
+        }
+        return result
     }
     get amountOfVertices() {
-        return this._vertices.length
+        // return this._vertices.length
+        return Object.keys(this._vertices).length;
     }
     get type() {
         return "polygon"
@@ -1791,7 +1861,10 @@ class PolygonModel extends ShapeModel {
         return undefined
     }
     addVertex(canvasPosition) {
-        this._vertices.push(new Vertex(this._vertices.length,canvasPosition))
+        let vertexId = "V"+this.amountOfVertices
+        let newVertex = new Vertex(vertexId,canvasPosition)
+        Vue.set(this._vertices,vertexId,newVertex)
+        Vue.set(this,vertexId,newVertex)
     }
     // get isClosed() {
     //     if (this._vertices.length < 2) {
@@ -1802,7 +1875,8 @@ class PolygonModel extends ShapeModel {
     //     return firstVertex.x == lastVertex.x && firstVertex.y == lastVertex.y
     // }
     isVertexProperty(propertyName) {
-        return !isNaN(propertyName)
+        // return !isNaN(propertyName)
+        return /V\d+/.test(propertyName);
     }
 
     followMaster(property) {
@@ -1822,13 +1896,22 @@ class PolygonModel extends ShapeModel {
             super.setOwnPropertiesFromMaster(property)
         }
     }
-    get allProperties() {
-        let previousProperties = [...super.allProperties]
-        for (let i=0;i<this._vertices.length;i++) {
-            previousProperties.push(i)
+
+    propertyMap() {
+        let newPropertyMap = super.propertyMap()
+        for (let key in this.vertices) {
+            newPropertyMap[key] = {"position":["x","y"]}
         }
-        return previousProperties
+        return newPropertyMap
     }
+
+    // get allProperties() {
+    //     let previousProperties = [...super.allProperties]
+    //     for (let i=0;i<this.amountOfVertices;i++) {
+    //         previousProperties.push("V"+i)
+    //     }
+    //     return previousProperties
+    // }
     isFollowingMaster(property) {
         if (this.isVertexProperty(property)) {
             return this._vertices[property] == undefined
@@ -1867,9 +1950,10 @@ class PolygonModel extends ShapeModel {
         }
     }
     toJSON() {
-        let verticesJSON = []
-        for (let eachVertex of this.vertices) {
-            verticesJSON.push(eachVertex.toJSON())
+        let verticesJSON = {}
+        for (let eachVertexKey in this.vertices) {
+            let eachVertex = this.vertices[eachVertexKey]
+            verticesJSON[eachVertexKey] = eachVertex.toJSON()
         }
         return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
     }
@@ -1884,8 +1968,8 @@ class PolygonModel extends ShapeModel {
             this.top = json.position.y
         }
         if (json.vertices) {
-            for (let i=0;i<json.vertices.length;i++) {
-                let eachJSONVertex = json.vertices[i]
+            for (let vertexKey in json.vertices) {
+                let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
                 if (vertex) {
                     vertex.x = eachJSONVertex.x
@@ -1901,9 +1985,20 @@ class PolygonModel extends ShapeModel {
 class Vertex {
     constructor(id,{x:canvasX,y:canvasY}) {
         this.id = id
-        this.x = canvasX
-        this.y = canvasY
+        this.position = new Position(canvasX,canvasY)
         this.highlight = false
+    }
+    get x() {
+        return this.position.x
+    }
+    set x(value) {
+        this.position.x = value
+    }
+    get y() {
+        return this.position.y
+    }
+    set y(value) {
+        this.position.y = value
     }
     top(aShape) {
         return this.y + aShape.position.y
@@ -2753,8 +2848,16 @@ class StateMachine {
             ownKeys(target) {
                 let allKeys = []
 
-                for (let eachVS of globalStore.visualStates) {
-                    allKeys.push(eachVS.name)
+                if (isServer) {
+                    //We have actual visualStates
+                    for (let eachVS of globalStore.visualStates) {
+                        allKeys.push(eachVS.name)
+                    }
+                } else {
+                    //We have hardcoded values
+                    for (let visualStateId in globalStore.mobileCanvasVM.hardcodedValues) {
+                        return visualStateId
+                    }
                 }
 
                 for (let eachObject of self.accumulatedObjects) {
@@ -2773,13 +2876,16 @@ class StateMachine {
                 return null
             },
             get (target, key) {
-                if (!isServer) {
-                    // Mobile debugging
-                    // debugger;
-                }
-                let vs = globalStore.visualStates.find((vs) => vs.name == key)
-                if (vs) {
-                    return vs.proxy;
+                if (isServer) {
+                    let vs = globalStore.visualStates.find((vs) => vs.name == key)
+                    if (vs) {
+                        return vs.proxy;
+                    }
+                } else {
+                    let hardcodedValueIndexedByVisualStateId = globalStore.mobileCanvasVM.hardcodedValues[key]
+                    if (hardcodedValueIndexedByVisualStateId) {
+                        return hardcodedValueIndexedByVisualStateId
+                    }
                 }
 
                 for (let eachObject of self.accumulatedObjects) {
