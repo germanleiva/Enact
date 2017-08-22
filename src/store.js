@@ -1057,20 +1057,25 @@ class RelevantPoint {
 }
 
 class InputEvent {
-    constructor({ type: type, touches: touches, timeStamp: timeStamp }) {
+    constructor({ type: type, touches: touches, changedTouches: changedTouches, timeStamp: timeStamp }) {
         this.type = type
         this.touches = []
+        this.changedTouches = []
         //We need to keep the old "for var i" iteration because touches in iOS are not iterable, they are a dictionary with numerical keys
         for (let i=0; i < touches.length; i++) {
             let eachTouchObject = touches[i]
             this.touches.push(new InputEventTouch(eachTouchObject))
+        }
+        for (let i=0; i < changedTouches.length; i++) {
+            let eachTouchObject = changedTouches[i]
+            this.changedTouches.push(new InputEventTouch(eachTouchObject))
         }
         this.timeStamp = timeStamp
         this.testShapes = []
     }
     get leanJSON() {
         //Removing testShapes from the inputEvent
-        return {type: this.type, touches: this.touches.map(x => x.leanJSON), timeStamp: this.timeStamp }
+        return {type: this.type, touches: this.touches.map(x => x.leanJSON), changedTouches: this.changedTouches.map(x => x.leanJSON), timeStamp: this.timeStamp }
     }
     touchFor(touchId) {
         return this.touches.find(aTouch => aTouch.id == touchId)
@@ -1229,6 +1234,7 @@ class Position extends Property {
         if (Number.isNaN(value)) {
             debugger;
         }
+        value = Math.round(value)
         this.previousX = !Number.isNaN(this._x)?this._x:value
         this._x = value
     }
@@ -1262,6 +1268,7 @@ class Position extends Property {
         if (value == NaN) {
             debugger;
         }
+        value = Math.round(value)
         this.previousY = !Number.isNaN(this._y)?this._y:value
         this._y = value
     }
@@ -1364,6 +1371,8 @@ class Size extends Property {
     set width(value) {
         if (value < 0) {
             value = 0
+        } else {
+            value = Math.round(value)
         }
         this.previousWidth = !Number.isNaN(this._width)?this._width:value
         this._width = value
@@ -1399,6 +1408,8 @@ class Size extends Property {
     set height(value) {
         if (value < 0) {
             value = 0
+        } else {
+            value = Math.round(value)
         }
         this.previousHeight = !Number.isNaN(this._height)?this._height:value
         this._height = value
@@ -1865,7 +1876,7 @@ class RectangleModel extends ShapeModel {
     toJSON() {
         let json = {}
         for (let eachKey of ['id','type','color','top','left','width','height','opacity', 'cornerRadius']) {
-            json[eachKey] = this[eachKey]
+            json[eachKey] = this[eachKey].valueOf()
         }
         return json
     }
@@ -1873,26 +1884,10 @@ class RectangleModel extends ShapeModel {
     fromJSON(json) {
         // this.id = json.id
         // this.type = json.type
-        if (json.color) {
-            this.color = json.color
-        }
-        if (json.top) {
-            this.top = json.top
-        }
-        if (json.left) {
-            this.left = json.left
-        }
-        if (json.width) {
-            this.width = json.width
-        }
-        if (json.height){
-            this.height = json.height
-        }
-        if (json.opacity) {
-            this.opacity = json.opacity
-        }
-        if (json.cornerRadius) {
-            this.cornerRadius = json.cornerRadius
+        for (let eachKey of ['color','top','left','width','height','opacity','cornerRadius']) {
+            if (json.hasOwnProperty(eachKey)) {
+                this[eachKey] = json[eachKey]
+            }
         }
     }
 }

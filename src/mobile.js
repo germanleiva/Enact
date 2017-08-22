@@ -457,33 +457,40 @@ globalStore.socket.on('message-from-server', function(data) {
             function dispathWaiting(aCachedEventObject, waitingTime, completionCallback = undefined) {
                 setTimeout(function() {
                     // var newEvent = new TouchEvent(aCachedEventObject.type, { pageX: aCachedEventObject.pageX, pageY: aCachedEventObject.pageY });
-                    let touchList = []
-                    for (let i=0;i< aCachedEventObject.touches.length;i++) {
-                        let aTouchObject = aCachedEventObject.touches[i];
-                        let createdTouch
 
-                        var isChrome = navigator.userAgent.indexOf("Chrome") > -1
+                    function populateList(newTouchList,touches) {
+                        for (let i=0;i< touches.length;i++) {
+                            let aTouchObject = touches[i];
+                            let createdTouch
 
-                        if (!isChrome && document.createTouch) {
-                            //Safari hack
-                            // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY, radiusX, radiusY, rotationAngle, force) {
-                            createdTouch = document.createTouch(window, document.getElementById('mobileCanvas'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.radiusX, aTouchObject.radiusY, aTouchObject.rotationAngle, aTouchObject.force);
-                        } else {
-                            createdTouch = new Touch({
-                                identifier: aTouchObject.identifier,
-                                target: document.getElementById('mobileCanvas'),
-                                clientX: aTouchObject.x,
-                                clientY: aTouchObject.y,
-                                pageX: aTouchObject.x,
-                                pageY: aTouchObject.y,
-                                radiusX: aTouchObject.radiusX,
-                                radiusY: aTouchObject.radiusY,
-                                rotationAngle: aTouchObject.rotationAngle,
-                                force: aTouchObject.force,
-                            });
+                            var isChrome = navigator.userAgent.indexOf("Chrome") > -1
+
+                            if (!isChrome && document.createTouch) {
+                                //Safari hack
+                                // createdTouch = document.createTouch(view, target, identifier, pageX, pageY, screenX, screenY, clientX, clientY, radiusX, radiusY, rotationAngle, force) {
+                                createdTouch = document.createTouch(window, document.getElementById('mobileCanvas'), aTouchObject.identifier, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.x, aTouchObject.y, aTouchObject.radiusX, aTouchObject.radiusY, aTouchObject.rotationAngle, aTouchObject.force);
+                            } else {
+                                createdTouch = new Touch({
+                                    identifier: aTouchObject.identifier,
+                                    target: document.getElementById('mobileCanvas'),
+                                    clientX: aTouchObject.x,
+                                    clientY: aTouchObject.y,
+                                    pageX: aTouchObject.x,
+                                    pageY: aTouchObject.y,
+                                    radiusX: aTouchObject.radiusX,
+                                    radiusY: aTouchObject.radiusY,
+                                    rotationAngle: aTouchObject.rotationAngle,
+                                    force: aTouchObject.force,
+                                });
+                            }
+                            newTouchList.push(createdTouch);
                         }
-                        touchList.push(createdTouch);
                     }
+
+                    let touchList = []
+                    let changedTouchList = []
+                    populateList(touchList,aCachedEventObject.touches);
+                    populateList(changedTouchList,aCachedEventObject.changedTouches);
 
                     let touchEvent
                     if (document.createEvent) {
@@ -500,14 +507,14 @@ globalStore.socket.on('message-from-server', function(data) {
 
                         touchEvent.touches = touchList;
                         touchEvent.targetTouches = touchList;
-                        touchEvent.changedTouches = touchList;
+                        touchEvent.changedTouches = changedTouchList;
                     } else {
                         touchEvent = new TouchEvent(aCachedEventObject.type, {
                             cancelable: true,
                             bubbles: true,
                             touches: touchList,
                             targetTouches: [],
-                            changedTouches: touchList,
+                            changedTouches: changedTouchList,
                             // currentTarget: document.getElementById('mobileCanvas'),
                             // shiftKey: false,
                         });
@@ -516,6 +523,8 @@ globalStore.socket.on('message-from-server', function(data) {
 
                     // cachedEventObject.timeStamp = new Date().getTime();
                     // var result = document.dispatchEvent(aCachedEventObject);
+                    console.log("We are dispatching ...")
+                    console.log(touchEvent)
                     var result = document.getElementById('mobileCanvas').dispatchEvent(touchEvent);
                     // console.log("Event result: " + result);
                     if (completionCallback) {
@@ -663,42 +672,43 @@ globalStore.socket.on('message-from-server', function(data) {
 
 function sendEvent(anEvent,messageType="INPUT_EVENT") {
     // return;
+    function generateArrayFrom(nativeTouches) {
+        //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
+        let touchArray = []
+        for (let i=0; i < nativeTouches.length;i++) {
+            let eachTouch = nativeTouches[i];
+            let radiusX = 20
+            if (eachTouch['radiusX']) {
+                // console.log("eachTouch.radiusX: " + eachTouch.radiusX)
+                if (eachTouch.radiusX > 5) {
+                    radiusX = eachTouch.radiusX
+                }
+            }
 
-    let touches = []
-    //We cannot use for .. of .. because iOS doesn't return an array in anEvent.touches
-    for (let i=0; i < anEvent.touches.length;i++) {
-        let eachTouch = anEvent.touches[i];
+            let radiusY = 20
+            if (eachTouch['radiusY']) {
+                // console.log("eachTouch.radiusY: " + eachTouch.radiusY)
+                if (eachTouch.radiusY > 5) {
+                    radiusY = eachTouch.radiusY
+                }
+            }
 
-        let radiusX = 20
-        if (eachTouch['radiusX']) {
-            // console.log("eachTouch.radiusX: " + eachTouch.radiusX)
-            if (eachTouch.radiusX > 5) {
-                radiusX = eachTouch.radiusX
+            let rotationAngle = 0
+            if (eachTouch['rotationAngle']) {
+                rotationAngle = eachTouch.rotationAngle
+            }
+
+            let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: radiusX, radiusY: radiusY, rotationAngle: rotationAngle, force: eachTouch.force }
+            touchArray.push(myTouchObject)
+            if (touchArray.indexOf(myTouchObject) != i) {
+                console.log("WRONG. The key "+ i + " should we == to the index in the array " + touchArray.indexOf(myTouchObject) + ", right?")
             }
         }
-
-        let radiusY = 20
-        if (eachTouch['radiusY']) {
-            // console.log("eachTouch.radiusY: " + eachTouch.radiusY)
-            if (eachTouch.radiusY > 5) {
-                radiusY = eachTouch.radiusY
-            }
-        }
-
-        let rotationAngle = 0
-        if (eachTouch['rotationAngle']) {
-            rotationAngle = eachTouch.rotationAngle
-        }
-
-        let myTouchObject = {identifier: eachTouch.identifier, x: eachTouch.pageX, y: eachTouch.pageY, radiusX: radiusX, radiusY: radiusY, rotationAngle: rotationAngle, force: eachTouch.force }
-        touches.push(myTouchObject)
-        if (touches.indexOf(myTouchObject) != i) {
-            console.log("WRONG. The key "+ eachTouchKey + " should we == to the index in the array " + touches.indexOf(myTouchObject) + ", right?")
-        }
+        return touchArray
     }
 
     // console.log(messageType + " >> " + JSON.stringify({ type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp }}))
-    globalStore.socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: touches, timeStamp: anEvent.timeStamp } });
+    globalStore.socket.emit('message-from-device', { type:messageType, message: { type: anEvent.type, touches: generateArrayFrom(anEvent.touches), changedTouches:generateArrayFrom(anEvent.changedTouches), timeStamp: anEvent.timeStamp } });
 }
 
 //To prevent scrolling - not working
