@@ -1726,13 +1726,13 @@ class ShapeModel {
                 break;
             }
             case 'position': {
-                this.left = this.left
-                this.top = this.top
+                this.left = this.left.valueOf()
+                this.top = this.top.valueOf()
                 break;
             }
             case 'size':{
-                this.width = this.width
-                this.height = this.height
+                this.width = this.width.valueOf()
+                this.height = this.height.valueOf()
                 break;
             }
             case '':
@@ -2051,7 +2051,7 @@ class PolygonModel extends ShapeModel {
     areEqualValues(property, value1, value2) {
         // console.log("Checking " + property + " v1: " + JSON.stringify(value1) + " v2:" + JSON.stringify(value2))
         if (this.isVertexProperty(property)) {
-            return value1.x == value2.x && value1.y == value2.y
+            return value1.x.valueOf() == value2.x.valueOf() && value1.y.valueOf() == value2.y.valueOf()
         } else {
             return super.areEqualValues(property, value1, value2)
         }
