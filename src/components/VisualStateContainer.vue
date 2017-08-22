@@ -2,8 +2,8 @@
     <div class='visualStateContainer'>
         <visual-state-canvas :visual-state-model="visualStateModel" :is-mirror="false"></visual-state-canvas>
         <div class="diffContainer" @drop="dropMirrorMobile" @dragover="allowDropMirrorMobile">
-        <div v-if="nextState == undefined" class='addVisualStateButton'>
-            <a class="button" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus-square-o"></i></span></a>
+        <div v-if="nextState == undefined">
+            <a class="button" id="addVisualStateButton" title="Create new State" v-on:click="addVisualState"><span class="icon is-small"><i class="fa fa-plus"></i></span></a>
         </div>
             <!--<div v-if="nextState != undefined" class='diffBox'>
                 <div class="inputDiffBox">
@@ -267,5 +267,14 @@ export default {
     background-color: #E1E1E1 !important;
     border: 1px solid #ffffff !important;
     box-shadow: 0 4px 3px rgba(100, 200, 100, 0.1), 0 0 0 1px rgba(100, 100, 100, 0.4) !important;
+}
+#addVisualStateButton{
+    margin-right: 4px;
+    height: 99%;
+    color:#333;
+    background-color: rgba(255,255,255,0.3);
+}
+#addVisualStateButton:hover{
+    background-color: rgba(255,255,255,1);
 }
 </style>
