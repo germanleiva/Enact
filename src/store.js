@@ -1785,10 +1785,10 @@ class ShapeModel {
                 return value1 == value2;
             }
             case 'position':{
-                return value1.x == value2.x && value1.y == value2.y;
+                return value1.x.valueOf() == value2.x.valueOf() && value1.y.valueOf() == value2.y.valueOf();
             }
             case 'size':{
-                return value1.width == value2.width && value1.height == value2.height;
+                return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
             }
         }
     }
