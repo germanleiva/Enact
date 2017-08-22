@@ -67,12 +67,7 @@ export default {
             return !this.isTestShape && globalStore.toolbarState.measureMode
         },
         styleObject: function() {
-                console.log(this.shapeModel.left + 'px')
-                console.log(this.shapeModel.top + 'px')
-                console.log(this.shapeModel.width + 'px')
-                console.log(this.shapeModel.height + 'px')
-
-                let result = {
+                return {
                     'backgroundColor': this.isTestShape? 'rgba(0,0,0,0)': this.shapeModel.color,
                     'position': 'absolute',
                     'left': this.shapeModel.left + 'px',
@@ -86,9 +81,6 @@ export default {
                     'pointer-events': this.isTestShape?'none':'auto'
                     // 'box-sizing': 'border-box' //To ignore the border size?
                 }
-                console.log("styleObject created")
-                console.log(result)
-                return result
         },
         positionStyleObject: function() {
             return {
@@ -139,7 +131,6 @@ export default {
     },
     watch: {
         styleObject: function(newVal,oldVal) {
-            console.log("RectangleShape >> watching styleObject ...")
             if (!this.isTestShape && this.shapeModel) {
 
                 if (globalStore.visualStates[0] === this.visualState) {
@@ -150,9 +141,7 @@ export default {
                             if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
                                 changes['color'] = newVal[eachKey]
                             } else {
-                                console.log("Failing just before the parseFloat? ...")
                                 changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
-                                console.log("Noup")
                             }
                         }
                     }

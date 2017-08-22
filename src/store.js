@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = true;
+let isLoggerActive = false;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -1780,10 +1780,6 @@ class ShapeModel {
         return this[property];
     }
     areEqualValues(property, value1, value2) {
-        console.log("ShapeModel >> areEqualValues, between")
-        console.log(property)
-        console.log(value1)
-        console.log(value2)
         switch (property) {
             case 'color':{
                 return value1 == value2;
