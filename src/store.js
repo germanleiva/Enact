@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = false;
+let isLoggerActive = true;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -1743,13 +1743,13 @@ class ShapeModel {
         // this[changePropertyName] = changedValue
         switch (changedPropertyName) {
             case 'position': {
-                this.left = changedValue.x
-                this.top = changedValue.y
+                this.left = changedValue.x.valueOf()
+                this.top = changedValue.y.valueOf()
                 break;
             }
             case 'size': {
-                this.width = changedValue.width
-                this.height = changedValue.height
+                this.width = changedValue.width.valueOf()
+                this.height = changedValue.height.valueOf()
                 break;
             }
             case 'color': {
@@ -1780,6 +1780,10 @@ class ShapeModel {
         return this[property];
     }
     areEqualValues(property, value1, value2) {
+        console.log("ShapeModel >> areEqualValues, between")
+        console.log(property)
+        console.log(value1)
+        console.log(value2)
         switch (property) {
             case 'color':{
                 return value1 == value2;
