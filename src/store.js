@@ -407,6 +407,10 @@ class DiffModel {
 }
 
 class MeasureModel {
+    static calculateDistance(p1,p2) {
+        return Math.sqrt( Math.pow(p1.x - p2.x,2) + Math.pow(p1.y - p2.y,2) )
+    }
+
     constructor(visualState, from, to, cachedFinalPosition) {
         this.visualState = visualState
         this.from = from // {type, id, handler}
@@ -441,13 +445,19 @@ class MeasureModel {
     }
 
     get distance() {
-        // return Math.sqrt( Math.pow(this.deltaX,2) + Math.pow(this.deltaY,2) );
-        console.log("MeasureModel >> distance")
-        console.log("initial: ")
-        console.log(this.initialPoint)
-        console.log("final: ")
-        console.log(this.finalPoint)
-        return new Distance(this.initialPoint, this.finalPoint)
+        let algo = MeasureModel.calculateDistance(this.initialPoint,this.finalPoint)
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          applyDelta: (input,max,min,ratio) => {
+            abort("Distances are inmutable")
+          },
+          delta: () => algo - (MeasureModel.calculateDistance(this.initialPoint.previous,this.finalPoint.previous))
+        }
     }
 
     get id() {
@@ -1191,6 +1201,10 @@ class Position extends Property {
     get x(){
         let algo = this._x
 
+        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+            return algo
+        }
+
         return {
           [Symbol.toPrimitive](hint) {
             return algo;
@@ -1220,6 +1234,10 @@ class Position extends Property {
     }
     get y(){
         let algo = this._y
+
+        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+            return algo
+        }
 
         return {
           [Symbol.toPrimitive](hint) {
@@ -1306,7 +1324,6 @@ class Size extends Property {
     constructor(width,height,previousWidth,previousHeight) {
         super()
 
-
         // if (width == NaN || height == NaN) {
         //     debugger;
         // }
@@ -1316,9 +1333,34 @@ class Size extends Property {
         this.previousWidth = previousWidth == undefined || Number.isNaN(previousWidth)?width:previousWidth
         this.previousHeight = previousHeight == undefined || Number.isNaN(previousHeight)?height:previousHeight
     }
+
     get width(){
-        return this._width
+        let algo = this._width
+
+        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+            return algo
+        }
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          applyDelta: (input,max,min,ratio) => {
+            let deltaValue = input.delta()
+            let {x:deltaX,y:deltaY} = deltaValue
+            if (deltaX || deltaY) {
+                abort()
+            }
+
+            this.width += deltaValue
+          },
+          delta: () => this.width - this.previousWidth
+        }
     }
+
     set width(value) {
         if (value < 0) {
             value = 0
@@ -1326,9 +1368,34 @@ class Size extends Property {
         this.previousWidth = !Number.isNaN(this._width)?this._width:value
         this._width = value
     }
+
     get height(){
-        return this._height
+        let algo = this._height
+
+        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+            return algo
+        }
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          applyDelta: (input,max,min,ratio) => {
+            let deltaValue = input.delta()
+            let {x:deltaX,y:deltaY} = deltaValue
+            if (deltaX || deltaY) {
+                abort()
+            }
+
+            this.height += deltaValue
+          },
+          delta: () => this.height - this.previousHeight
+        }
     }
+
     set height(value) {
         if (value < 0) {
             value = 0
@@ -1381,22 +1448,67 @@ class Size extends Property {
 }
 
 class Distance extends Property {
+    static dist(p1,p2) {
+        return Math.sqrt( Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2))
+    }
+
+    [Symbol.toPrimitive](hint) {
+        return this.value;
+    }
+
+    valueOf() {
+        return this.value
+    }
+
+    toString() {
+        return "" + this.value
+    }
+
+    toJSON() {
+        return this.value
+    }
+
     constructor(initialPoint,finalPoint) {
         super()
         this.initialPoint = initialPoint
         this.finalPoint = finalPoint
     }
-    get distance() {
-        return this.calculateDistance(this.initialPoint,this.finalPoint)
-    }
 
-    calculateDistance({x:x1,y:y1},{x:x2,y:y2}) {
-        return Math.sqrt( Math.pow(x1-x2,2) + Math.pow(y1-y2,2))
+    get value() {
+        return Distance.dist(this.initialPoint,this.finalPoint)
     }
 
     delta() {
-        let previousDistance = this.calculateDistance(this.initialPoint.previous,this.finalPoint.previous)
-        return this.distance - previousDistance
+        let previousDistance = Distance.dist(this.initialPoint.previous,this.finalPoint.previous)
+        return this.value - previousDistance
+    }
+
+    get distanceX() {
+        let algo = this.initialPoint.x - this.finalPoint.x
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          delta: () => algo - (this.initialPoint.previous.x - this.finalPoint.previous.x)
+        }
+    }
+
+    get distanceY() {
+        let algo = this.initialPoint.y - this.finalPoint.y
+
+        return {
+          [Symbol.toPrimitive](hint) {
+            return algo;
+          },
+          valueOf: () => algo,
+          toString: () => "" + algo,
+          toJSON: () => algo,
+          delta: () => algo - (this.initialPoint.previous.y - this.finalPoint.previous.y)
+        }
     }
 }
 
