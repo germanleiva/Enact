@@ -902,7 +902,7 @@ class VisualStateModel {
         }
 
         if (relatedShape.areEqualValues(changedPropertyName, newPreviousValue, previousValue)) {
-            //Equal values, this shape should keep or start following the master
+            logger("Equal values, this shape should keep or start following the master")
             relatedShape.followMaster(changedPropertyName);
 
             if (this.nextState) {
@@ -1206,7 +1206,7 @@ class Position extends Property {
     get x(){
         let algo = this._x
 
-        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+        if (!algo) {
             return algo
         }
 
@@ -1231,17 +1231,17 @@ class Position extends Property {
 
     }
     set x(value) {
-        if (Number.isNaN(value)) {
-            debugger;
+        if (value && !Number.isNaN(value)) {
+            value = Math.round(value)
         }
-        value = Math.round(value)
+
         this.previousX = !Number.isNaN(this._x)?this._x:value
         this._x = value
     }
     get y(){
         let algo = this._y
 
-        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+        if (!algo) {
             return algo
         }
 
@@ -1265,10 +1265,9 @@ class Position extends Property {
         }
     }
     set y(value) {
-        if (value == NaN) {
-            debugger;
+        if (value && !Number.isNaN(value)) {
+            value = Math.round(value)
         }
-        value = Math.round(value)
         this.previousY = !Number.isNaN(this._y)?this._y:value
         this._y = value
     }
@@ -1344,7 +1343,7 @@ class Size extends Property {
     get width(){
         let algo = this._width
 
-        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+        if (!algo) {
             return algo
         }
 
@@ -1369,10 +1368,12 @@ class Size extends Property {
     }
 
     set width(value) {
-        if (value < 0) {
-            value = 0
-        } else {
-            value = Math.round(value)
+        if (value && !Number.isNaN(value)) {
+            if (value < 0) {
+                value = 0
+            } else {
+                value = Math.round(value)
+            }
         }
         this.previousWidth = !Number.isNaN(this._width)?this._width:value
         this._width = value
@@ -1381,7 +1382,7 @@ class Size extends Property {
     get height(){
         let algo = this._height
 
-        if (algo == null || algo == undefined || Number.isNaN(algo)) {
+        if (!algo) {
             return algo
         }
 
@@ -1406,10 +1407,12 @@ class Size extends Property {
     }
 
     set height(value) {
-        if (value < 0) {
-            value = 0
-        } else {
-            value = Math.round(value)
+        if (value && !Number.isNaN(value)) {
+            if (value < 0) {
+                value = 0
+            } else {
+                value = Math.round(value)
+            }
         }
         this.previousHeight = !Number.isNaN(this._height)?this._height:value
         this._height = value

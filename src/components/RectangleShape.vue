@@ -361,7 +361,7 @@ export default {
         },
 
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
-            let previousValue = { width: this.shapeModel.size.width, height: this.shapeModel.size.height };
+            let previousValue = { width: this.shapeModel.size.width.valueOf(), height: this.shapeModel.size.height.valueOf() };
 
             let currentWindowMousePositionX = e.pageX;
             let currentWindowMousePositionY = e.pageY;
