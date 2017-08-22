@@ -22,6 +22,7 @@ extendArray(Array);
 import Vue from 'vue'
 import Distance from './Distance.vue'
 import {globalStore,globalBus,logger, MeasureModel, DiffModel, ObjectLink} from '../store.js'
+import tinyColor from 'tinycolor2'
 
 // class Handler {
 //     constructor(namePrefix, left, top, right, bottom) {
@@ -67,14 +68,15 @@ export default {
             return !this.isTestShape && globalStore.toolbarState.measureMode
         },
         styleObject: function() {
+            let testColor = tinyColor(this.shapeModel.color).setAlpha(0.1)
                 return {
-                    'backgroundColor': this.isTestShape? 'rgba(0,0,0,0)': this.shapeModel.color,
+                    'backgroundColor': this.isTestShape? testColor: this.shapeModel.color,
                     'position': 'absolute',
                     'left': this.shapeModel.left + 'px',
                     'top': this.shapeModel.top + 'px',
                     'width': this.shapeModel.width /*+ border*/ + 'px',
                     'height': this.shapeModel.height /*+ border*/ + 'px',
-                    'border': this.isTestShape? '2px dashed #ffa500':'1px solid gray',
+                    'border': this.isTestShape? '2px dotted #ff8800':'1px solid gray',
                     'overflow': 'visible',
                     'opacity': '1',
                     'borderRadius': this.shapeModel.cornerRadius,
