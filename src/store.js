@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = false;
+let isLoggerActive = true;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -1557,6 +1557,10 @@ class ShapeModel {
         this.isMoving = false
     }
 
+    snapVertexPosition(plainPositionObject) {
+        //Empty implementation
+    }
+
     propertyMap() {
         return {"position":["x","y"],"size":["width","height"],"color":[]}
     }
@@ -1910,6 +1914,16 @@ class PolygonModel extends ShapeModel {
     // Defined in the superclass, I couldn't figure out how to do inheritance of getters/setters
     // get proxy() {
     // }
+
+    snapVertexPosition(plainPositionObject) {
+        for (let eachVertex of Object.values(this.vertices)) {
+            if (Math.abs(plainPositionObject.x - eachVertex.position.x) < 5 && Math.abs(plainPositionObject.y - eachVertex.position.y) < 5) {
+                plainPositionObject.x = eachVertex.position.x.valueOf()
+                plainPositionObject.y = eachVertex.position.y.valueOf()
+                return
+            }
+        }
+    }
 
     prepareForDeletion() {
         //Nothing to clean, the vertex doesn't know the Polygon
