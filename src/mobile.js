@@ -71,7 +71,7 @@ globalStore.mobileCanvasVM = mobileCanvasVM
 //         return foundShape.shapeModel
 //     }
 
-//     let foundFunction = target.functions.find((f) => f.name == key)
+//     let foundFunction = target.functions.find(f => f.name == key)
 //     if (foundFunction) {
 //         return foundFunction.func
 //     }
@@ -368,6 +368,22 @@ globalStore.socket.on('message-from-server', function(data) {
             stateMachine.insertNewTransition(jsonTransitionData)
             break;
         }
+        case "MACHINE_DELETED": {
+            stateMachine.event = undefined;
+            stateMachine.currentState = undefined;
+            stateMachine.firstState = undefined;
+            break;
+        }
+        case "MACHINE_DELETED_FUNCTION": {
+            let functionToDelete = stateMachine.findFunctionId(data.id)
+            functionToDelete.deleteYourself()
+            break;
+        }
+        case "MACHINE_DELETED_STATE": {
+            let stateToDelete = stateMachine.findStateId(data.id)
+            stateToDelete.deleteYourself()
+            break;
+        }
         case "MACHINE_CHANGED_STATE": {
             try {
                 let changedStateData;
@@ -389,6 +405,11 @@ globalStore.socket.on('message-from-server', function(data) {
                 }
                 console.log(data.message)
             }
+            break;
+        }
+        case "MACHINE_DELETED_TRANSITION": {
+            let transitionToDelete = stateMachine.findTransitionId(data.id)
+            transitionToDelete.deleteYourself()
             break;
         }
         case "MACHINE_CHANGED_TRANSITION": {

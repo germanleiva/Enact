@@ -746,7 +746,7 @@ class VisualStateModel {
     }
 
     get allObjectNames() {
-        return this.allObjects.map((o) => o.name)
+        return this.allObjects.map(obj => obj.name)
     }
 
     objectFor(name) {
@@ -887,7 +887,7 @@ class VisualStateModel {
     }
     addNewShape(shapeType,shapeId,protoShape) {
         let correspondingVersion
-debugger;
+
         if (protoShape) {
             //Cheap way of cloning the version, and setting the masterVersion!
             correspondingVersion = ShapeModel.createShape(shapeType, shapeId, protoShape);
@@ -1193,7 +1193,7 @@ class InputEventTouch {
     }
 
     get leanJSON() {
-        console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
+        // console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
         //TODO check why angularRotation is not appearing, apparently when a value it is undefined cannot be added to the final JSON
         return {identifier: this.identifier, x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
     }
@@ -1803,7 +1803,7 @@ class ShapeModel {
             }
             case 'size':{
                 this.width = this.width.valueOf()
-                this.height = this.height.valueOf()
+                this.height = this.height.valueOf() //TODO cannot read valueOf() null during import
                 break;
             }
             case '':
@@ -2701,7 +2701,9 @@ class State {
         this.isReadyToServe = false
     }
 
-    prepareForDeletion() {
+    deleteYourself() {
+        this.machine.states.remove(this);
+        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_STATE", id: this.id });
         this.machine = undefined;
     }
 
@@ -2848,8 +2850,10 @@ return true;
         this.isActiveTimer = undefined
     }
 
-    prepareForDeletion() {
-        this.machine = undefined
+    deleteYourself() {
+        this.machine.transitions.remove(this);
+        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_TRANSITION", id: this.id });
+        this.machine = undefined;
     }
 
     get functions() {
@@ -2993,8 +2997,10 @@ class SMFunction {
         this.isReadyToServe = false
     }
 
-    prepareForDeletion() {
-        this.machine = undefined
+    deleteYourself() {
+        this.machine.functions.remove(this)
+        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_FUNCTION", id: this.id });
+        this.machine = undefined;
     }
 
     get code() {
@@ -3058,6 +3064,7 @@ class StateMachine {
     constructor({isServer}) {
         this.states = []
         this.transitions = []
+        this.functions = []
 
         this.event = undefined; //This is the event that we are currently processing
         this._currentState = undefined;
@@ -3065,8 +3072,6 @@ class StateMachine {
 
         this.isServer = isServer
         // this.hardcodedValues = {}
-
-        this.functions = []
 
         let self = this;
         this.globalScope = new Proxy({}, {
@@ -3102,7 +3107,7 @@ class StateMachine {
             },
             get (target, key) {
                 if (isServer) {
-                    let vs = globalStore.visualStates.find((vs) => vs.name == key)
+                    let vs = globalStore.visualStates.find(vs => vs.name == key)
                     if (vs) {
                         return vs.proxy;
                     }
@@ -3119,7 +3124,7 @@ class StateMachine {
                     }
                 }
 
-                let foundFunction = self.functions.find((f) => f.name == key)
+                let foundFunction = self.functions.find(f => f.name == key)
                 if (foundFunction) {
                     return foundFunction.func
                 }
@@ -3200,13 +3205,25 @@ class StateMachine {
         }
     }
 
+    deleteYourself() {
+        this.functions.concat(this.transitions).concat(this.states).forEach(each => {
+            each.deleteYourself()
+        })
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED" });
+        }
+    }
+
     get currentState() {
         return this._currentState
     }
 
     set currentState(value) {
         this._currentState = value
-        globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", stateId: value.id });
+        if (value) {
+            globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", stateId: value.id });
+        }
     }
 
     get accumulatedObjects() {
@@ -3223,15 +3240,15 @@ class StateMachine {
     }
 
     get selectedElement() {
-        let selectedFunction = this.functions.find((f) => f.isSelected)
+        let selectedFunction = this.functions.find(f => f.isSelected)
         if (selectedFunction) {
             return selectedFunction
         }
-        let selectedNode = this.states.find((s) => s.isSelected)
+        let selectedNode = this.states.find(s => s.isSelected)
         if (selectedNode) {
             return selectedNode
         }
-        let selectedTransition = this.transitions.find((s) => s.isSelected)
+        let selectedTransition = this.transitions.find(s => s.isSelected)
         if (selectedTransition) {
             return selectedTransition
         }
@@ -3277,7 +3294,7 @@ class StateMachine {
     }
 
     updateFunction(aFunctionJSON,shouldCreate=false) {
-        let foundFunction = this.functions.find((f) => f.id == aFunctionJSON.id)
+        let foundFunction = this.findFunctionId(aFunctionJSON.id)
         if (foundFunction) {
            foundFunction.fromJSON(aFunctionJSON)
         } else {
@@ -3353,15 +3370,19 @@ class StateMachine {
     }
 
     findTransitionsFrom(sourceState,transitionName) {
-        return this.transitions.find((aTransition) => aTransition.source == sourceState && aTransition.name == transitionName)
+        return this.transitions.find(aTransition => aTransition.source == sourceState && aTransition.name == transitionName)
     }
 
     findStateId(stateId) {
-        return this.states.find((aState) => aState.id == stateId)
+        return this.states.find(aState => aState.id == stateId)
     }
 
     findTransitionId(transitionId){
-        return this.transitions.find((aTransition) => aTransition.id == transitionId)
+        return this.transitions.find(aTransition => aTransition.id == transitionId)
+    }
+
+    findFunctionId(functionId) {
+        return this.functions.find(f => f.id == functionId)
     }
 
     notifyChange(type,object,propertyName) {

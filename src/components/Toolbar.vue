@@ -26,7 +26,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,globalBus} from '../store.js'
+import {globalStore,globalBus, InputEvent} from '../store.js'
 
 export default {
   name: 'toolbar',
@@ -72,7 +72,7 @@ export default {
             }
 
             let reader = new FileReader();
-            reader.onload = (e) => {
+            reader.onload = e => {
                 console.log("ONLOAD")
                 let json = JSON.parse(e.target.result);
 
@@ -85,6 +85,15 @@ export default {
                     inputEvent.deleteYourself()
                     globalStore.inputEvents.remove(inputEvent)
                 })
+                globalStore.stateMachine.deleteYourself();
+
+                //Load everything
+
+                globalStore.shapeCounter = json.shapeCounter;
+                globalStore.measureCounter = json.measureCounter;
+                globalStore.stateCounter = json.stateCounter;
+                globalStore.transitionCounter = json.transitionCounter;
+                globalStore.functionCounte = json.functionCounter;
 
                 globalStore.toolbarState.currentColor = json.currentColor;
 
@@ -112,8 +121,11 @@ export default {
                             newShape.fromJSON(shapeDesc)
 
                             if (newVisualState.nextState) {
-                                debugger;
                                 newVisualState.nextState.didCreateShape(newShape, newVisualState);
+                            }
+
+                            if (globalStore.visualStates[0] === newVisualState) {
+                                globalStore.newShapeCreated(newShape);
                             }
                         } else {
                             newShape.fromJSON(shapeDesc)
@@ -133,7 +145,14 @@ export default {
 
             //Let's save all the visualStates
 
-            let jsonFile = {}
+            let jsonFile = {
+                shapeCounter:globalStore.shapeCounter,
+                measureCounter:globalStore.measureCounter,
+                stateCounter:globalStore.stateCounter,
+                transitionCounter:globalStore.transitionCounter,
+                functionCounter:globalStore.functionCounter
+            }
+
             jsonFile.visualStates = []
 
             for (let vs of globalStore.visualStates) {

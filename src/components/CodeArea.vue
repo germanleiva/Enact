@@ -154,7 +154,7 @@ CodeMirror.hint.javascript = function(editor,options) {
     // inner.list.push("$S3");
     for (let i=0; i < result.list.length; i++) {
         let currentText = result.list[i]
-        let stateMachineFunction = globalStore.stateMachine.functions.find((f) => f.name == currentText)
+        let stateMachineFunction = globalStore.stateMachine.functions.find(f => f.name == currentText)
         if (stateMachineFunction) {
             let match = /function\s(\w+)\(\s*(\{[\s\S]*\})\s*\)/.exec(stateMachineFunction.code)
             if (match) {
@@ -361,7 +361,7 @@ export default {
             editor.on("drop",this.dropOnCode);
 
             var scroller = editor.getScrollerElement();
-            scroller.addEventListener('mouseup', (e) => {
+            scroller.addEventListener('mouseup', e => {
                 var pos = editor.coordsChar({x: e.pageX, y: e.pageY});
                 var token = editor.getTokenAt(pos);
                 this.onEditorMouseUp(editor,e);
@@ -513,7 +513,7 @@ export default {
             }
         },
         unselectStateMachine(){
-            let unselect = (x) => x.isSelected = false
+            let unselect = x => x.isSelected = false
             this.stateMachine.states.forEach(unselect)
             this.stateMachine.transitions.forEach(unselect)
         },
