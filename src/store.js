@@ -52,7 +52,7 @@ export const globalStore = new Vue({
             measureMode: false,
             shapeType: 'rectangle',
             currentLink: undefined,
-            currentColor: '#1a60f3',
+            currentColor: '#f0F0F0',
         },
         cursorType: 'auto',
         context: undefined,
@@ -1590,25 +1590,26 @@ class ShapeModel {
         if (!shapeId) {
             console.log("ShapeModel class >> createShape, I'm pretty sure that shapeId needs to be defined")
         }
+        let myColor = globalStore.toolbarState.currentColor;
         switch (shapeType) {
             case 'rectangle': {
                 if (protoShape) {
                     return new RectangleModel(shapeId, protoShape)
                 }
-                return new RectangleModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
+                return new RectangleModel(shapeId, protoShape, myColor, NaN, NaN, NaN, NaN)
             }
             case 'circle': {
                 if (protoShape) {
                     return new RectangleModel(shapeId, protoShape)
                 }
-                return new RectangleModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN, '50%')
+                return new RectangleModel(shapeId, protoShape, myColor, NaN, NaN, NaN, NaN, '50%')
             }
             case 'polygon': {
                 if (protoShape) {
                     return new PolygonModel(shapeId, protoShape)
                 }
                 // return new PolygonModel(shapeId, protoShape, '#ffffff', NaN, NaN, NaN, NaN)
-                return new PolygonModel(shapeId, protoShape, '#ffffff', 0, 0, 0, 0)
+                return new PolygonModel(shapeId, protoShape, myColor, 0, 0, 0, 0)
             }
             default: {
                 console.log("Unrecognized shapeType in static ShapeModel.createShape :" + shapeType)
@@ -1649,7 +1650,7 @@ class ShapeModel {
             'top:' + this.top + 'px' + ";" +
             'width:' + this.width + 'px' + ";" +
             'height:' + this.height + 'px' + ";" +
-            'border:' + ('1px') + ' solid gray' + ";" +
+            'border:' + ('1px') + ' solid #cccccc' + ";" +
             'overflow:' + 'visible' + ";" +
             'border-radius:' + this.cornerRadius + ";" +
             'opacity:' + opacityValue

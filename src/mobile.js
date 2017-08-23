@@ -142,7 +142,7 @@ let RectangleVM = Vue.extend({
                     'top': this.shapeModel.position.y + 'px',
                     'width': this.shapeModel.size.width + 'px',
                     'height': this.shapeModel.size.height + 'px',
-                    'border': '1px solid gray',
+                    'border': '1px solid #cccccc',
                     'overflow': 'visible',
                     'opacity': this.shapeModel.opacity,
                     'position': 'absolute'
