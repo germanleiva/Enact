@@ -163,7 +163,8 @@ CodeMirror.hint.javascript = function(editor,options) {
 
                 //ASSERT
                 if (functionName != currentText) {
-                    abort("THIS SHOULDNT HAPPEN")
+                    console.log("THIS SHOULDNT HAPPEN")
+                    abort()
                 }
 
                jsonParameter = jsonParameter.replace(/{|}|\n|\s*/g,'')

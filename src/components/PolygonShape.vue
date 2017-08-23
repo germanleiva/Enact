@@ -247,8 +247,10 @@ export default {
                 //     }
                 // }
 
-                for (let testShape of this.visualState.testShapes) {
-                    testShape.snapVertexPosition(newValue)
+                for (let testShape of [...this.visualState.testShapes]) {
+                    if (testShape.id == this.shapeModel.id) {
+                        testShape.snapVertexPosition(newValue)
+                    }
                 }
 
                 this.visualState.changeProperty(this.shapeModel,vertexId,previousValue,newValue)
@@ -357,7 +359,6 @@ export default {
             }
 
             //Snap to testShapes or previous state value
-            let shapesToSnap = [...this.visualState.testShapes]
 
             // if (this.visualState.previousState) {
             //     let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
@@ -366,12 +367,14 @@ export default {
             //     }
             // }
 
-            for (let testShape of shapesToSnap) {
-                if (Math.abs(newValue.x - testShape.position.x) < 5) {
-                    newValue.x = testShape.position.x.valueOf()
-                }
-                if (Math.abs(newValue.y - testShape.position.y) < 5) {
-                    newValue.y = testShape.position.y.valueOf()
+            for (let testShape of [...this.visualState.testShapes]) {
+                if (testShape.id == this.shapeModel.id) {
+                    if (Math.abs(newValue.x - testShape.position.x) < 5) {
+                        newValue.x = testShape.position.x.valueOf()
+                    }
+                    if (Math.abs(newValue.y - testShape.position.y) < 5) {
+                        newValue.y = testShape.position.y.valueOf()
+                    }
                 }
             }
 
