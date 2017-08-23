@@ -452,6 +452,10 @@ export default {
                 }
             }
 
+            for (let eachTestShape of this.visualState.testShapes) {
+                eachTestShape.snap(this.shapeModel.position,newValue)
+            }
+
             if (this.shapeModel.isFollowingMaster('size') && previousValue.width == newValue.width && previousValue.height == newValue.height) {
                 //Don't do anything, keep following master and do not propagate
             } else {

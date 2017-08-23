@@ -1419,7 +1419,6 @@ class Size extends Property {
     }
 
     applyDelta(input,max,min,ratio) {
-        debugger;
         let {x:deltaX,y:deltaY} = input.delta()
         let ratioX = 1
         let ratioY = 1
@@ -1557,7 +1556,11 @@ class ShapeModel {
         this.isMoving = false
     }
 
-    snapVertexPosition(plainPositionObject) {
+    snapVertexPosition(plainPosition) {
+        //Empty implementation
+    }
+
+    snap(positionProperty,plainSize) {
         //Empty implementation
     }
 
@@ -1795,7 +1798,11 @@ class ShapeModel {
         return this.isFollowingMaster('color') && this.isFollowingMaster('position') && this.isFollowingMaster('size')
     }
     valueForProperty(property) {
-        return this[property];
+        let value = this[property]
+        if (value) {
+            return value.valueOf()
+        }
+        return value;
     }
     areEqualValues(property, value1, value2) {
         switch (property) {
@@ -1896,6 +1903,22 @@ class RectangleModel extends ShapeModel {
                 this[eachKey] = json[eachKey]
             }
         }
+    }
+
+    snap(positionProperty,plainSize) {
+        let result = false
+        //this is the testShape
+        if (Math.abs(this.position.x - positionProperty.x) < 5 && Math.abs(this.position.y - positionProperty.y) < 5) {
+            positionProperty.x = this.position.x.valueOf()
+            positionProperty.y = this.position.y.valueOf()
+            result = true
+        }
+        if (result && Math.abs(this.size.width - plainSize.width) < 5 && Math.abs(this.size.height - plainSize.height) < 5) {
+            plainSize.width = this.size.width.valueOf()
+            plainSize.height = this.size.height.valueOf()
+            result = true
+        }
+        return result
     }
 }
 
