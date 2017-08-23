@@ -52,7 +52,7 @@ export const globalStore = new Vue({
             measureMode: false,
             shapeType: 'rectangle',
             currentLink: undefined,
-            currentColor: '#f0F0F0',
+            currentColor: '#b3b1f3',
         },
         cursorType: 'auto',
         context: undefined,
@@ -110,6 +110,8 @@ export const globalStore = new Vue({
             //TODO DRY
             let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
             newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+
+            return newVisualState
         },
         newShapeCreated(aShapeModel) {
             this.stateMachine.addShape(aShapeModel)
@@ -630,6 +632,9 @@ class MeasureModel {
             }
         }
     }
+    toJSON() {
+        return {idCount: this.idCount, from: this.from ,to: this.to}
+    }
 }
 
 class ObjectLink {
@@ -675,6 +680,33 @@ class VisualStateModel {
         this.showAllInputEvents = false
         this.timeoutForStopMovingSelectedShapes = undefined
     }
+
+    deleteYourself() {
+        for (let aShapeModel of Object.values(this.shapesDictionary)) {
+            this.deleteShape(aShapeModel)
+        }
+        for (let aMeasure of this.measures) {
+            aMeasure.deleteYourself()
+        }
+        this.previousState = undefined;
+        this.nextState = undefined;
+    }
+
+    toJSON() {
+        let result = {name: this.name}
+        result.shapes = {}
+        let shapesJSON = {}
+        for (let eachShapeKey in this.shapesDictionary) {
+            result.shapes[eachShapeKey] = this.shapesDictionary[eachShapeKey].toJSON()
+        }
+        result.measures = []
+        for (let aMeasure of this.measures) {
+            result.measures.push(aMeasure.toJSON())
+        }
+        result.currentInputEventIndex = globalStore.inputEvents.indexOf(this.currentInputEvent)
+        return result
+    }
+
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
@@ -774,6 +806,13 @@ class VisualStateModel {
     get currentInputEventIndex() {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
+    set currentInputEventIndex(anInputEventIndex) {
+        if (anInputEventIndex < 0 || anInputEventIndex >= globalStore.inputEvents.length) {
+            return
+        }
+        this.currentInputEvent = globalStore.inputEvents[anInputEventIndex]
+    }
+
     get percentageInTimeline() {
         if (this.currentInputEventIndex >= 0) {
             let totalEventCount = globalStore.inputEvents.length
@@ -794,7 +833,7 @@ class VisualStateModel {
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -803,7 +842,7 @@ class VisualStateModel {
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -812,7 +851,7 @@ class VisualStateModel {
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     // }
                 // }
                 break;
@@ -823,11 +862,19 @@ class VisualStateModel {
         return []
     }
 
-    addNewMeasureUntilLastState(fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
+    addNewMeasureUntilLastState(idCount,fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
         let result = []
 
+        //TODO what about deleted measures?
+        if (idCount && this.measureFor(idCount)) {
+            return []
+        }
+
         let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
-        newMeasure.idCount = globalStore.measureCounter++;
+        if (!idCount) {
+            idCount = globalStore.measureCounter++;
+        }
+        newMeasure.idCount = idCount;
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
@@ -840,7 +887,7 @@ class VisualStateModel {
     }
     addNewShape(shapeType,shapeId,protoShape) {
         let correspondingVersion
-
+debugger;
         if (protoShape) {
             //Cheap way of cloning the version, and setting the masterVersion!
             correspondingVersion = ShapeModel.createShape(shapeType, shapeId, protoShape);
@@ -1073,6 +1120,12 @@ class InputEvent {
         }
         this.timeStamp = timeStamp
         this.testShapes = []
+    }
+    deleteYourself() {
+        for (aTestShape of Array.from(this.testShapes)) {
+            aTestShape.prepareForDeletion()
+            this.testShapes.remove(aTestShape)
+        }
     }
     get leanJSON() {
         //Removing testShapes from the inputEvent
@@ -1904,8 +1957,8 @@ class RectangleModel extends ShapeModel {
     }
 
     fromJSON(json) {
-        // this.id = json.id
-        // this.type = json.type
+        //     this.id = json.id
+        //     this.type = json.type
         for (let eachKey of ['color','top','left','width','height','opacity','cornerRadius']) {
             if (json.hasOwnProperty(eachKey)) {
                 this[eachKey] = json[eachKey]
@@ -2015,8 +2068,10 @@ class PolygonModel extends ShapeModel {
         }
         return undefined
     }
-    addVertex(canvasPosition) {
-        let vertexId = "V"+this.amountOfVertices
+    addVertex(canvasPosition,vertexId=undefined) {
+        if (!vertexId) {
+            vertexId = "V"+this.amountOfVertices
+        }
         let newVertex = new Vertex(vertexId,canvasPosition)
         Vue.set(this._vertices,vertexId,newVertex)
         Vue.set(this,vertexId,newVertex)
@@ -2113,8 +2168,8 @@ class PolygonModel extends ShapeModel {
         return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
     }
     fromJSON(json) {
-        // this.id = json.id
-        // this.type = json.type
+            // this.id = json.id
+            // this.type = json.type
         if (json.color) {
             this.color = json.color
         }
@@ -2123,6 +2178,7 @@ class PolygonModel extends ShapeModel {
             this.top = json.position.y
         }
         if (json.vertices) {
+            debugger;
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
@@ -2130,7 +2186,8 @@ class PolygonModel extends ShapeModel {
                     vertex.x = eachJSONVertex.x
                     vertex.y = eachJSONVertex.y
                 } else {
-                    Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
+                    this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                    // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
                 }
             }
         }
@@ -2644,6 +2701,10 @@ class State {
         this.isReadyToServe = false
     }
 
+    prepareForDeletion() {
+        this.machine = undefined;
+    }
+
     get actions() {
         return this.machine.actions;
     }
@@ -2787,6 +2848,10 @@ return true;
         this.isActiveTimer = undefined
     }
 
+    prepareForDeletion() {
+        this.machine = undefined
+    }
+
     get functions() {
         return this.machine.functions
     }
@@ -2927,6 +2992,11 @@ class SMFunction {
 
         this.isReadyToServe = false
     }
+
+    prepareForDeletion() {
+        this.machine = undefined
+    }
+
     get code() {
         return eval(JSONfn.stringify(this.func))
     }
@@ -3089,6 +3159,47 @@ class StateMachine {
     this.firstIndex = -1;    // index of first non-null entry in touchInfo
     }
 
+    toJSON() {
+        let result = {}
+        result.functions = []
+        for (let fn of this.functions) {
+            result.functions.push(fn.toJSON())
+        }
+        result.states = []
+        for (let state of this.states) {
+            result.states.push(state.toJSONString())
+        }
+        result.transitions = []
+        for (let transition of this.transitions) {
+            result.transitions.push(transition.toJSONString())
+        }
+        return result
+    }
+
+    fromJSON(json) {
+        for (let array of [this.functions, this.states, this.transitions]) {
+            array.forEach(each => each.prepareForDeletion())
+            array.removeAll()
+        }
+
+        for (let fnString of json.functions) {
+            let functionDescription = JSON.parse(fnString)
+            this.updateFunction(functionDescription,true);
+        }
+
+        for (let stateString of json.states) {
+            let stateDesc;
+            eval(`stateDesc = ${stateString}`);
+            this.insertNewState(stateDesc)
+        }
+
+        for (let transitionString of json.transitions) {
+            let transitionDesc;
+            eval(`transitionDesc = ${transitionString}`);
+            this.insertNewTransition(transitionDesc)
+        }
+    }
+
     get currentState() {
         return this._currentState
     }
@@ -3143,7 +3254,7 @@ class StateMachine {
         // this.measures.push(aMeasure);
 
         if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {idCount: aMeasure.idCount, from: aMeasure.from ,to: aMeasure.to} });
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: aMeasure.toJSON() });
         }
     }
 

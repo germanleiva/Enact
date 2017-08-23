@@ -1,0 +1,159 @@
+{
+    "visualStates": [
+        {
+            "name": "VS1",
+            "shapes": {
+                "S1": {
+                    "id": "S1",
+                    "type": "rectangle",
+                    "color": "#b3b1f3",
+                    "top": 56,
+                    "left": 100,
+                    "width": 186,
+                    "height": 152,
+                    "opacity": 1,
+                    "cornerRadius": ""
+                },
+                "S2": {
+                    "id": "S2",
+                    "type": "rectangle",
+                    "color": "#b3b1f3",
+                    "top": 322,
+                    "left": 72,
+                    "width": 189,
+                    "height": 173,
+                    "opacity": 1,
+                    "cornerRadius": "50%"
+                },
+                "S3": {
+                    "id": "S3",
+                    "type": "polygon",
+                    "color": "#b3b1f3",
+                    "position": {
+                        "x": 0,
+                        "y": 0
+                    },
+                    "vertices": {
+                        "V0": {
+                            "id": "V0",
+                            "x": 255,
+                            "y": 303
+                        },
+                        "V1": {
+                            "id": "V1",
+                            "x": 348,
+                            "y": 216
+                        },
+                        "V2": {
+                            "id": "V2",
+                            "x": 348,
+                            "y": 343
+                        }
+                    }
+                }
+            },
+            "measures": [
+                {
+                    "idCount": 1,
+                    "from": {
+                        "type": "shape",
+                        "id": "S1",
+                        "handler": "center"
+                    },
+                    "to": {
+                        "type": "shape",
+                        "id": "S2",
+                        "handler": "center"
+                    }
+                }
+            ],
+            "currentInputEventIndex": -1
+        },
+        {
+            "name": "VS2",
+            "shapes": {
+                "S1": {
+                    "id": "S1",
+                    "type": "rectangle",
+                    "color": "#b3b1f3",
+                    "top": 150,
+                    "left": 39,
+                    "width": 186,
+                    "height": 152,
+                    "opacity": 1,
+                    "cornerRadius": ""
+                },
+                "S2": {
+                    "id": "S2",
+                    "type": "rectangle",
+                    "color": "#b3b1f3",
+                    "top": 323,
+                    "left": 189,
+                    "width": 189,
+                    "height": 173,
+                    "opacity": 1,
+                    "cornerRadius": "50%"
+                },
+                "S3": {
+                    "id": "S3",
+                    "type": "polygon",
+                    "color": "#b3b1f3",
+                    "position": {
+                        "x": -53,
+                        "y": -172
+                    },
+                    "vertices": {
+                        "V0": {
+                            "id": "V0",
+                            "x": 255,
+                            "y": 303
+                        },
+                        "V1": {
+                            "id": "V1",
+                            "x": 348,
+                            "y": 216
+                        },
+                        "V2": {
+                            "id": "V2",
+                            "x": 348,
+                            "y": 343
+                        }
+                    }
+                }
+            },
+            "measures": [
+                {
+                    "idCount": 3,
+                    "from": {
+                        "type": "shape",
+                        "id": "S1",
+                        "handler": "center"
+                    },
+                    "to": {
+                        "type": "shape",
+                        "id": "S2",
+                        "handler": "center"
+                    }
+                }
+            ],
+            "currentInputEventIndex": -1
+        }
+    ],
+    "inputEvents": [],
+    "stateMachine": {
+        "functions": [
+            "{\"id\":1,\"name\":\"isInside\",\"code\":\"function isInside({touch, shape}) {\\n        return shape.left < touch.x && shape.top < touch.y && shape.left + shape.width > touch.x && shape.top + shape.height > touch.y;\\n}\"}",
+            "{\"id\":2,\"name\":\"map\",\"code\":\"function map({input,\\n              output,\\n              min = Number.NEGATIVE_INFINITY,\\n              max = Number.POSITIVE_INFINITY,\\n              ratio = 1}) {\\n        output.applyDelta(input,min,max,ratio)\\n}\"}"
+        ],
+        "states": [
+            "{\n\tid: '1',\n\tdescription: '',\n\tname: 'Idle',\n\tisSelected: true,\n\tisActive: false,\n\tx: 309.0189681724131,\n\ty: 263.49733778867534,\n\tenter: function (e) {/* This function is executed when we enter this state */},\n\texit: function (e) {/* This function is executed when we leave this state */},\n\n}",
+            "{\n\tid: '2',\n\tdescription: '',\n\tname: 'Moving',\n\tisSelected: false,\n\tisActive: false,\n\tx: 245.65943824320038,\n\ty: 92.67162086210044,\n\tenter: function (e) {/* This function is executed when we enter this state */},\n\texit: function (e) {/* This function is executed when we leave this state */},\n\n}"
+        ],
+        "transitions": [
+            "{\n\tid: '1',\n\tdescription: '',\n\tname: 'touchstart',\n\tsource: '1',\n\ttarget: '2',\n\tguard: function (e) {\n            // Only when the guard is true the transition is executed\n            return true;\n        },\n\taction: function (e) {\n            // When the transition is executed this action is performed\n        },\n\tisSelected: false,\n\tisActive: false\n}",
+            "{\n\tid: '2',\n\tdescription: '',\n\tname: 'touchmove',\n\tsource: '2',\n\ttarget: '2',\n\tguard: function (e) {\n            // Only when the guard is true the transition is executed\n            return true;\n        },\n\taction: function (e) {\n            // When the transition is executed this action is performed\n        },\n\tisSelected: false,\n\tisActive: false\n}",
+            "{\n\tid: '3',\n\tdescription: '',\n\tname: 'touchend',\n\tsource: '2',\n\ttarget: '1',\n\tguard: function (e) {\n            // Only when the guard is true the transition is executed\n            return true;\n        },\n\taction: function (e) {\n            // When the transition is executed this action is performed\n        },\n\tisSelected: false,\n\tisActive: false\n}"
+        ]
+    },
+    "currentColor": "#b3b1f3"
+}
