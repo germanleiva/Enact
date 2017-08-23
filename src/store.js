@@ -454,6 +454,7 @@ class MeasureModel {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,max,min,ratio) => {
+            console.log("MeasureModel >> distance")
             abort("Distances are inmutable")
           },
           delta: () => algo - (MeasureModel.calculateDistance(this.initialPoint.previous,this.finalPoint.previous))
@@ -1220,7 +1221,9 @@ class Position extends Property {
           applyDelta: (input,max,min,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX || deltaY) {
+            if (deltaX == undefined || deltaY == undefined) {
+
+                console.log("Position >> x")
                 abort()
             }
 
@@ -1255,7 +1258,8 @@ class Position extends Property {
           applyDelta: (input,max,min,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX || deltaY) {
+            if (deltaX == undefined || deltaY == undefined) {
+                console.log("Position >> y")
                 abort()
             }
 
@@ -1278,7 +1282,8 @@ class Position extends Property {
     applyDelta(input,max,min,ratio,onlyToX=false,onlyToY=false) {
         let {x:deltaX,y:deltaY} = input.delta()
 
-        if (!deltaX || !deltaY) {
+        if (deltaX == undefined || deltaY == undefined) {
+            console.log("Position >> applyDelta")
             abort()
         }
 
@@ -1357,7 +1362,8 @@ class Size extends Property {
           applyDelta: (input,max,min,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX || deltaY) {
+            if (deltaX == undefined || deltaY == undefined) {
+                console.log("Size >> width")
                 abort()
             }
 
@@ -1396,7 +1402,8 @@ class Size extends Property {
           applyDelta: (input,max,min,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX || deltaY) {
+            if (deltaX == undefined || deltaY == undefined) {
+                console.log("Size >> width")
                 abort()
             }
 
@@ -3280,94 +3287,114 @@ class StateMachine {
         // console.log(">> processTouchEvent " + type + " - " + event.touches.length + " touches, " + event.changedTouches.length + " changed touches");
         event.preventDefault(); // avoid event bubbling
         // process each change
-        for (var i = 0; i < event.changedTouches.length; i++) {
+        // for (var i = 0; i < event.changedTouches.length; i++) {
             // console.log("  process touch #"+i);
             // event.touch = event.changedTouches.item(i); // add a shortcut to the touch being processed
-            let touchBeingProcessed = event.changedTouches[i];
+            // let touchBeingProcessed = event.changedTouches[i];
             // console.log("  preFn ");
-            if (preFn){
-                // preFn(event, event.touch); // adds / modifies event.info
-                preFn(event, touchBeingProcessed); // adds / modifies event.info
-            }
+        if (preFn){
+            // preFn(event, event.touch); // adds / modifies event.info
+            preFn(event); // adds / modifies event.info
+        }
 
-            this.processEvent(type, globalStore.mobileCanvasVM.currentInputEvent);
+        this.processEvent(type, globalStore.mobileCanvasVM.currentInputEvent);
 
-            if (postFn) {
-                // postFn(event, event.touch);
-                postFn(event, touchBeingProcessed);
-            }
+        if (postFn) {
+            // postFn(event, event.touch);
+            postFn(event);
         }
     }
 
     // Find the first available slot in touchInfo, initialize the info record
     // and add it to the event
-    recordTouchStart(event, touch) {
-        // console.log("-- recordTouchStart id "+touch.identifier);
-        var index = 0;
-        this.firstIndex = 0;
-        this.numTouches++;
-        while (this.touchInfo[index])
-            index++;
-        // console.log("-- index="+index);
-
-        this.touchId2Index[touch.identifier] = index;
-        // this.touchInfo[index] = {
-        //     id: touch.identifier,
-        //     index: index,
-        //     first: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-        //     prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-        //     cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
-        // };
-
-        this.touchInfo[index] = new InputEventTouch(touch)
+    recordTouchStart(event) {
 
             //hack
             globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
-            globalStore.mobileCanvasVM.currentInputEvent.touches = [this.touchInfo[index]]
+            globalStore.mobileCanvasVM.currentInputEvent.touches = []
+
+        // console.log("-- recordTouchStart id "+touch.identifier);
+        var index = 0;
+        this.firstIndex = 0;
+
+
+        for (let i=0;i<event.changedTouches.length;i++) {
+            let touch = event.changedTouches[i];
+            this.numTouches++;
+            while (this.touchInfo[index])
+                index++;
+            // console.log("-- index="+index);
+
+            this.touchId2Index[touch.identifier] = index;
+            // this.touchInfo[index] = {
+            //     id: touch.identifier,
+            //     index: index,
+            //     first: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+            //     prev: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+            //     cur: {x: touch.pageX, y: touch.pageY, t: event.timeStamp},
+            // };
+
+            let newTouch = new InputEventTouch(touch);
+            this.touchInfo[index] = newTouch;
+            globalStore.mobileCanvasVM.currentInputEvent.touches.push(newTouch)
+        }
 
         // console.log("-- done");
     }
 
     // Update the info record and add it to the event
-    recordTouchMove(event, touch) {
+    recordTouchMove(event) {
         // console.log("-- recordTouchMove id "+touch.identifier);
         // console.log("-- index="+touchId2Index[touch.identifier]);
-        let myInputEventTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
-        myInputEventTouch.x = touch.pageX
-        myInputEventTouch.y = touch.pageY
 
             //hack
             globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
-            globalStore.mobileCanvasVM.currentInputEvent.touches = [myInputEventTouch]
+            globalStore.mobileCanvasVM.currentInputEvent.touches = []
+
+        for (let i=0;i<event.changedTouches.length;i++) {
+            let touch = event.changedTouches[i];
+            let myInputEventTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
+            myInputEventTouch.x = touch.pageX
+            myInputEventTouch.y = touch.pageY
+            globalStore.mobileCanvasVM.currentInputEvent.touches.push(myInputEventTouch)
+        }
         // console.log("-- done");
     }
 
     // Add the info record to the event
-    recordTouchEnd(event, touch) {
-        let endedTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
+    recordTouchEnd(event) {
+        //hack
+        globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+        globalStore.mobileCanvasVM.currentInputEvent.touches = []
 
-            //hack
-            globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
-            globalStore.mobileCanvasVM.currentInputEvent.touches = [endedTouch]
+        for (let i=0;i<event.changedTouches.length;i++) {
+            let touch = event.changedTouches[i]
+            let endedTouch = this.touchInfo[this.touchId2Index[touch.identifier]];
+            globalStore.mobileCanvasVM.currentInputEvent.touches.push(endedTouch)
+        }
     }
 
     // Remove the info record corresponding to a touch that is now gone
-    clearTouch(event, touch) {
+    clearTouch(event) {
         // console.log("-- clearTouch id "+touch.identifier);
-        var index = this.touchId2Index[touch.identifier];
-        delete this.touchInfo[index];
-        delete this.touchId2Index[touch.identifier];
+        for (let i=0;i<event.changedTouches.length;i++) {
+            let touch = event.changedTouches[i]
+            var index = this.touchId2Index[touch.identifier];
 
-        this.numTouches--;
-        if (this.numTouches == 0)
-            this.firstIndex = -1;
-        else {
-            this.firstIndex = 0;
-            while (!this.touchInfo[this.firstIndex])
-                this.firstIndex++;
+            delete this.touchInfo[index];
+            delete this.touchId2Index[touch.identifier];
+
+            this.numTouches--;
+            if (this.numTouches == 0)
+                this.firstIndex = -1;
+            else {
+                this.firstIndex = 0;
+                while (!this.touchInfo[this.firstIndex])
+                    this.firstIndex++;
+            }
         }
 
-        globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
+        // globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
         // console.log("-- done - numTouches = " + numTouches + ", firstindex = " + firstIndex);
     }
 

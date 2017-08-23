@@ -326,7 +326,6 @@ export default {
             }
 
             //Snap to testShapes or previous state value
-            let shapesToSnap = [...this.visualState.testShapes]
 
             // if (this.visualState.previousState) {
             //     let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
@@ -335,14 +334,16 @@ export default {
             //     }
             // }
 
-            for (let testShape of shapesToSnap) {
-                if (Math.abs(newValue.x - testShape.position.x) < 5) {
-                    logger('insideTheX testing')
-                    newValue.x = testShape.position.x
-                }
-                if (Math.abs(newValue.y - testShape.position.y) < 5) {
-                    logger('insideTheY testing')
-                    newValue.y = testShape.position.y
+            for (let testShape of [...this.visualState.testShapes]) {
+                if (testShape.id == this.shapeModel.id) {
+                    if (Math.abs(newValue.x - testShape.position.x) < 5) {
+                        logger('insideTheX testing')
+                        newValue.x = testShape.position.x.valueOf()
+                    }
+                    if (Math.abs(newValue.y - testShape.position.y) < 5) {
+                        logger('insideTheY testing')
+                        newValue.y = testShape.position.y.valueOf()
+                    }
                 }
             }
 
@@ -452,8 +453,10 @@ export default {
                 }
             }
 
-            for (let eachTestShape of this.visualState.testShapes) {
-                eachTestShape.snap(this.shapeModel.position,newValue)
+            for (let testShape of this.visualState.testShapes) {
+                if (testShape.id == this.shapeModel.id) {
+                    testShape.snap(this.shapeModel.position,newValue)
+                }
             }
 
             if (this.shapeModel.isFollowingMaster('size') && previousValue.width == newValue.width && previousValue.height == newValue.height) {

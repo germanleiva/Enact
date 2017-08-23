@@ -69,7 +69,7 @@ export default {
                 }
                 return JSON.stringify(this.object[this.propertyName])
             }
-
+            console.log("TextMark >> hardcodedValue")
             abort()
         }
     },
