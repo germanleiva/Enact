@@ -12,7 +12,7 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore, globalBus, VisualStateModel} from '../store.js'
+import {globalStore, globalBus, VisualStateModel,logger} from '../store.js'
 import RectangleShape from './RectangleShape.vue'
 import PolygonShape from './PolygonShape.vue'
 import Distance from './Distance.vue'
@@ -253,6 +253,8 @@ export default {
                 x: e.pageX + document.getElementById('outputArea').scrollLeft - this.canvasOffsetLeft(),
                 y: e.pageY + document.getElementById('outputArea').scrollTop - this.canvasOffsetTop()
             };
+
+            logger(startingCanvasMousePosition)
 
             if (globalStore.toolbarState.polygonMode) {
                 if (this.currentPolygon == undefined) {
