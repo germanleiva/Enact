@@ -131,27 +131,37 @@ export default {
         console.log("WE DESTROYED RECTANGLE (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
-        styleObject: function(newVal,oldVal) {
-            if (!this.isTestShape && this.shapeModel) {
+        // styleObject: function(newVal,oldVal) {
+        //     if (!this.isTestShape && this.shapeModel) {
 
-                if (globalStore.visualStates[0] === this.parentVisualState) {
+        //         if (globalStore.visualStates[0] === this.parentVisualState) {
 
-                    let changes = {}
-                    for (let eachKey in newVal) {
-                        if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
-                            if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
-                                changes['color'] = newVal[eachKey]
-                            } else {
-                                changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
-                            }
-                        }
+        //             let changes = {}
+        //             for (let eachKey in newVal) {
+        //                 if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
+        //                     if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
+        //                         changes['color'] = newVal[eachKey]
+        //                     } else {
+        //                         changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
+        //                     }
+        //                 }
+        //             }
+        //             // console.log("message-from-desktop EDIT_SHAPE")
+        //             globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
+        //        }
+        //     } else {
+        //         //I WAS DELETED
+        //         console.log("Should i worry? " + this.shapeModel)
+        //     }
+        // }
+        shapeModel:{
+            deep: true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape && this.shapeModel) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON() })
                     }
-                    // console.log("message-from-desktop EDIT_SHAPE")
-                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
-               }
-            } else {
-                //I WAS DELETED
-                console.log("Should i worry? " + this.shapeModel)
+                }
             }
         }
     },
