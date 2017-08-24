@@ -325,7 +325,8 @@ text {
 }
 
 .node.activated circle {
-    fill:#ff0000;
+    stroke: #ff0000;
+    stroke-width: 2.5px;
     cursor:default;
 }
 
