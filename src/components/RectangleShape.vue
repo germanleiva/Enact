@@ -87,8 +87,8 @@ export default {
         positionStyleObject: function() {
             return {
                 'position':'absolute',
-                'top': -this.shapeModel.top + 'px',
-                'left': -this.shapeModel.left + 'px',
+                'top': -this.shapeModel.top -1 + 'px',
+                'left': -this.shapeModel.left -1 + 'px',
                 'width': this.shapeModel.left + 'px',
                 'height': this.shapeModel.top + 'px',
                 'border-right': '1px black dotted',
