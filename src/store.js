@@ -3237,7 +3237,7 @@ class StateMachine {
         this.functions.concat(this.transitions).concat(this.states).forEach(each => {
             each.deleteYourself()
         })
-debugger;
+
         this.event = undefined;
         this.currentState = undefined;
         this.firstState = undefined;

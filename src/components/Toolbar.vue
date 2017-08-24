@@ -5,8 +5,8 @@
             <a class="button is-primary is-alone is-disabled" title="A Tool to Create Interaction" id="title">ENACT</a>
             <p class="control has-addons">
 
-                <a class="button" title="Selection" v-on:click="openFile"><span class="icon is-small"><i class="fa fa-folder-open-o"></i></span></a>
-                <a class="button" title="Selection" v-on:click="saveFile"><span class="icon is-small"><i class="fa fa-floppy-o "></i></span></a>
+                <a class="button" title="Open Project" v-on:click="openFile"><span class="icon is-small"><i class="fa fa-folder-open-o"></i></span></a>
+                <a class="button" title="Save Project" v-on:click="saveFile"><span class="icon is-small"><i class="fa fa-floppy-o "></i></span></a>
             </p>
 
             <p class="control has-addons">
