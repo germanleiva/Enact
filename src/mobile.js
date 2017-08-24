@@ -94,6 +94,7 @@ globalStore.mobileCanvasVM = mobileCanvasVM
 let stateMachine = new StateMachine({isServer:false})//proxyStateMachine
 window.stateMachine = stateMachine //For debugging in the developer tools
 window.mobileCanvasVM = mobileCanvasVM //For debugging in the developer tools
+window.globalStore = globalStore //For debugging in the developer tools
 
 $ = stateMachine.globalScope
 
@@ -263,7 +264,7 @@ function createShapeVM(id, message) {
 }
 
 globalStore.socket.on('message-from-server', function(data) {
-    // console.log("Received something from server: " + JSON.stringify(data));
+    console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
         case "CLEAN":{
             console.log("Cleaning up ... aka deleting everything")
@@ -283,7 +284,7 @@ globalStore.socket.on('message-from-server', function(data) {
 
             mobileCanvas.hardcodedValues = {}
 
-            stateMachine.deleteYourself()
+            // stateMachine.deleteYourself()
 
             break;
         }

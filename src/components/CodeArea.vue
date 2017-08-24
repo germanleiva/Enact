@@ -88,14 +88,6 @@ const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-sha
 const acceptedOutputTypes = ["text/diff-shape"]
 
 
-globalStore.stateMachine = new StateMachine({isServer:true});
-
-let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
-let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
-idleState.isSelected = true;
-globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
 
 
 let orig = CodeMirror.hint.javascript;
@@ -568,9 +560,19 @@ export default {
             return this.stateMachine.selectedElement
         }
     },
-    mounted: function() {
-        this.stateMachine.initialize()
+    beforeCreate: function() {
+        globalStore.stateMachine = new StateMachine({isServer:true});
 
+        let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
+        let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
+        idleState.isSelected = true;
+        globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
+        globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
+        globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
+
+        globalStore.stateMachine.initialize()
+    },
+    mounted: function() {
         this.onSelectedState(this.currentlySelectedState)
 
         globalBus.$on('message-from-device-STATE_MACHINE_STATE',function(data) {

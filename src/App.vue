@@ -30,8 +30,6 @@ import InputArea from './components/InputArea.vue'
 import VisualStateCanvas from './components/VisualStateCanvas.vue'
 import CodeArea from './components/CodeArea.vue'
 
-globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
-
 export default {
   name: 'app',
   data () {
@@ -46,6 +44,10 @@ export default {
     InputArea,
     CodeArea,
     VisualStateCanvas
+  },
+  beforeCreate: function() {
+    debugger;
+    globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
   },
   mounted: function() {
     globalBus.$on('message-from-device-MOBILE_INIT', function(data) {

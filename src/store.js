@@ -2200,7 +2200,7 @@ class PolygonModel extends ShapeModel {
             }
         }
         if (json.vertices) {
-            debugger;
+            console.log("I might be a problematic piece of code, shame on me")
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
@@ -3237,7 +3237,7 @@ class StateMachine {
         this.functions.concat(this.transitions).concat(this.states).forEach(each => {
             each.deleteYourself()
         })
-
+debugger;
         this.event = undefined;
         this.currentState = undefined;
         this.firstState = undefined;
