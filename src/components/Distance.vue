@@ -160,9 +160,13 @@ export default {
             return undefined
         },
         mouseDownStartedOnRelevantPoint(e,aRelevantPoint){
+            globalStore.codeEditor.getInputField().blur()
+
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,'distance',this.measureModel.id)
         },
         mouseDownStartedOnMeasure(e) {
+            globalStore.codeEditor.getInputField().blur()
+
             if (!this.isLink && e.metaKey) {
                 e.preventDefault()
                 e.stopPropagation();

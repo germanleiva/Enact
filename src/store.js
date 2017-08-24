@@ -34,6 +34,7 @@ export const globalStore = new Vue({
         mobileCanvasVM: undefined,
         visualStates: [],
         deviceVisualState: undefined,
+        codeEditor: undefined,
         inputEvents: [],
         isRecording: false,
         shapeCounter: 1,

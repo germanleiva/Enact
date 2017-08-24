@@ -46,7 +46,6 @@ export default {
     VisualStateCanvas
   },
   beforeCreate: function() {
-    debugger;
     globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
   },
   mounted: function() {
@@ -106,7 +105,7 @@ export default {
     var that = this;
     window.addEventListener('keydown', function(e) {
         // e.preventDefault()
-        if (e.target.tagName == "INPUT") {
+        if (e.target.tagName == "INPUT" || globalStore.codeEditor.hasFocus()) {
             //ignore
             return
         }
@@ -242,9 +241,9 @@ export default {
         let arrowDisplacement = 5;
         console.log("KEY DOWN EVENT " + typeof(e.keyCode))
         switch(e.keyCode) {
-            case 'AltLeft':
-            case 'AltRight':
+            case 16: //'Shift':
                 globalStore.toolbarState.multiSelectionMode = true;
+            case 18: //'AltLeft' & 'AltRight':
                 break;
             case 38:
                 // up arrow

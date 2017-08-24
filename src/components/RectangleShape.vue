@@ -203,6 +203,8 @@ export default {
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId)
         },
         mouseDownStartedOnHandler(e) {
+            globalStore.codeEditor.getInputField().blur()
+
             e.preventDefault();
             e.stopPropagation();
 
@@ -232,6 +234,8 @@ export default {
             visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
         },
         mouseDownStartedOnShape(e) {
+            globalStore.codeEditor.getInputField().blur()
+
             if (this.isTestShape) {
                 return
             }

@@ -37,6 +37,7 @@ export default {
     },
     mounted: function() {
         globalBus.$on('didSelectShapeVM', theSelectedShapeVM => {
+            globalStore.codeEditor.getInputField().blur()
             //A shape was selected in other VisualState, I need to deselect my shapes
             //or, I'm not in multiSelectionMode and I need to deselect my shapes (except for theSelectedShapeVM)
             if (!globalStore.toolbarState.multiSelectionMode || theSelectedShapeVM.visualState !== this.visualStateModel) {

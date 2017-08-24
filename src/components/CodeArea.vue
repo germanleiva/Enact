@@ -87,9 +87,6 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
-
-
-
 let orig = CodeMirror.hint.javascript;
 CodeMirror.hint.javascript = function(editor,options) {
     var result = orig(editor,options)// || {from: cm.getCursor(), to: cm.getCursor(), list: []};
@@ -589,6 +586,8 @@ export default {
         globalBus.$on('DELETE-CODE',function(data) {
             this.deleteAllTextMarkers()
         }.bind(this));
+
+        globalStore.codeEditor = this.$refs.codeContainer.editor
     }
 }
 </script>
