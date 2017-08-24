@@ -20,8 +20,6 @@
             </codemirror>
         </div>
         <div class="column">
-            <!-- <a class="button buttonmenuleft" @click="createNewState()">New</a> -->
-            <a class="button" @click="deleteSelectedStateMachineItem()" :class="{'is-disabled' :!currentlySelectedEdge && !currentlySelectedState}">Delete</a>
             <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
@@ -30,6 +28,8 @@
                 @diagramNewNode="addNewState"
                 @diagramNewLink="addNewTransition">
             </state-diagram>
+            <a class="button" @click="deleteSelectedStateMachineItem()" :class="{'is-disabled' :!currentlySelectedEdge && !currentlySelectedState}">Delete</a>
+
         </div>
     </div>
 </template>
