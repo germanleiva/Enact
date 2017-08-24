@@ -56,7 +56,7 @@ export default {
             return `$.${this.objectId}`
         },
         object() {
-            let parentVisualState = globalStore.visualStates.find((vs) => vs.name == this.visualStateId)
+            let parentVisualState = globalStore.visualStates.find(vs => vs.name == this.visualStateId)
             return parentVisualState.objectFor(this.objectId)
         },
         hardcodedValue() {

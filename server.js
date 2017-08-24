@@ -3,7 +3,9 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var ip = require("ip");
-console.dir ( "CHACKINGASF => "+ ip.address() );
+const fs = require('fs');
+
+// console.dir ( "CHACKINGASF => "+ ip.address() );
 
 // var path    = require("path");
 // app.get('/', function (req, res) {
@@ -39,6 +41,18 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('user disconnected ' + socket.id);
   });
+  socket.on('message-save-file', function(data) {
+    // const content = JSON.stringify(data);
+
+    let filePath = "./savedProjects/" + data.fileName
+    fs.writeFile(filePath, JSON.stringify(data.content), 'utf8', function (err) {
+        if (err) {
+            return console.log(err);
+        }
+
+        console.log(`File ${filePath} was saved!`);
+    });
+  })
   socket.on('message-from-device',function(data) {
     // console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');
 

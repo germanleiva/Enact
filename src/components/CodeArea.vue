@@ -87,17 +87,6 @@ let ContextMenu = Vue.extend({
 const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
 const acceptedOutputTypes = ["text/diff-shape"]
 
-
-globalStore.stateMachine = new StateMachine({isServer:true});
-
-let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
-let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
-idleState.isSelected = true;
-globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
-globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
-
-
 let orig = CodeMirror.hint.javascript;
 CodeMirror.hint.javascript = function(editor,options) {
     var result = orig(editor,options)// || {from: cm.getCursor(), to: cm.getCursor(), list: []};
@@ -154,7 +143,7 @@ CodeMirror.hint.javascript = function(editor,options) {
     // inner.list.push("$S3");
     for (let i=0; i < result.list.length; i++) {
         let currentText = result.list[i]
-        let stateMachineFunction = globalStore.stateMachine.functions.find((f) => f.name == currentText)
+        let stateMachineFunction = globalStore.stateMachine.functions.find(f => f.name == currentText)
         if (stateMachineFunction) {
             let match = /function\s(\w+)\(\s*(\{[\s\S]*\})\s*\)/.exec(stateMachineFunction.code)
             if (match) {
@@ -361,7 +350,7 @@ export default {
             editor.on("drop",this.dropOnCode);
 
             var scroller = editor.getScrollerElement();
-            scroller.addEventListener('mouseup', (e) => {
+            scroller.addEventListener('mouseup', e => {
                 var pos = editor.coordsChar({x: e.pageX, y: e.pageY});
                 var token = editor.getTokenAt(pos);
                 this.onEditorMouseUp(editor,e);
@@ -513,7 +502,7 @@ export default {
             }
         },
         unselectStateMachine(){
-            let unselect = (x) => x.isSelected = false
+            let unselect = x => x.isSelected = false
             this.stateMachine.states.forEach(unselect)
             this.stateMachine.transitions.forEach(unselect)
         },
@@ -568,6 +557,18 @@ export default {
             return this.stateMachine.selectedElement
         }
     },
+    beforeCreate: function() {
+        globalStore.stateMachine = new StateMachine({isServer:true});
+
+        let idleState = globalStore.stateMachine.insertNewState({name:'Idle'});
+        let movingState = globalStore.stateMachine.insertNewState({name:'Moving'});
+        idleState.isSelected = true;
+        globalStore.stateMachine.insertNewTransition({name:'touchstart',source:idleState,target:movingState});
+        globalStore.stateMachine.insertNewTransition({name:'touchmove',source:movingState,target:movingState});
+        globalStore.stateMachine.insertNewTransition({name:'touchend',source:movingState,target:idleState});
+
+        globalStore.stateMachine.initialize()
+    },
     mounted: function() {
         this.onSelectedState(this.currentlySelectedState)
 
@@ -581,6 +582,12 @@ export default {
                 this.stateMachine.activateTransition(transitionId)
             }
         }.bind(this));
+
+        globalBus.$on('DELETE-CODE',function(data) {
+            this.deleteAllTextMarkers()
+        }.bind(this));
+
+        globalStore.codeEditor = this.$refs.codeContainer.editor
     }
 }
 </script>

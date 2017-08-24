@@ -37,6 +37,7 @@ export default {
     },
     mounted: function() {
         globalBus.$on('didSelectShapeVM', theSelectedShapeVM => {
+            globalStore.codeEditor.getInputField().blur()
             //A shape was selected in other VisualState, I need to deselect my shapes
             //or, I'm not in multiSelectionMode and I need to deselect my shapes (except for theSelectedShapeVM)
             if (!globalStore.toolbarState.multiSelectionMode || theSelectedShapeVM.visualState !== this.visualStateModel) {
@@ -110,12 +111,12 @@ export default {
             let sharedCachedFinalPosition = {x: e.pageX  - this.canvasOffsetLeft(), y: e.pageY  - this.canvasOffsetTop()}
 
             //TODO this is nasty, sorry future Germán
-            let presentAndFutureMeasures = this.visualStateModel.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
+            let presentAndFutureMeasures = this.visualStateModel.addNewMeasureUntilLastState(undefined,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
 
             //Let's add the measure to the deviceVisualState
             //TODO AWFUL!!!
             let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
-            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
+            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(undefined,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
             presentAndFutureMeasures.push(aDeviceMeasure)
 
             let newMeasure = presentAndFutureMeasures[0]

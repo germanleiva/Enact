@@ -71,7 +71,7 @@ globalStore.mobileCanvasVM = mobileCanvasVM
 //         return foundShape.shapeModel
 //     }
 
-//     let foundFunction = target.functions.find((f) => f.name == key)
+//     let foundFunction = target.functions.find(f => f.name == key)
 //     if (foundFunction) {
 //         return foundFunction.func
 //     }
@@ -94,6 +94,7 @@ globalStore.mobileCanvasVM = mobileCanvasVM
 let stateMachine = new StateMachine({isServer:false})//proxyStateMachine
 window.stateMachine = stateMachine //For debugging in the developer tools
 window.mobileCanvasVM = mobileCanvasVM //For debugging in the developer tools
+window.globalStore = globalStore //For debugging in the developer tools
 
 $ = stateMachine.globalScope
 
@@ -263,16 +264,27 @@ function createShapeVM(id, message) {
 }
 
 globalStore.socket.on('message-from-server', function(data) {
-    // console.log("Received something from server: " + JSON.stringify(data));
+    console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
         case "CLEAN":{
-            let allKeys = []
-            for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
-                allKeys.push(eachShapeKey)
-            }
-            for (let shapeId of allKeys) {
+            console.log("Cleaning up ... aka deleting everything")
+
+            for (let shapeId of Object.keys(mobileCanvasVM.interactiveShapes)) {
                 deleteRectangleVM(shapeId)
             }
+
+            for (let aMeasure of mobileCanvasVM.measures) {
+                aMeasure.deleteYourself()
+            }
+
+            if (mobileCanvas.currentInputEvent) {
+                mobileCanvas.currentInputEvent.deleteYourself()
+                mobileCanvas.currentInputEvent = undefined;
+            }
+
+            mobileCanvas.hardcodedValues = {}
+
+            // stateMachine.deleteYourself()
 
             break;
         }
@@ -368,6 +380,24 @@ globalStore.socket.on('message-from-server', function(data) {
             stateMachine.insertNewTransition(jsonTransitionData)
             break;
         }
+        case "MACHINE_DELETED": {
+            stateMachine.deleteYourself()
+            break;
+        }
+        case "MACHINE_DELETED_FUNCTION": {
+            let functionToDelete = stateMachine.findFunctionId(data.id)
+            if (functionToDelete) {
+                functionToDelete.deleteYourself()
+            }
+            break;
+        }
+        case "MACHINE_DELETED_STATE": {
+            let stateToDelete = stateMachine.findStateId(data.id)
+            if (stateToDelete) {
+                stateToDelete.deleteYourself()
+            }
+            break;
+        }
         case "MACHINE_CHANGED_STATE": {
             try {
                 let changedStateData;
@@ -388,6 +418,13 @@ globalStore.socket.on('message-from-server', function(data) {
                     console.log("Unknown error in MACHINE_CHANGED_STATE: " + e)
                 }
                 console.log(data.message)
+            }
+            break;
+        }
+        case "MACHINE_DELETED_TRANSITION": {
+            let transitionToDelete = stateMachine.findTransitionId(data.id)
+            if (transitionToDelete) {
+                transitionToDelete.deleteYourself()
             }
             break;
         }

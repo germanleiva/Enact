@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = true;
+let isLoggerActive = false;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -33,6 +33,8 @@ export const globalStore = new Vue({
     data: {
         mobileCanvasVM: undefined,
         visualStates: [],
+        deviceVisualState: undefined,
+        codeEditor: undefined,
         inputEvents: [],
         isRecording: false,
         shapeCounter: 1,
@@ -52,7 +54,7 @@ export const globalStore = new Vue({
             measureMode: false,
             shapeType: 'rectangle',
             currentLink: undefined,
-            currentColor: '#f0F0F0',
+            currentColor: '#b3b1f3',
         },
         cursorType: 'auto',
         context: undefined,
@@ -110,6 +112,8 @@ export const globalStore = new Vue({
             //TODO DRY
             let correspondingIndex = Math.floor(newVisualState.percentageInTimeline / 100 * (globalStore.inputEvents.length -1))
             newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
+
+            return newVisualState
         },
         newShapeCreated(aShapeModel) {
             this.stateMachine.addShape(aShapeModel)
@@ -187,7 +191,7 @@ export const globalStore = new Vue({
                 let aPreviousShape = previousVisualState.shapesDictionary[previousShapeId]
                 let aNewShape = newVisualState.shapesDictionary[previousShapeId]
                 if (aNewShape) {
-                    for (let eachProperty of ['color','position','size']) {
+                    for (let eachProperty of aNewShape.allProperties) {
                         if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[eachProperty],aNewShape[eachProperty])) {
                             aNewShape.followMaster(eachProperty)
                         }
@@ -206,7 +210,7 @@ export const globalStore = new Vue({
                     let aNewShape = newVisualState.shapesDictionary[nextShapeId]
 
                     if (aNewShape) {
-                        for (let eachProperty of ['color','position','size']) {
+                        for (let eachProperty of aNewShape.allProperties) {
                             if (aNextShape.areEqualValues(eachProperty,aNextShape[eachProperty],aNewShape[eachProperty])) {
                                 aNextShape.followMaster(eachProperty)
                             }
@@ -630,6 +634,9 @@ class MeasureModel {
             }
         }
     }
+    toJSON() {
+        return {idCount: this.idCount, from: this.from ,to: this.to}
+    }
 }
 
 class ObjectLink {
@@ -675,6 +682,33 @@ class VisualStateModel {
         this.showAllInputEvents = false
         this.timeoutForStopMovingSelectedShapes = undefined
     }
+
+    deleteYourself() {
+        for (let aShapeModel of Object.values(this.shapesDictionary)) {
+            this.deleteShape(aShapeModel)
+        }
+        for (let aMeasure of this.measures) {
+            aMeasure.deleteYourself()
+        }
+        this.previousState = undefined;
+        this.nextState = undefined;
+    }
+
+    toJSON() {
+        let result = {name: this.name}
+        result.shapes = {}
+        let shapesJSON = {}
+        for (let eachShapeKey in this.shapesDictionary) {
+            result.shapes[eachShapeKey] = this.shapesDictionary[eachShapeKey].toJSON()
+        }
+        result.measures = []
+        for (let aMeasure of this.measures) {
+            result.measures.push(aMeasure.toJSON())
+        }
+        result.currentInputEventIndex = globalStore.inputEvents.indexOf(this.currentInputEvent)
+        return result
+    }
+
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
@@ -714,7 +748,7 @@ class VisualStateModel {
     }
 
     get allObjectNames() {
-        return this.allObjects.map((o) => o.name)
+        return this.allObjects.map(obj => obj.name)
     }
 
     objectFor(name) {
@@ -774,6 +808,13 @@ class VisualStateModel {
     get currentInputEventIndex() {
         return globalStore.inputEvents.indexOf(this.currentInputEvent)
     }
+    set currentInputEventIndex(anInputEventIndex) {
+        if (anInputEventIndex < 0 || anInputEventIndex >= globalStore.inputEvents.length) {
+            return
+        }
+        this.currentInputEvent = globalStore.inputEvents[anInputEventIndex]
+    }
+
     get percentageInTimeline() {
         if (this.currentInputEventIndex >= 0) {
             let totalEventCount = globalStore.inputEvents.length
@@ -794,7 +835,7 @@ class VisualStateModel {
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -803,7 +844,7 @@ class VisualStateModel {
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -812,7 +853,7 @@ class VisualStateModel {
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
-                        return this.addNewMeasureUntilLastState(previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     // }
                 // }
                 break;
@@ -823,11 +864,19 @@ class VisualStateModel {
         return []
     }
 
-    addNewMeasureUntilLastState(fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
+    addNewMeasureUntilLastState(idCount,fromEntityType, fromId, fromHandlerName, toEntityType, toId, toHandlerName, cachedFinalPosition) {
         let result = []
 
+        //TODO what about deleted measures?
+        if (idCount && this.measureFor(idCount)) {
+            return []
+        }
+
         let newMeasure = new MeasureModel(this, { type: fromEntityType, id: fromId, handler: fromHandlerName }, { type: toEntityType, id: toId, handler: toHandlerName }, cachedFinalPosition)
-        newMeasure.idCount = globalStore.measureCounter++;
+        if (!idCount) {
+            idCount = globalStore.measureCounter++;
+        }
+        newMeasure.idCount = idCount;
         result.push(newMeasure)
         this.measures.push(newMeasure)
         if (this.nextState) {
@@ -1074,6 +1123,12 @@ class InputEvent {
         this.timeStamp = timeStamp
         this.testShapes = []
     }
+    deleteYourself() {
+        for (aTestShape of Array.from(this.testShapes)) {
+            aTestShape.prepareForDeletion()
+            this.testShapes.remove(aTestShape)
+        }
+    }
     get leanJSON() {
         //Removing testShapes from the inputEvent
         return {type: this.type, touches: this.touches.map(x => x.leanJSON), changedTouches: this.changedTouches.map(x => x.leanJSON), timeStamp: this.timeStamp }
@@ -1140,7 +1195,7 @@ class InputEventTouch {
     }
 
     get leanJSON() {
-        console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
+        // console.log("InputEventTouch >> " + JSON.stringify({identifier: this.identifier,x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }))
         //TODO check why angularRotation is not appearing, apparently when a value it is undefined cannot be added to the final JSON
         return {identifier: this.identifier, x: this.x, y: this.y, radiusX: this.radiusX, radiusY: this.radiusY, angularRotation: this.angularRotation, force: this.force }
     }
@@ -1740,17 +1795,17 @@ class ShapeModel {
     setOwnPropertiesFromMaster(property) {
         switch (property) {
             case 'color': {
-                this.color = this.color
+                this.color = this.valueForProperty("color")
                 break;
             }
             case 'position': {
-                this.left = this.left.valueOf()
-                this.top = this.top.valueOf()
+                this.left = this.valueForProperty("left")
+                this.top = this.valueForProperty("top")
                 break;
             }
             case 'size':{
-                this.width = this.width.valueOf()
-                this.height = this.height.valueOf()
+                this.width = this.valueForProperty("width")
+                this.height = this.valueForProperty("height")
                 break;
             }
             case '':
@@ -1810,7 +1865,7 @@ class ShapeModel {
         if (value) {
             return value.valueOf()
         }
-        return value;
+        return value
     }
     areEqualValues(property, value1, value2) {
         switch (property) {
@@ -1818,10 +1873,23 @@ class ShapeModel {
                 return value1 == value2;
             }
             case 'position':{
+                if (value1.x == null || value1.x == undefined || Number.isNaN(value1.x) || value1.y == null || value1.y == undefined || Number.isNaN(value1.y)) {
+                    debugger;
+                }
+                if (value2.x == null || value2.x == undefined || Number.isNaN(value2.x) || value2.y == null || value2.y == undefined || Number.isNaN(value2.y)) {
+                    debugger;
+                }
                 return value1.x.valueOf() == value2.x.valueOf() && value1.y.valueOf() == value2.y.valueOf();
             }
             case 'size':{
+                if (value1.width == null || value1.width == undefined || Number.isNaN(value1.width) || value1.height == null || value1.height == undefined || Number.isNaN(value1.height)) {
+                    debugger;
+                }
+                if (value2.width == null || value2.width == undefined || Number.isNaN(value2.width) || value2.height == null || value2.height == undefined || Number.isNaN(value2.height)) {
+                    debugger;
+                }
                 return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
+                // return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
             }
         }
     }
@@ -1904,11 +1972,16 @@ class RectangleModel extends ShapeModel {
     }
 
     fromJSON(json) {
-        // this.id = json.id
-        // this.type = json.type
+        //     this.id = json.id
+        //     this.type = json.type
         for (let eachKey of ['color','top','left','width','height','opacity','cornerRadius']) {
             if (json.hasOwnProperty(eachKey)) {
-                this[eachKey] = json[eachKey]
+                if (this.valueForProperty(eachKey) != json[eachKey]) {
+                    // console.log("RectangleModel >> fromJSON, NOT ignoring " + eachKey + " " + json[eachKey])
+                    this[eachKey] = json[eachKey]
+                }// else {
+                    // console.log("RectangleModel >> fromJSON, ignoring " + eachKey + " " + json[eachKey])
+                // }
             }
         }
     }
@@ -2015,8 +2088,10 @@ class PolygonModel extends ShapeModel {
         }
         return undefined
     }
-    addVertex(canvasPosition) {
-        let vertexId = "V"+this.amountOfVertices
+    addVertex(canvasPosition,vertexId=undefined) {
+        if (!vertexId) {
+            vertexId = "V"+this.amountOfVertices
+        }
         let newVertex = new Vertex(vertexId,canvasPosition)
         Vue.set(this._vertices,vertexId,newVertex)
         Vue.set(this,vertexId,newVertex)
@@ -2113,16 +2188,20 @@ class PolygonModel extends ShapeModel {
         return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
     }
     fromJSON(json) {
-        // this.id = json.id
-        // this.type = json.type
+            // this.id = json.id
+            // this.type = json.type
         if (json.color) {
-            this.color = json.color
+            if (!this.areEqualValues("color",this.color,json.color)) {
+                this.changeOwnProperty("color",json.color)
+            }
         }
         if (json.position) {
-            this.left = json.position.x
-            this.top = json.position.y
+            if (!this.areEqualValues("position",this.position,json.position)) {
+                this.changeOwnProperty("position",json.position)
+            }
         }
         if (json.vertices) {
+            console.log("I might be a problematic piece of code, shame on me")
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
@@ -2130,7 +2209,8 @@ class PolygonModel extends ShapeModel {
                     vertex.x = eachJSONVertex.x
                     vertex.y = eachJSONVertex.y
                 } else {
-                    Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
+                    this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                    // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
                 }
             }
         }
@@ -2644,6 +2724,14 @@ class State {
         this.isReadyToServe = false
     }
 
+    deleteYourself() {
+        this.machine.states.remove(this);
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_STATE", id: this.id });
+        }
+        this.machine = undefined;
+    }
+
     get actions() {
         return this.machine.actions;
     }
@@ -2773,7 +2861,7 @@ class Transition {
         this.source = typeof source === "string" ? this.machine.findStateId(source) : source;
         this.target = typeof target === "string" ? this.machine.findStateId(target) : target;
         this._isSelected = isSelected || false;
-        this._isActive = isSelected || false;
+        this._isActive = isActive || false;
         this._guard = guard || function(e) {
 // Only when the guard is true the transition is executed
 return true;
@@ -2785,6 +2873,14 @@ return true;
         this.isReadyToServe = false;
 
         this.isActiveTimer = undefined
+    }
+
+    deleteYourself() {
+        this.machine.transitions.remove(this);
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_TRANSITION", id: this.id });
+        }
+        this.machine = undefined;
     }
 
     get functions() {
@@ -2927,6 +3023,15 @@ class SMFunction {
 
         this.isReadyToServe = false
     }
+
+    deleteYourself() {
+        this.machine.functions.remove(this)
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_FUNCTION", id: this.id });
+        }
+        this.machine = undefined;
+    }
+
     get code() {
         return eval(JSONfn.stringify(this.func))
     }
@@ -2988,6 +3093,7 @@ class StateMachine {
     constructor({isServer}) {
         this.states = []
         this.transitions = []
+        this.functions = []
 
         this.event = undefined; //This is the event that we are currently processing
         this._currentState = undefined;
@@ -2995,8 +3101,6 @@ class StateMachine {
 
         this.isServer = isServer
         // this.hardcodedValues = {}
-
-        this.functions = []
 
         let self = this;
         this.globalScope = new Proxy({}, {
@@ -3032,7 +3136,7 @@ class StateMachine {
             },
             get (target, key) {
                 if (isServer) {
-                    let vs = globalStore.visualStates.find((vs) => vs.name == key)
+                    let vs = globalStore.visualStates.find(vs => vs.name == key)
                     if (vs) {
                         return vs.proxy;
                     }
@@ -3049,7 +3153,7 @@ class StateMachine {
                     }
                 }
 
-                let foundFunction = self.functions.find((f) => f.name == key)
+                let foundFunction = self.functions.find(f => f.name == key)
                 if (foundFunction) {
                     return foundFunction.func
                 }
@@ -3057,13 +3161,6 @@ class StateMachine {
                 return target[key]
             }
         });
-
-        // if (this.isServer) {
-            for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this})]) {
-                this.addFunction(newFunction)
-            }
-            this.functions[0].isSelected = true;
-        // }
 
         /***
     Utility functions to keep track of the touches.
@@ -3089,13 +3186,77 @@ class StateMachine {
     this.firstIndex = -1;    // index of first non-null entry in touchInfo
     }
 
+    initialize() {
+        for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this})]) {
+            this.addFunction(newFunction)
+        }
+        this.functions[0].isSelected = true;
+    }
+
+    toJSON() {
+        let result = {}
+        result.functions = []
+        for (let fn of this.functions) {
+            result.functions.push(fn.toJSON())
+        }
+        result.states = []
+        for (let state of this.states) {
+            result.states.push(state.toJSONString())
+        }
+        result.transitions = []
+        for (let transition of this.transitions) {
+            result.transitions.push(transition.toJSONString())
+        }
+        return result
+    }
+
+    fromJSON(json) {
+        for (let array of [this.functions, this.states, this.transitions]) {
+            array.forEach(each => each.prepareForDeletion())
+            array.removeAll()
+        }
+
+        for (let fnString of json.functions) {
+            let functionDescription = JSON.parse(fnString)
+            this.updateFunction(functionDescription,true);
+        }
+
+        for (let stateString of json.states) {
+            let stateDesc;
+            eval(`stateDesc = ${stateString}`);
+            this.insertNewState(stateDesc)
+        }
+
+        for (let transitionString of json.transitions) {
+            let transitionDesc;
+            eval(`transitionDesc = ${transitionString}`);
+            this.insertNewTransition(transitionDesc)
+        }
+    }
+
+    deleteYourself() {
+        this.functions.concat(this.transitions).concat(this.states).forEach(each => {
+            each.deleteYourself()
+        })
+
+        this.event = undefined;
+        this.currentState = undefined;
+        this.firstState = undefined;
+
+        if (this.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED" });
+        }
+    }
+
     get currentState() {
         return this._currentState
     }
 
     set currentState(value) {
         this._currentState = value
-        globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", stateId: value.id });
+        if (value) {
+            globalStore.socket.emit('message-from-device', { type:"STATE_MACHINE_STATE", stateId: value.id });
+        }
     }
 
     get accumulatedObjects() {
@@ -3112,15 +3273,15 @@ class StateMachine {
     }
 
     get selectedElement() {
-        let selectedFunction = this.functions.find((f) => f.isSelected)
+        let selectedFunction = this.functions.find(f => f.isSelected)
         if (selectedFunction) {
             return selectedFunction
         }
-        let selectedNode = this.states.find((s) => s.isSelected)
+        let selectedNode = this.states.find(s => s.isSelected)
         if (selectedNode) {
             return selectedNode
         }
-        let selectedTransition = this.transitions.find((s) => s.isSelected)
+        let selectedTransition = this.transitions.find(s => s.isSelected)
         if (selectedTransition) {
             return selectedTransition
         }
@@ -3143,7 +3304,7 @@ class StateMachine {
         // this.measures.push(aMeasure);
 
         if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: {idCount: aMeasure.idCount, from: aMeasure.from ,to: aMeasure.to} });
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: aMeasure.toJSON() });
         }
     }
 
@@ -3166,7 +3327,7 @@ class StateMachine {
     }
 
     updateFunction(aFunctionJSON,shouldCreate=false) {
-        let foundFunction = this.functions.find((f) => f.id == aFunctionJSON.id)
+        let foundFunction = this.findFunctionId(aFunctionJSON.id)
         if (foundFunction) {
            foundFunction.fromJSON(aFunctionJSON)
         } else {
@@ -3242,15 +3403,19 @@ class StateMachine {
     }
 
     findTransitionsFrom(sourceState,transitionName) {
-        return this.transitions.find((aTransition) => aTransition.source == sourceState && aTransition.name == transitionName)
+        return this.transitions.find(aTransition => aTransition.source == sourceState && aTransition.name == transitionName)
     }
 
     findStateId(stateId) {
-        return this.states.find((aState) => aState.id == stateId)
+        return this.states.find(aState => aState.id == stateId)
     }
 
     findTransitionId(transitionId){
-        return this.transitions.find((aTransition) => aTransition.id == transitionId)
+        return this.transitions.find(aTransition => aTransition.id == transitionId)
+    }
+
+    findFunctionId(functionId) {
+        return this.functions.find(f => f.id == functionId)
     }
 
     notifyChange(type,object,propertyName) {

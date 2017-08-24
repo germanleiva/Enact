@@ -36,7 +36,6 @@ export default {
     return {
         canvasWidth: globalStore.mobileWidth,
         canvasHeight: globalStore.mobileHeight,
-        deviceVisualState: new VisualStateModel()
     }
   },
   components: {
@@ -45,6 +44,9 @@ export default {
     InputArea,
     CodeArea,
     VisualStateCanvas
+  },
+  beforeCreate: function() {
+    globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
   },
   mounted: function() {
     globalBus.$on('message-from-device-MOBILE_INIT', function(data) {
@@ -60,8 +62,6 @@ export default {
         console.log("didRecordingChanged " + isRecording)
         this.deviceVisualState.showAllInputEvents = isRecording
     }.bind(this));
-
-    globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
 
     globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
@@ -105,7 +105,7 @@ export default {
     var that = this;
     window.addEventListener('keydown', function(e) {
         // e.preventDefault()
-        if (e.target.tagName == "INPUT") {
+        if (e.target.tagName == "INPUT" || globalStore.codeEditor.hasFocus()) {
             //ignore
             return
         }
@@ -208,7 +208,12 @@ export default {
 
   },
   computed: {
-
+    deviceVisualState: function() {
+        if (!globalStore.deviceVisualState) {
+            globalStore.deviceVisualState = new VisualStateModel()
+        }
+        return globalStore.deviceVisualState
+    }
   },
   methods: {
     mirrorDragged(event) {
@@ -236,9 +241,9 @@ export default {
         let arrowDisplacement = 5;
         console.log("KEY DOWN EVENT " + typeof(e.keyCode))
         switch(e.keyCode) {
-            case 'AltLeft':
-            case 'AltRight':
+            case 16: //'Shift':
                 globalStore.toolbarState.multiSelectionMode = true;
+            case 18: //'AltLeft' & 'AltRight':
                 break;
             case 38:
                 // up arrow

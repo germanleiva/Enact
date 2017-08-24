@@ -50,7 +50,6 @@ export default {
     props: ['shapeModel', 'parentVisualState','isTestShape'],
     data: function() {
         return {
-            visualState: this.parentVisualState,
             isHovered: false,
             isMoving: false
         }
@@ -145,7 +144,7 @@ export default {
             deep:true,
             handler: function(newVal,oldVal) {
             if (!this.isTestShape) {
-                if (globalStore.visualStates[0] === this.visualState) {
+                if (globalStore.visualStates[0] === this.parentVisualState) {
 
         //             let changes = {}
         //             for (let eachKey in newVal) {
@@ -206,6 +205,8 @@ export default {
             return undefined
         },
         mouseDownStartedOnRelevantPoint(e,aRelevantPoint) {
+            globalStore.codeEditor.getInputField().blur()
+
             if (globalStore.toolbarState.measureMode) {
                 this.measureStartedOnRelevantPoint(e,aRelevantPoint,'shape',this.shapeModel.id)
             } else {
@@ -216,6 +217,8 @@ export default {
             this.$parent.measureStartedOnRelevantPoint(e,aRelevantPoint,fromType,fromId)
         },
         mouseDownStartedOnHandler(e) {
+            globalStore.codeEditor.getInputField().blur()
+
             e.preventDefault();
             e.stopPropagation();
 
@@ -238,22 +241,22 @@ export default {
 
 
                 //Snap to testShapes or previous state value
-                // let shapesToSnap = [...this.visualState.testShapes]
+                // let shapesToSnap = [...this.parentVisualState.testShapes]
 
-                // if (this.visualState.previousState) {
-                //     let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
+                // if (this.parentVisualState.previousState) {
+                //     let previousShape = this.parentVisualState.previousState.shapeFor(this.shapeModel.id)
                 //     if (previousShape) {
                 //         shapesToSnap.push(previousShape)
                 //     }
                 // }
 
-                for (let testShape of [...this.visualState.testShapes]) {
+                for (let testShape of [...this.parentVisualState.testShapes]) {
                     if (testShape.id == this.shapeModel.id) {
                         testShape.snapVertexPosition(newValue)
                     }
                 }
 
-                this.visualState.changeProperty(this.shapeModel,vertexId,previousValue,newValue)
+                this.parentVisualState.changeProperty(this.shapeModel,vertexId,previousValue,newValue)
 
             }.bind(this)
             let visualStateElement = this.$parent.canvasElement();
@@ -269,6 +272,8 @@ export default {
             visualStateElement.addEventListener('mouseup', mouseUpHandler, false);
         },
         mouseDownStartedOnShape(e) {
+            globalStore.codeEditor.getInputField().blur()
+
             if (this.isTestShape) {
                 return
             }
@@ -360,14 +365,14 @@ export default {
 
             //Snap to testShapes or previous state value
 
-            // if (this.visualState.previousState) {
-            //     let previousShape = this.visualState.previousState.shapeFor(this.shapeModel.id)
+            // if (this.parentVisualState.previousState) {
+            //     let previousShape = this.parentVisualState.previousState.shapeFor(this.shapeModel.id)
             //     if (previousShape) {
             //         shapesToSnap.push(previousShape)
             //     }
             // }
 
-            for (let testShape of [...this.visualState.testShapes]) {
+            for (let testShape of [...this.parentVisualState.testShapes]) {
                 if (testShape.id == this.shapeModel.id) {
                     if (Math.abs(newValue.x - testShape.position.x) < 5) {
                         newValue.x = testShape.position.x.valueOf()
@@ -382,7 +387,7 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            this.visualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
+            this.parentVisualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
         },
         toggleSelection(notify = true) {
             this.shapeModel.isSelected = !this.shapeModel.isSelected;
@@ -413,7 +418,7 @@ export default {
                 console.log("dropForShape >> " + data)
                 let diffModel = new DiffModel(JSON.parse(data))
 
-                diffModel.applyDelta(this.visualState,this.shapeModel)
+                diffModel.applyDelta(this.parentVisualState,this.shapeModel)
                 this.shapeModel.highlight = false
             } else {
                 console.log("WEIRD, we accepted the drop but there is no data for us =(")
