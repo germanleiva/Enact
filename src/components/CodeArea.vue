@@ -569,6 +569,8 @@ export default {
         }
     },
     mounted: function() {
+        this.stateMachine.initialize()
+
         this.onSelectedState(this.currentlySelectedState)
 
         globalBus.$on('message-from-device-STATE_MACHINE_STATE',function(data) {
@@ -580,6 +582,10 @@ export default {
             if (transitionId) {
                 this.stateMachine.activateTransition(transitionId)
             }
+        }.bind(this));
+
+        globalBus.$on('DELETE-CODE',function(data) {
+            this.deleteAllTextMarkers()
         }.bind(this));
     }
 }

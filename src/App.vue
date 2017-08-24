@@ -30,13 +30,14 @@ import InputArea from './components/InputArea.vue'
 import VisualStateCanvas from './components/VisualStateCanvas.vue'
 import CodeArea from './components/CodeArea.vue'
 
+globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
+
 export default {
   name: 'app',
   data () {
     return {
         canvasWidth: globalStore.mobileWidth,
         canvasHeight: globalStore.mobileHeight,
-        deviceVisualState: new VisualStateModel()
     }
   },
   components: {
@@ -60,8 +61,6 @@ export default {
         console.log("didRecordingChanged " + isRecording)
         this.deviceVisualState.showAllInputEvents = isRecording
     }.bind(this));
-
-    globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
 
     globalBus.$on('message-from-device-SHAPE_CREATED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
@@ -208,7 +207,12 @@ export default {
 
   },
   computed: {
-
+    deviceVisualState: function() {
+        if (!globalStore.deviceVisualState) {
+            globalStore.deviceVisualState = new VisualStateModel()
+        }
+        return globalStore.deviceVisualState
+    }
   },
   methods: {
     mirrorDragged(event) {

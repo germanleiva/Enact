@@ -26,14 +26,13 @@
 
 import {extendArray} from '../collections.js'
 extendArray(Array);
-import {globalStore,globalBus, InputEvent} from '../store.js'
+import {globalStore,globalBus, InputEvent, VisualStateModel} from '../store.js'
 
 export default {
   name: 'toolbar',
   data () {
     return {
         toolbarState: globalStore.toolbarState,
-        currentColor: globalStore.toolbarState.currentColor
     }
   },
     methods: {
@@ -60,7 +59,9 @@ export default {
             globalBus.$emit('changeColorOfSelectedShapes',this.currentColor)
         },
         openFile(){
-            document.getElementById('file-input').click()
+            let fileInput = document.getElementById('file-input');
+            fileInput.value = "";
+            fileInput.click();
         },
         fileLoaded(e) {
             let file = document.getElementById('file-input').files[0]
@@ -72,8 +73,11 @@ export default {
             }
 
             let reader = new FileReader();
+            reader.onabort = e => console.log ("file reader aborted");
+            reader.onerror = e => alert("There was an error while reading this file");
             reader.onload = e => {
                 console.log("ONLOAD")
+
                 let json = JSON.parse(e.target.result);
 
                 //Delete everything first
@@ -81,11 +85,17 @@ export default {
                     vs.deleteYourself();
                     globalStore.visualStates.remove(vs)
                 })
+                globalStore.deviceVisualState.deleteYourself();
+                globalStore.deviceVisualState = new VisualStateModel()
+
                 Array.from(globalStore.inputEvents).forEach(inputEvent => {
                     inputEvent.deleteYourself()
                     globalStore.inputEvents.remove(inputEvent)
                 })
+                globalBus.$emit("DELETE-CODE");
                 globalStore.stateMachine.deleteYourself();
+
+                globalStore.socket.emit('message-from-desktop', { type: "CLEAN", message: {} })
 
                 //Load everything
 
@@ -174,6 +184,11 @@ export default {
 
             globalStore.socket.emit('message-save-file', { fileName: "example.json", content: jsonFile })
 
+        }
+    },
+    computed: {
+        currentColor: function() {
+            return globalStore.toolbarState.currentColor
         }
     },
     created: function() {

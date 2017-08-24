@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = true;
+let isLoggerActive = false;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -33,6 +33,7 @@ export const globalStore = new Vue({
     data: {
         mobileCanvasVM: undefined,
         visualStates: [],
+        deviceVisualState: undefined,
         inputEvents: [],
         isRecording: false,
         shapeCounter: 1,
@@ -189,7 +190,7 @@ export const globalStore = new Vue({
                 let aPreviousShape = previousVisualState.shapesDictionary[previousShapeId]
                 let aNewShape = newVisualState.shapesDictionary[previousShapeId]
                 if (aNewShape) {
-                    for (let eachProperty of ['color','position','size']) {
+                    for (let eachProperty of aNewShape.allProperties) {
                         if (aPreviousShape.areEqualValues(eachProperty,aPreviousShape[eachProperty],aNewShape[eachProperty])) {
                             aNewShape.followMaster(eachProperty)
                         }
@@ -208,7 +209,7 @@ export const globalStore = new Vue({
                     let aNewShape = newVisualState.shapesDictionary[nextShapeId]
 
                     if (aNewShape) {
-                        for (let eachProperty of ['color','position','size']) {
+                        for (let eachProperty of aNewShape.allProperties) {
                             if (aNextShape.areEqualValues(eachProperty,aNextShape[eachProperty],aNewShape[eachProperty])) {
                                 aNextShape.followMaster(eachProperty)
                             }
@@ -1793,17 +1794,17 @@ class ShapeModel {
     setOwnPropertiesFromMaster(property) {
         switch (property) {
             case 'color': {
-                this.color = this.color
+                this.color = this.valueForProperty("color")
                 break;
             }
             case 'position': {
-                this.left = this.left.valueOf()
-                this.top = this.top.valueOf()
+                this.left = this.valueForProperty("left")
+                this.top = this.valueForProperty("top")
                 break;
             }
             case 'size':{
-                this.width = this.width.valueOf()
-                this.height = this.height.valueOf() //TODO cannot read valueOf() null during import
+                this.width = this.valueForProperty("width")
+                this.height = this.valueForProperty("height")
                 break;
             }
             case '':
@@ -1863,7 +1864,7 @@ class ShapeModel {
         if (value) {
             return value.valueOf()
         }
-        return value;
+        return value
     }
     areEqualValues(property, value1, value2) {
         switch (property) {
@@ -1871,10 +1872,23 @@ class ShapeModel {
                 return value1 == value2;
             }
             case 'position':{
+                if (value1.x == null || value1.x == undefined || Number.isNaN(value1.x) || value1.y == null || value1.y == undefined || Number.isNaN(value1.y)) {
+                    debugger;
+                }
+                if (value2.x == null || value2.x == undefined || Number.isNaN(value2.x) || value2.y == null || value2.y == undefined || Number.isNaN(value2.y)) {
+                    debugger;
+                }
                 return value1.x.valueOf() == value2.x.valueOf() && value1.y.valueOf() == value2.y.valueOf();
             }
             case 'size':{
+                if (value1.width == null || value1.width == undefined || Number.isNaN(value1.width) || value1.height == null || value1.height == undefined || Number.isNaN(value1.height)) {
+                    debugger;
+                }
+                if (value2.width == null || value2.width == undefined || Number.isNaN(value2.width) || value2.height == null || value2.height == undefined || Number.isNaN(value2.height)) {
+                    debugger;
+                }
                 return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
+                // return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
             }
         }
     }
@@ -1961,7 +1975,12 @@ class RectangleModel extends ShapeModel {
         //     this.type = json.type
         for (let eachKey of ['color','top','left','width','height','opacity','cornerRadius']) {
             if (json.hasOwnProperty(eachKey)) {
-                this[eachKey] = json[eachKey]
+                if (this.valueForProperty(eachKey) != json[eachKey]) {
+                    // console.log("RectangleModel >> fromJSON, NOT ignoring " + eachKey + " " + json[eachKey])
+                    this[eachKey] = json[eachKey]
+                }// else {
+                    // console.log("RectangleModel >> fromJSON, ignoring " + eachKey + " " + json[eachKey])
+                // }
             }
         }
     }
@@ -2171,11 +2190,14 @@ class PolygonModel extends ShapeModel {
             // this.id = json.id
             // this.type = json.type
         if (json.color) {
-            this.color = json.color
+            if (!this.areEqualValues("color",this.color,json.color)) {
+                this.changeOwnProperty("color",json.color)
+            }
         }
         if (json.position) {
-            this.left = json.position.x
-            this.top = json.position.y
+            if (!this.areEqualValues("position",this.position,json.position)) {
+                this.changeOwnProperty("position",json.position)
+            }
         }
         if (json.vertices) {
             debugger;
@@ -2703,7 +2725,9 @@ class State {
 
     deleteYourself() {
         this.machine.states.remove(this);
-        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_STATE", id: this.id });
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_STATE", id: this.id });
+        }
         this.machine = undefined;
     }
 
@@ -2836,7 +2860,7 @@ class Transition {
         this.source = typeof source === "string" ? this.machine.findStateId(source) : source;
         this.target = typeof target === "string" ? this.machine.findStateId(target) : target;
         this._isSelected = isSelected || false;
-        this._isActive = isSelected || false;
+        this._isActive = isActive || false;
         this._guard = guard || function(e) {
 // Only when the guard is true the transition is executed
 return true;
@@ -2852,7 +2876,9 @@ return true;
 
     deleteYourself() {
         this.machine.transitions.remove(this);
-        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_TRANSITION", id: this.id });
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_TRANSITION", id: this.id });
+        }
         this.machine = undefined;
     }
 
@@ -2999,7 +3025,9 @@ class SMFunction {
 
     deleteYourself() {
         this.machine.functions.remove(this)
-        globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_FUNCTION", id: this.id });
+        if (this.machine.isServer) {
+            globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_FUNCTION", id: this.id });
+        }
         this.machine = undefined;
     }
 
@@ -3133,13 +3161,6 @@ class StateMachine {
             }
         });
 
-        // if (this.isServer) {
-            for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this})]) {
-                this.addFunction(newFunction)
-            }
-            this.functions[0].isSelected = true;
-        // }
-
         /***
     Utility functions to keep track of the touches.
     touchInfo[i] is an info record for the i-th finger being put down:
@@ -3162,6 +3183,13 @@ class StateMachine {
     this.touchInfo = [];     // stores touch information
     this.numTouches = 0;     // number of non-null entries in touchInfo
     this.firstIndex = -1;    // index of first non-null entry in touchInfo
+    }
+
+    initialize() {
+        for (let newFunction of [new SMFunctionIsInside({machine:this}),new SMFunctionMap({machine:this})]) {
+            this.addFunction(newFunction)
+        }
+        this.functions[0].isSelected = true;
     }
 
     toJSON() {
@@ -3209,6 +3237,10 @@ class StateMachine {
         this.functions.concat(this.transitions).concat(this.states).forEach(each => {
             each.deleteYourself()
         })
+
+        this.event = undefined;
+        this.currentState = undefined;
+        this.firstState = undefined;
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED" });

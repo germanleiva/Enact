@@ -55,7 +55,6 @@ export default {
     props: ['shapeModel', 'parentVisualState','isTestShape'],
     data: function() {
         return {
-            visualState: this.parentVisualState,
             isHovered: false,
             isMoving: false
         }
@@ -135,7 +134,7 @@ export default {
         styleObject: function(newVal,oldVal) {
             if (!this.isTestShape && this.shapeModel) {
 
-                if (globalStore.visualStates[0] === this.visualState) {
+                if (globalStore.visualStates[0] === this.parentVisualState) {
 
                     let changes = {}
                     for (let eachKey in newVal) {
@@ -147,7 +146,7 @@ export default {
                             }
                         }
                     }
-                    // console.log("message-from-desktop EDIT_SHAPE")
+                    console.log("message-from-desktop EDIT_SHAPE")
                     globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
                }
             } else {
@@ -321,8 +320,8 @@ export default {
 
             let previousValue = { x: this.shapeModel.position.x, y: this.shapeModel.position.y };
             let newValue = {
-                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.visualState.maxWidth),
-                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.visualState.maxHeight)
+                x: Math.min(Math.max(currentWindowMousePositionX - initialOffsetX, 0), this.parentVisualState.maxWidth),
+                y: Math.min(Math.max(currentWindowMousePositionY - initialOffsetY, 0), this.parentVisualState.maxHeight)
             }
 
             //Snap to testShapes or previous state value
@@ -334,7 +333,7 @@ export default {
             //     }
             // }
 
-            for (let testShape of [...this.visualState.testShapes]) {
+            for (let testShape of [...this.parentVisualState.testShapes]) {
                 if (testShape.id == this.shapeModel.id) {
                     if (Math.abs(newValue.x - testShape.position.x) < 5) {
                         logger('insideTheX testing')
@@ -351,7 +350,7 @@ export default {
             logger('previousValue: ' + JSON.stringify(previousValue));
             logger('newValue: ' + JSON.stringify(newValue));
             logger("---------");
-            this.visualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
+            this.parentVisualState.changeProperty(this.shapeModel,'position',previousValue,newValue);
         },
         toggleSelection(notify = true) {
             this.shapeModel.isSelected = !this.shapeModel.isSelected;
@@ -453,7 +452,7 @@ export default {
                 }
             }
 
-            for (let testShape of this.visualState.testShapes) {
+            for (let testShape of this.parentVisualState.testShapes) {
                 if (testShape.id == this.shapeModel.id) {
                     testShape.snap(this.shapeModel.position,newValue)
                 }
@@ -464,8 +463,8 @@ export default {
             } else {
                 this.shapeModel.width = newValue.width;
                 this.shapeModel.height = newValue.height;
-                if (this.visualState.nextState) {
-                    this.visualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'size');
+                if (this.parentVisualState.nextState) {
+                    this.parentVisualState.nextState.somethingChangedPreviousState(this.shapeModel.id, previousValue, newValue, 'size');
                 }
             }
         },
@@ -489,7 +488,7 @@ export default {
                 console.log("dropForShape >> " + data)
                 let diffModel = new DiffModel(JSON.parse(data))
 
-                diffModel.applyDelta(this.visualState,this.shapeModel,event.altKey)
+                diffModel.applyDelta(this.parentVisualState,this.shapeModel,event.altKey)
                 this.shapeModel.highlight = false
             } else {
                 console.log("WEIRD, we accepted the drop but there is no data for us =(")

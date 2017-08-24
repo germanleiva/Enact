@@ -266,13 +266,24 @@ globalStore.socket.on('message-from-server', function(data) {
     // console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
         case "CLEAN":{
-            let allKeys = []
-            for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
-                allKeys.push(eachShapeKey)
-            }
-            for (let shapeId of allKeys) {
+            console.log("Cleaning up ... aka deleting everything")
+
+            for (let shapeId of Object.keys(mobileCanvasVM.interactiveShapes)) {
                 deleteRectangleVM(shapeId)
             }
+
+            for (let aMeasure of mobileCanvasVM.measures) {
+                aMeasure.deleteYourself()
+            }
+
+            if (mobileCanvas.currentInputEvent) {
+                mobileCanvas.currentInputEvent.deleteYourself()
+                mobileCanvas.currentInputEvent = undefined;
+            }
+
+            mobileCanvas.hardcodedValues = {}
+
+            stateMachine.deleteYourself()
 
             break;
         }
@@ -369,19 +380,21 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "MACHINE_DELETED": {
-            stateMachine.event = undefined;
-            stateMachine.currentState = undefined;
-            stateMachine.firstState = undefined;
+            stateMachine.deleteYourself()
             break;
         }
         case "MACHINE_DELETED_FUNCTION": {
             let functionToDelete = stateMachine.findFunctionId(data.id)
-            functionToDelete.deleteYourself()
+            if (functionToDelete) {
+                functionToDelete.deleteYourself()
+            }
             break;
         }
         case "MACHINE_DELETED_STATE": {
             let stateToDelete = stateMachine.findStateId(data.id)
-            stateToDelete.deleteYourself()
+            if (stateToDelete) {
+                stateToDelete.deleteYourself()
+            }
             break;
         }
         case "MACHINE_CHANGED_STATE": {
@@ -409,7 +422,9 @@ globalStore.socket.on('message-from-server', function(data) {
         }
         case "MACHINE_DELETED_TRANSITION": {
             let transitionToDelete = stateMachine.findTransitionId(data.id)
-            transitionToDelete.deleteYourself()
+            if (transitionToDelete) {
+                transitionToDelete.deleteYourself()
+            }
             break;
         }
         case "MACHINE_CHANGED_TRANSITION": {
