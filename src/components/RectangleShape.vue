@@ -146,7 +146,7 @@ export default {
                             }
                         }
                     }
-                    console.log("message-from-desktop EDIT_SHAPE")
+                    // console.log("message-from-desktop EDIT_SHAPE")
                     globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
                }
             } else {

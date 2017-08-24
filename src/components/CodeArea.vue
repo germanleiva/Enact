@@ -20,6 +20,8 @@
             </codemirror>
         </div>
         <div class="column">
+            <!-- <a class="button buttonmenuleft" @click="createNewState()">New</a> -->
+            <a class="button" @click="deleteSelectedStateMachineItem()" :class="{'is-disabled' :!currentlySelectedEdge && !currentlySelectedState}">Delete</a>
             <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
@@ -463,12 +465,10 @@ export default {
         },
         onSelectedState(aNode) {
             this.unselectAllFunctions()
-            this.codeEditor.focus()
             // this.codeEditor.setValue(aNode.code)
         },
         onSelectedEdge(aLink) {
             this.unselectAllFunctions()
-            this.codeEditor.focus()
             // this.codeEditor.setValue(aLink.code)
         },
         createNewFunction(){
@@ -511,8 +511,38 @@ export default {
         },
         addNewTransition({source,target}) {
             this.stateMachine.insertNewTransition({name:'unnamed',source:source,target:target});
-        }
+        },
+        deleteSelectedStateMachineItem() {
+            let state = this.currentlySelectedState
+            let edge = this.currentlySelectedEdge
+            if (state) {
+                //delete state
+                let stateToDelete = this.stateMachine.findStateId(state.id)
+                if (stateToDelete) {
+                    let relevantTransitions = stateToDelete.relevantTransitions
+                    let extraMessage = ""
+                    if (relevantTransitions.length > 0) {
+                        extraMessage = ` and ${relevantTransitions.length} transition${relevantTransitions.length>1?"s":""}`
+                    }
 
+                    if (confirm(`Do you want to delete state ${stateToDelete.name}${extraMessage}?`)) {
+                        stateToDelete.deleteYourself()
+                    }
+                }
+            }
+            if (edge) {
+                //delete edge
+                let transitionToDelete = this.stateMachine.findTransitionId(edge.id)
+                if (transitionToDelete) {
+                    if (confirm('Do you want to delete transition ' + transitionToDelete.name + '?')) {
+                        transitionToDelete.deleteYourself()
+                    }
+                }
+            }
+            if (this.stateMachine.states.length > 0) {
+                this.stateMachine.states[0].isSelected = true
+            }
+        }
     },
     computed: {
         parsingData() {
@@ -554,7 +584,11 @@ export default {
             return globalStore.stateMachine;
         },
         selectedElement() {
-            return this.stateMachine.selectedElement
+            let element = this.stateMachine.selectedElement
+            if (element) {
+                return element
+            }
+            return {code:''}
         }
     },
     beforeCreate: function() {

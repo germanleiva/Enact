@@ -54,7 +54,7 @@ export const globalStore = new Vue({
             measureMode: false,
             shapeType: 'rectangle',
             currentLink: undefined,
-            currentColor: '#b3b1f3',
+            currentColor: '#00d2b2',
         },
         cursorType: 'auto',
         context: undefined,
@@ -2724,7 +2724,16 @@ class State {
         this.isReadyToServe = false
     }
 
+    get relevantTransitions() {
+        return this.machine.transitions.filter(t => t.source == this || t.target == this)
+    }
+
     deleteYourself() {
+        //Let's find all the transitions coming out or in this state
+        for (let transition of Array.from(this.relevantTransitions)) {
+            transition.deleteYourself()
+        }
+
         this.machine.states.remove(this);
         if (this.machine.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED_STATE", id: this.id });
