@@ -2202,12 +2202,20 @@ class PolygonModel extends ShapeModel {
         }
         if (json.vertices) {
             console.log("I might be a problematic piece of code, shame on me")
+            debugger;
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
-                if (vertex) {
-                    vertex.x = eachJSONVertex.x
-                    vertex.y = eachJSONVertex.y
+                if (vertex && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
+                    //Do i actually has the vertex or was I following master?
+                    let vertex = this._vertices[vertexKey]
+                    if (vertex) {
+                        //I actually has a vertex
+                        vertex.x = eachJSONVertex.x
+                        vertex.y = eachJSONVertex.y
+                    } else {
+                        this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                    }
                 } else {
                     this.addVertex(eachJSONVertex,eachJSONVertex.id)
                     // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
