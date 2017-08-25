@@ -154,16 +154,36 @@ export default {
         //         console.log("Should i worry? " + this.shapeModel)
         //     }
         // }
-        shapeModel:{
+        "shapeModel.position":{
             deep: true,
             handler: function(newVal,oldVal) {
                 if (!this.isTestShape && this.shapeModel) {
                     if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON() })
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['top','left']) })
                     }
                 }
             }
-        }
+        },
+        "shapeModel.size":{
+            deep: true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape && this.shapeModel) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['width','height']) })
+                    }
+                }
+            }
+        },
+        "shapeModel.color":{
+            deep: true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape && this.shapeModel) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['color']) })
+                    }
+                }
+            }
+        },
     },
     methods: {
         isPointInside(x,y) {
