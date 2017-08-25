@@ -3,27 +3,27 @@
         <!--define arrow markers for graph links-->
         <defs>
              <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="regularColor">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="selectedColor">
+             <marker id="arrowhead-selected" class="selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="arrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="activeColor">
+             <marker id="arrowhead-activated" class="activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
              <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="regularColor">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="selectedColor">
+             <marker id="selfarrowhead-selected" class="selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="selfarrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" :fill="activeColor">
+             <marker id="selfarrowhead-activated" class="activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
         </defs>
@@ -79,15 +79,6 @@ export default {
         }
     },
     computed: {
-        activeColor() {
-            return '#cd1b5b'
-        },
-        selectedColor() {
-            return '#00d1b2'
-        },
-        regularColor() {
-            return '#333'
-        },
         width() {
             return this.$el.clientWidth
         },
@@ -312,6 +303,22 @@ export default {
 </script>
 
 <style scoped>
+
+/*$regular-color: #333;　
+$selected-color: #00d1b2;　
+$activated-color: #cd1b5b;　
+*/
+
+marker > path {
+    fill: #333;
+}
+
+marker.selected > path {
+    fill: #00d1b2;
+}
+marker.activated >path {
+    fill: #cd1b5b;
+}
 
 text {
     fill: #333333;
