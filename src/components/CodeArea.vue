@@ -515,7 +515,6 @@ export default {
             this.stateMachine.insertNewTransition({name:'unnamed',source:source,target:target});
         },
         deleteSelectedStateMachineItem() {
-            debugger;
             let state = this.currentlySelectedState
             let edge = this.currentlySelectedEdge
             if (state) {
