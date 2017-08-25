@@ -297,9 +297,16 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_MEASURE":{
-            let newMeasure = new MeasureModel(mobileCanvasVM,data.message.from, data.message.to, undefined);
-            newMeasure.idCount = data.message.idCount;
-            mobileCanvasVM.measures.push(newMeasure);
+            let newMeasure = mobileCanvasVM.measures.find(m => m.idCount == data.message.idCount)
+            if (!newMeasure) {
+                newMeasure = new MeasureModel(mobileCanvasVM,data.message.from, data.message.to, undefined);
+                newMeasure.idCount = data.message.idCount;
+                mobileCanvasVM.measures.push(newMeasure);
+            } else {
+                //We need to update the measure right?
+                newMeasure.from = data.message.from
+                newMeasure.to = data.message.to
+            }
             break;
         }
         case "NEW_SHAPE":{

@@ -835,7 +835,7 @@ class VisualStateModel {
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -844,7 +844,7 @@ class VisualStateModel {
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -853,7 +853,7 @@ class VisualStateModel {
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     // }
                 // }
                 break;
@@ -878,7 +878,7 @@ class VisualStateModel {
         }
         newMeasure.idCount = idCount;
         result.push(newMeasure)
-        this.measures.push(newMeasure)
+        this.measures.push(newMeasure);console.log("ADDED MEASURE " + newMeasure.id)
         if (this.nextState) {
             let importedMeasures = this.nextState.importMeasureUntilLastVisualState(newMeasure)
             for (let anImportedMeasure of importedMeasures) {
@@ -1244,6 +1244,64 @@ class Property {
     constructor() {
 
     }
+    basicApplyDelta(input,min,max,ratio,xProperty=undefined,yProperty=undefined) {
+        //'this' is the output
+        let deltaValue = input.delta()
+        let deltaX
+        let deltaY
+
+        if (typeof deltaValue == "number") {
+            if (xProperty && yProperty) {
+                //the delta is unidimensional and I need to apply to a 2D value
+                abort()
+                return
+            }
+            deltaX = deltaValue
+            deltaY = deltaValue
+        } else {
+            let {x:dx,y:dy} = deltaValue
+
+            deltaX = dx
+            deltaY = dy
+        }
+
+        if (deltaX == undefined && deltaY == undefined) {
+            console.log("Property >> applyDelta")
+            abort()
+            return
+        }
+
+        let ratioX = 1
+        let ratioY = 1
+        if (typeof ratio == "number") {
+            ratioX = ratioY = ratio
+        } else {
+            let {x:ratioX,y:ratioY} = ratio
+        }
+
+        let maxX = Number.POSITIVE_INFINITY
+        let maxY = Number.POSITIVE_INFINITY
+        if (typeof max == "number") {
+            maxX = maxY = max
+        } else {
+            let {x:maxX,y:maxY} = max
+        }
+
+        let minX = Number.NEGATIVE_INFINITY
+        let minY = Number.NEGATIVE_INFINITY
+        if (typeof min == "number") {
+            minX = minY = min
+        } else {
+            let {x:minX,y:minY} = min
+        }
+
+        if (xProperty) {
+            this[xProperty] = Math.max(Math.min(this[xProperty] + deltaX * ratioX, maxX), minX)
+        }
+        if (yProperty) {
+            this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
+        }
+    }
 }
 
 class Position extends Property {
@@ -1274,13 +1332,7 @@ class Position extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX) {
-                deltaValue = deltaX
-            }
-
-            this.x += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,"x",undefined)
           },
           delta: () => this.x - this.previousX
         }
@@ -1309,13 +1361,7 @@ class Position extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaY) {
-                deltaValue = deltaY
-            }
-
-            this.y += deltaValue
+             this.basicApplyDelta(input,min,max,ratio,undefined,"y")
           },
           delta: () => this.y - this.previousY
         }
@@ -1331,40 +1377,8 @@ class Position extends Property {
         return {x: this.previousX,y:this.previousY}
     }
 
-    applyDelta(input,min,max,ratio,onlyToX=false,onlyToY=false) {
-        let {x:deltaX,y:deltaY} = input.delta()
-
-        if (deltaX == undefined || deltaY == undefined) {
-            console.log("Position >> applyDelta")
-            abort()
-        }
-
-        let ratioX = 1
-        let ratioY = 1
-        if (typeof ratio == "number") {
-            ratioX = ratioY = ratio
-        } else {
-            let {ratioX,ratioY} = ratio
-        }
-
-        let maxX = Number.POSITIVE_INFINITY
-        let maxY = Number.POSITIVE_INFINITY
-        if (typeof max == "number") {
-            maxX = maxY = max
-        } else {
-            let {maxX,maxY} = max
-        }
-
-        let minX = Number.NEGATIVE_INFINITY
-        let minY = Number.NEGATIVE_INFINITY
-        if (typeof min == "number") {
-            minX = minY = min
-        } else {
-            let {minX,minY} = min
-        }
-
-        this.x = Math.max(Math.min(this.x + deltaX * ratioX, maxX), minX)
-        this.y = Math.max(Math.min(this.y + deltaY * ratioY, maxY), minY)
+    applyDelta(input,min,max,ratio) {
+        this.basicApplyDelta(input,min,max,ratio,"x","y")
     }
 
     delta() {
@@ -1409,13 +1423,7 @@ class Size extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaWidth,y:deltaHeight} = deltaValue
-            if (deltaWidth) {
-                deltaValue = deltaWidth
-            }
-
-            this.width += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,"width",undefined)
           },
           delta: () => this.width - this.previousWidth
         }
@@ -1448,13 +1456,7 @@ class Size extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaWidth,y:deltaHeight} = deltaValue
-            if (deltaHeight) {
-                deltaValue = deltaHeight
-            }
-
-            this.height += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,undefined,"height")
           },
           delta: () => this.height - this.previousHeight
         }
@@ -1473,49 +1475,7 @@ class Size extends Property {
     }
 
     applyDelta(input,min,max,ratio) {
-        let {x:deltaX,y:deltaY} = input.delta()
-
-        let ratioX = 1
-        let ratioY = 1
-        if (typeof ratio == "number") {
-            ratioX = ratioY = ratio
-        } else {
-            let {x:rx,y:ry} = ratio
-            if (!rx && !ry) {
-                abort()
-            }
-            ratioX = rx
-            ratioY = ry
-        }
-
-        let maxX = Number.POSITIVE_INFINITY
-        let maxY = Number.POSITIVE_INFINITY
-        if (typeof max == "number") {
-            maxX = maxY = max
-        } else {
-            let {x:mx,y:my} = max
-            if (!mx && !my) {
-                abort()
-            }
-            maxX = mx
-            maxY = my
-        }
-
-        let minX = Number.NEGATIVE_INFINITY
-        let minY = Number.NEGATIVE_INFINITY
-        if (typeof min == "number") {
-            minX = minY = min
-        } else {
-            let {x:mx,y:my} = min
-            if (!mx && !my) {
-                abort()
-            }
-            minX = mx
-            minY = my
-        }
-
-        this.width = Math.max(Math.min(this.width + deltaX * ratioX, maxX), minX)
-        this.height = Math.max(Math.min(this.height + deltaY * ratioY, maxY), minY)
+        this.basicApplyDelta(input,min,max,ratio,"width","height")
     }
 
     delta() {

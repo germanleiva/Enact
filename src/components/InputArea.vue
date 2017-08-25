@@ -193,5 +193,6 @@ export default {
 <style >
 #reset-button{
     margin-left: 6px;
+    z-index: 999;
 }
 </style>

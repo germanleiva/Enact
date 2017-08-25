@@ -1,6 +1,6 @@
 {
     "shapeCounter": 4,
-    "measureCounter": 2,
+    "measureCounter": 1,
     "stateCounter": 3,
     "transitionCounter": 4,
     "functionCounter": 3,
@@ -72,21 +72,7 @@
                     }
                 }
             },
-            "measures": [
-                {
-                    "idCount": 1,
-                    "from": {
-                        "type": "shape",
-                        "id": "S1",
-                        "handler": "middleRight"
-                    },
-                    "to": {
-                        "type": "shape",
-                        "id": "S2",
-                        "handler": "middleRight"
-                    }
-                }
-            ],
+            "measures": [],
             "currentInputEventIndex": -1
         },
         {
@@ -156,21 +142,7 @@
                     }
                 }
             },
-            "measures": [
-                {
-                    "idCount": 1,
-                    "from": {
-                        "type": "shape",
-                        "id": "S1",
-                        "handler": "middleRight"
-                    },
-                    "to": {
-                        "type": "shape",
-                        "id": "S2",
-                        "handler": "middleRight"
-                    }
-                }
-            ],
+            "measures": [],
             "currentInputEventIndex": -1
         }
     ],

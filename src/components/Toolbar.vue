@@ -143,7 +143,14 @@ export default {
                         }
                     }
                     for (let measureDesc of vsDesc.measures) {
-                        newVisualState.addNewMeasureUntilLastState(measureDesc.idCount,measureDesc.from.type, measureDesc.from.id, measureDesc.from.handler, measureDesc.to.type, measureDesc.to.id, measureDesc.to.handler)
+                        let insertMeasureInVisualState = aVisualState => aVisualState.addNewMeasureUntilLastState(measureDesc.idCount,measureDesc.from.type, measureDesc.from.id, measureDesc.from.handler, measureDesc.to.type, measureDesc.to.id, measureDesc.to.handler)
+
+                        let presentAndFutureMeasures = insertMeasureInVisualState(newVisualState)
+
+                        //TODO AWFUL!!
+                        insertMeasureInVisualState(globalStore.deviceVisualState)
+
+                        globalStore.stateMachine.addMeasure(presentAndFutureMeasures[0])
                     }
                 }
 

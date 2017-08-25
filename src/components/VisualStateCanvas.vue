@@ -112,14 +112,14 @@ export default {
 
             //TODO this is nasty, sorry future Germán
             let presentAndFutureMeasures = this.visualStateModel.addNewMeasureUntilLastState(undefined,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)
+            let newMeasure = presentAndFutureMeasures[0]
 
             //Let's add the measure to the deviceVisualState
             //TODO AWFUL!!!
             let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
-            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(undefined,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
+            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(newMeasure.idCount,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
             presentAndFutureMeasures.push(aDeviceMeasure)
 
-            let newMeasure = presentAndFutureMeasures[0]
             var mouseMoveHandler
             mouseMoveHandler = function(e) {
                 let initial = newMeasure.initialPoint
