@@ -365,7 +365,10 @@ export default {
 
 #toolbar{
   display: block;
-  padding: 1%;
+  padding-left: 1%;
+  padding-right: 1%;
+  padding-top: 0.7%;
+  padding-bottom: 0.7%;
 
 }
 
@@ -423,8 +426,8 @@ export default {
     display: flex;
     justify-content:center;
     padding-left: 1%;
-    padding-top: 1%;
-    padding-bottom: 1%;
+    padding-top: 0.8%;
+    padding-bottom: 0.8%;
 
     background-color: #ffffff;
 }

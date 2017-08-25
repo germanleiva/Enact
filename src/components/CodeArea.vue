@@ -20,6 +20,8 @@
             </codemirror>
         </div>
         <div class="column">
+            <p id="stateMachineTitle" class="menu-label">State-Machine</p>
+            <a class="button" id="delete" @click="deleteSelectedStateMachineItem()" :class="{'is-disabled' :!currentlySelectedEdge && !currentlySelectedState}">Delete</a>
             <state-diagram
                 :nodes="stateMachine.states"
                 :links="stateMachine.transitions"
@@ -28,8 +30,6 @@
                 @diagramNewNode="addNewState"
                 @diagramNewLink="addNewTransition">
             </state-diagram>
-            <a class="button" @click="deleteSelectedStateMachineItem()" :class="{'is-disabled' :!currentlySelectedEdge && !currentlySelectedState}">Delete</a>
-
         </div>
     </div>
 </template>
@@ -639,7 +639,10 @@ export default {
     /*width: 70%;*/
     background-color: #eeeeee;
     margin-top: 0px;
-    padding: 1%;
+    padding-left: 1%;
+    padding-right: 1%;
+    padding-top: 0.8%;
+    font-family: futura;
     /*height: 550px;*/
 }
 
@@ -661,6 +664,20 @@ export default {
 
 .buttonmenuleft{
     margin-left: 6px !important;
+}
+
+.column{
+    padding-top: 0px !important;
+}
+
+#delete{
+    position: absolute;
+    margin-left: 6px !important;
+    margin-top: 30px !important;
+}
+#stateMachineTitle{
+    position: absolute;
+    margin-top: 5px;
 }
 
 </style>
