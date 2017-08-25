@@ -59,7 +59,7 @@ export const globalStore = new Vue({
         cursorType: 'auto',
         context: undefined,
         rulesPlaceholders: [],
-        mobileWidth: 410, //iPhone 375 Nexus 5X 410
+        mobileWidth: 410 + 2, //iPhone 375 Nexus 5X 410
         mobileHeight: 660//iPhone 667 Nexus 5X 660
     },
     computed: {
@@ -457,7 +457,7 @@ class MeasureModel {
           valueOf: () => algo,
           toString: () => "" + algo,
           toJSON: () => algo,
-          applyDelta: (input,max,min,ratio) => {
+          applyDelta: (input,min,max,ratio) => {
             console.log("MeasureModel >> distance")
             abort("Distances are inmutable")
           },
@@ -1273,13 +1273,11 @@ class Position extends Property {
           valueOf: () => algo,
           toString: () => "" + algo,
           toJSON: () => algo,
-          applyDelta: (input,max,min,ratio) => {
+          applyDelta: (input,min,max,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX == undefined || deltaY == undefined) {
-
-                console.log("Position >> x")
-                abort()
+            if (deltaX) {
+                deltaValue = deltaX
             }
 
             this.x += deltaValue
@@ -1310,12 +1308,11 @@ class Position extends Property {
           valueOf: () => algo,
           toString: () => "" + algo,
           toJSON: () => algo,
-          applyDelta: (input,max,min,ratio) => {
+          applyDelta: (input,min,max,ratio) => {
             let deltaValue = input.delta()
             let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX == undefined || deltaY == undefined) {
-                console.log("Position >> y")
-                abort()
+            if (deltaY) {
+                deltaValue = deltaY
             }
 
             this.y += deltaValue
@@ -1334,7 +1331,7 @@ class Position extends Property {
         return {x: this.previousX,y:this.previousY}
     }
 
-    applyDelta(input,max,min,ratio,onlyToX=false,onlyToY=false) {
+    applyDelta(input,min,max,ratio,onlyToX=false,onlyToY=false) {
         let {x:deltaX,y:deltaY} = input.delta()
 
         if (deltaX == undefined || deltaY == undefined) {
@@ -1366,11 +1363,8 @@ class Position extends Property {
             let {minX,minY} = min
         }
 
-        // this.x = Math.max(Math.min((this.x + deltaX) * ratioX, maxX), minX)
-        // this.y = Math.max(Math.min((this.y + deltaY) * ratioY, maxY), minY)
-
-        this.x += deltaX
-        this.y += deltaY
+        this.x = Math.max(Math.min(this.x + deltaX * ratioX, maxX), minX)
+        this.y = Math.max(Math.min(this.y + deltaY * ratioY, maxY), minY)
     }
 
     delta() {
@@ -1414,12 +1408,11 @@ class Size extends Property {
           valueOf: () => algo,
           toString: () => "" + algo,
           toJSON: () => algo,
-          applyDelta: (input,max,min,ratio) => {
+          applyDelta: (input,min,max,ratio) => {
             let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX == undefined || deltaY == undefined) {
-                console.log("Size >> width")
-                abort()
+            let {x:deltaWidth,y:deltaHeight} = deltaValue
+            if (deltaWidth) {
+                deltaValue = deltaWidth
             }
 
             this.width += deltaValue
@@ -1454,12 +1447,11 @@ class Size extends Property {
           valueOf: () => algo,
           toString: () => "" + algo,
           toJSON: () => algo,
-          applyDelta: (input,max,min,ratio) => {
+          applyDelta: (input,min,max,ratio) => {
             let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX == undefined || deltaY == undefined) {
-                console.log("Size >> width")
-                abort()
+            let {x:deltaWidth,y:deltaHeight} = deltaValue
+            if (deltaHeight) {
+                deltaValue = deltaHeight
             }
 
             this.height += deltaValue
@@ -1480,14 +1472,20 @@ class Size extends Property {
         this._height = value
     }
 
-    applyDelta(input,max,min,ratio) {
+    applyDelta(input,min,max,ratio) {
         let {x:deltaX,y:deltaY} = input.delta()
+
         let ratioX = 1
         let ratioY = 1
         if (typeof ratio == "number") {
             ratioX = ratioY = ratio
         } else {
-            let {ratioX,ratioY} = ratio
+            let {x:rx,y:ry} = ratio
+            if (!rx && !ry) {
+                abort()
+            }
+            ratioX = rx
+            ratioY = ry
         }
 
         let maxX = Number.POSITIVE_INFINITY
@@ -1495,7 +1493,12 @@ class Size extends Property {
         if (typeof max == "number") {
             maxX = maxY = max
         } else {
-            let {maxX,maxY} = max
+            let {x:mx,y:my} = max
+            if (!mx && !my) {
+                abort()
+            }
+            maxX = mx
+            maxY = my
         }
 
         let minX = Number.NEGATIVE_INFINITY
@@ -1503,18 +1506,20 @@ class Size extends Property {
         if (typeof min == "number") {
             minX = minY = min
         } else {
-            let {minX,minY} = min
+            let {x:mx,y:my} = min
+            if (!mx && !my) {
+                abort()
+            }
+            minX = mx
+            minY = my
         }
 
-        // this.x = Math.max(Math.min((this.x + deltaX) * ratioX, maxX), minX)
-        // this.y = Math.max(Math.min((this.y + deltaY) * ratioY, maxY), minY)
-
-        this.width += deltaX
-        this.height += deltaY
+        this.width = Math.max(Math.min(this.width + deltaX * ratioX, maxX), minX)
+        this.height = Math.max(Math.min(this.height + deltaY * ratioY, maxY), minY)
     }
 
     delta() {
-        return {width:this.width - this.previousWidth,height:this.height-this.previousHeight}
+        return {x:this.width - this.previousWidth,y:this.height-this.previousHeight}
     }
 
     toJSON() {
@@ -1963,9 +1968,9 @@ class RectangleModel extends ShapeModel {
         }
     }
 
-    toJSON() {
+    toJSON(props=['color','top','left','width','height']) {
         let json = {}
-        for (let eachKey of ['id','type','color','top','left','width','height','opacity', 'cornerRadius']) {
+        for (let eachKey of ['id','type','opacity', 'cornerRadius'].concat(props)) {
             json[eachKey] = this[eachKey].valueOf()
         }
         return json
@@ -2201,13 +2206,19 @@ class PolygonModel extends ShapeModel {
             }
         }
         if (json.vertices) {
-            console.log("I might be a problematic piece of code, shame on me")
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
                 let vertex = this.vertexFor(eachJSONVertex.id)
-                if (vertex) {
-                    vertex.x = eachJSONVertex.x
-                    vertex.y = eachJSONVertex.y
+                if (vertex && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
+                    //Do i actually has the vertex or was I following master?
+                    let vertex = this._vertices[vertexKey]
+                    if (vertex) {
+                        //I actually has a vertex
+                        vertex.x = eachJSONVertex.x
+                        vertex.y = eachJSONVertex.y
+                    } else {
+                        this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                    }
                 } else {
                     this.addVertex(eachJSONVertex,eachJSONVertex.id)
                     // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
@@ -2778,7 +2789,7 @@ class State {
     }
     set isActive(value) {
         this._isActive = value
-        this.machine.notifyChange("STATE",this,"isActive");
+        // this.machine.notifyChange("STATE",this,"isActive");
     }
 
     get enter() {

@@ -506,8 +506,10 @@ export default {
             this.stateMachine.states.forEach(unselect)
             this.stateMachine.transitions.forEach(unselect)
         },
-        addNewState() {
-            this.stateMachine.insertNewState({name:'New State'});
+        addNewState(e) {
+            let newState = this.stateMachine.insertNewState({name:'New State'});
+            newState.x = e.offsetX
+            newState.y = e.offsetY
         },
         addNewTransition({source,target}) {
             this.stateMachine.insertNewTransition({name:'unnamed',source:source,target:target});
@@ -540,7 +542,7 @@ export default {
                 }
             }
             if (this.stateMachine.states.length > 0) {
-                this.stateMachine.states[0].isSelected = true
+                this.stateMachine.states.last().isSelected = true
             }
         }
     },
@@ -607,7 +609,7 @@ export default {
         this.onSelectedState(this.currentlySelectedState)
 
         globalBus.$on('message-from-device-STATE_MACHINE_STATE',function(data) {
-            console.log("STATE_MACHINE_STATE json: " + JSON.stringify(data))
+            // console.log("STATE_MACHINE_STATE json: " + JSON.stringify(data))
             let {stateId,transitionId} = data
             if (stateId) {
                 this.stateMachine.activateState(stateId)

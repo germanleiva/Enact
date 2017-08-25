@@ -332,11 +332,13 @@ globalStore.socket.on('message-from-server', function(data) {
 
                 if (i == keys.length - 1) {
                     //Last key in the path, let's insert the value
-                    Vue.set(currentObject,key,value)
+                    Vue.set(currentObject,key,JSON.parse(value))
                 } else {
-                    //We always clean the existing or non-existing object @ key
-                    let newObject = {}
-                    Vue.set(currentObject,key,newObject)
+                    let newObject = currentObject[key]
+                    if (!newObject) {
+                        newObject = {}
+                        Vue.set(currentObject,key,newObject)
+                    }
                     currentObject = newObject
                 }
             }

@@ -116,9 +116,11 @@ export default {
         },
         sendToMobileHardcodedValue: _.debounce(
             function () {
-                debugger;
-                if (this.propertyName) {
-                    let path = this.propertyName
+                if (this.objectId) {
+                    let path = this.objectId
+                    if (this.propertyName) {
+                        path += "." + this.propertyName
+                    }
                     if (this.extraPropertyName) {
                         path += "." + this.extraPropertyName
                     }
@@ -138,9 +140,13 @@ export default {
     watch: {
         codeToShow: function() {
             if (this.visualStateId) {
-                debugger;
                 this.sendToMobileHardcodedValue()
             }
+        }
+    },
+    mounted: function() {
+        if (this.visualStateId) {
+            this.sendToMobileHardcodedValue()
         }
     },
     destroyed: function(){

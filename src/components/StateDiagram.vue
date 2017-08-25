@@ -3,27 +3,27 @@
         <!--define arrow markers for graph links-->
         <defs>
              <marker id="arrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#333">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="arrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
+             <marker id="arrowhead-selected" class="selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="arrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ff0000">
+             <marker id="arrowhead-activated" class="activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/20" orient="auto" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
              <marker id="selfarrowhead" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#333">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="selfarrowhead-selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#00d1b2">
+             <marker id="selfarrowhead-selected" class="selected" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
-             <marker id="selfarrowhead-activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
-                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`" fill="#ff0000">
+             <marker id="selfarrowhead-activated" class="activated" :viewBox="`0 -${arrowSize/2} ${arrowSize} ${arrowSize}`" :refX="nodeRadius * 2" :refY="nodeRadius/5 - 9" orient="-110" :markerWidth="arrowSize" :markerHeight="arrowSize" markerUnits="userSpaceOnUse" overflow="visible">
+                <path :d="`M0,-${arrowSize/2}L${arrowSize},0L0,${arrowSize/2}z`">
                 </path>
             </marker>
         </defs>
@@ -40,7 +40,7 @@
 
             <!-- <circle r="40" class="inner" @mousedown="mouseDownOnInnerCircle(eachNode,$event)" @mouseup="mouseUpOnInnerCircle(eachNode,$event)" @mouseover="eachNode.isHovered = true" @mouseout="eachNode.isHovered = false"></circle> -->
             <circle :id="'Node;'+eachNode.id" :r="nodeRadius" @click.prevent="toggleNode(eachNode)"></circle>
-            <text class="nodeTextClass" x="20" y=".31em" @click.prevent="toggleNode(eachNode)">{{eachNode.name}}</text>
+            <text class="nodeTextClass" x="23" y=".31em" @click.prevent="toggleNode(eachNode)">{{eachNode.name}}</text>
 
             <!-- <text text-anchor="middle" y="4">{{eachNode.name}}</text> -->
             <!-- <title>{{eachNode.name}}</title> -->
@@ -206,7 +206,8 @@ export default {
             let suffix = ""
             if (eachLink.isSelected) {
                 suffix = "-selected"
-            } else if (eachLink.isActive) {
+            }
+            if (eachLink.isActive) {
                 suffix = "-activated"
             }
             return `url(${name}${suffix})`
@@ -264,7 +265,7 @@ export default {
             return "invis_" + aLink.source.id + "-" + aLink.name + "-" + aLink.target.id;
         },
         canvasDoubleClick(event) {
-            this.$emit('diagramNewNode')
+            this.$emit('diagramNewNode',event)
         }
         // addNewState(newState) {
         //     // let newState = {id: `${this.nodes.length}`, name: 'new state', x:100, y:100};
@@ -303,6 +304,22 @@ export default {
 
 <style scoped>
 
+/*$regular-color: #333;　
+$selected-color: #00d1b2;　
+$activated-color: #cd1b5b;　
+*/
+
+marker > path {
+    fill: #333;
+}
+
+marker.selected path {
+    fill: #00d1b2;
+}
+marker.activated path {
+    fill: #cd1b5b;
+}
+
 text {
     fill: #333333;
     font-family: futura;
@@ -316,7 +333,10 @@ text {
 .node circle {
     stroke: #333333;
     stroke-width: 1.5px;
-    fill:#A2C1CC;
+    fill:#eee;
+}
+.node:hover circle {
+    fill:#00d1b2;
 }
 
 .node.selected circle {
@@ -325,8 +345,8 @@ text {
 }
 
 .node.activated circle {
-    stroke: #ff0000;
-    stroke-width: 2.5px;
+    stroke: #cd1b5b;
+    stroke-width: 4.5px;
     cursor:default;
 }
 
@@ -344,7 +364,7 @@ path.link.selected{
 
 path.link.activated{
     stroke-width: 4px;
-    stroke: #ff0000;
+    stroke: #cd1b5b;
 }
 
 path.invis {
@@ -353,7 +373,7 @@ path.invis {
 }
 
 .nodeTextClass {
-    margin-left-left: 10px;
+    /*font-weight: bold;*/
     font-size: 1.2em;
     cursor: pointer;
 }
@@ -361,13 +381,15 @@ path.invis {
     fill: #00d1b2;
 }
 .selected > .nodeTextClass {
-    font-size: 1.3em;
-    fill: #00d1b2;
+    /*font-size: 1.3em;*/
+    /*fill: #00d1b2;*/
+    /*font-weight: bold;*/
     cursor: default;
 }
 
 .activated > .nodeTextClass {
     font-size: 1.3em;
+    fill: #cd1b5b;
     cursor: pointer;
 }
 
@@ -382,14 +404,14 @@ path.invis {
 }
 
 .linkLabel.selected {
-    font-size: 1.3em;
-    fill: #00d1b2;
+    /*font-size: 1.3em;*/
+    /*fill: #00d1b2;*/
     cursor: default;
 }
 
 .linkLabel.activated {
     font-size: 1.3em;
-    fill: #ff0000;
+    fill: #cd1b5b;
     cursor: pointer;
 }
 .dragline {
