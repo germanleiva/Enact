@@ -313,10 +313,10 @@ marker > path {
     fill: #333;
 }
 
-marker.selected > path {
+marker.selected path {
     fill: #00d1b2;
 }
-marker.activated >path {
+marker.activated path {
     fill: #cd1b5b;
 }
 
