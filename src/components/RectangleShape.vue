@@ -56,10 +56,13 @@ export default {
     data: function() {
         return {
             isHovered: false,
-            isMoving: false
+            isMoving: false,
         }
     },
     computed: {
+        isMirror() {
+            return globalStore.deviceVisualState === this.parentVisualState
+        },
         shouldShowHandlers: function() {
             return !this.isTestShape && this.shapeModel.isSelected
         },
@@ -68,20 +71,20 @@ export default {
         },
         styleObject: function() {
             let testColor = tinyColor(this.shapeModel.color).setAlpha(0.1)
-                return {
-                    'backgroundColor': this.isTestShape? testColor: this.shapeModel.color,
-                    'position': 'absolute',
-                    'left': this.shapeModel.left + 'px',
-                    'top': this.shapeModel.top + 'px',
-                    'width': this.shapeModel.width /*+ border*/ + 'px',
-                    'height': this.shapeModel.height /*+ border*/ + 'px',
-                    'border': this.isTestShape? '2px dotted #ff8800':'1px solid #cccccc',
-                    'overflow': 'visible',
-                    'opacity': '1',
-                    'borderRadius': this.shapeModel.cornerRadius,
-                    'pointer-events': this.isTestShape?'none':'auto'
-                    // 'box-sizing': 'border-box' //To ignore the border size?
-                }
+            return {
+                'backgroundColor': this.isTestShape? testColor: this.shapeModel.color,
+                'position': 'absolute',
+                'left': this.shapeModel.left + 'px',
+                'top': this.shapeModel.top + 'px',
+                'width': this.shapeModel.width /*+ border*/ + 'px',
+                'height': this.shapeModel.height /*+ border*/ + 'px',
+                'border': this.isTestShape? '2px dotted #ff8800':'1px solid #cccccc',
+                'overflow': 'visible',
+                'opacity': '1',
+                'borderRadius': this.shapeModel.cornerRadius,
+                'pointer-events': this.isTestShape?'none':'auto'
+                // 'box-sizing': 'border-box' //To ignore the border size?
+            }
         },
         positionStyleObject: function() {
             return {
@@ -130,60 +133,19 @@ export default {
     destroyed: function() {
         console.log("WE DESTROYED RECTANGLE (the original props of this has: " + this.shapeModel.id +")")
     },
+    mounted: function() {
+        let propertyDictionary = {'position':['left','top'],'color':['color'],'size':['width','height']}
+        for (let key in propertyDictionary) {
+            this.$watch(`shapeModel.${key}`, function (newVal, oldVal) {
+                if (!this.isMirror && !this.isTestShape) {
+                    //We only send to mobile if we are not a mirror visual state or a test shape
+                    this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key])
+                }
+            },{deep:true});
+        }
+    },
     watch: {
-        // styleObject: function(newVal,oldVal) {
-        //     if (!this.isTestShape && this.shapeModel) {
 
-        //         if (globalStore.visualStates[0] === this.parentVisualState) {
-
-        //             let changes = {}
-        //             for (let eachKey in newVal) {
-        //                 if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
-        //                     if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
-        //                         changes['color'] = newVal[eachKey]
-        //                     } else {
-        //                         changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
-        //                     }
-        //                 }
-        //             }
-        //             // console.log("message-from-desktop EDIT_SHAPE")
-        //             globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: changes })
-        //        }
-        //     } else {
-        //         //I WAS DELETED
-        //         console.log("Should i worry? " + this.shapeModel)
-        //     }
-        // }
-        "shapeModel.position":{
-            deep: true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape && this.shapeModel) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['top','left']) })
-                    }
-                }
-            }
-        },
-        "shapeModel.size":{
-            deep: true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape && this.shapeModel) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['width','height']) })
-                    }
-                }
-            }
-        },
-        "shapeModel.color":{
-            deep: true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape && this.shapeModel) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['color']) })
-                    }
-                }
-            }
-        },
     },
     methods: {
         isPointInside(x,y) {

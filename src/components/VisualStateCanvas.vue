@@ -267,7 +267,7 @@ export default {
                     this.currentPolygon = newShapeModel
 
                     if (globalStore.visualStates[0] === this.visualStateModel) {
-                        globalStore.newShapeCreated(this.currentPolygon)
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
                     }
                 }
 
@@ -306,8 +306,8 @@ export default {
                 window.addEventListener('mousemove', mouseMoveHandler, false);
                 window.addEventListener('mouseup', mouseUpHandler, false);
 
-                if (globalStore.visualStates[0] === this.visualStateModel) {
-                    globalStore.newShapeCreated(newShapeModel);
+                if (newShapeModel.masterVersion == undefined) {
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
                 }
             }
         },

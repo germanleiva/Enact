@@ -116,9 +116,6 @@ export const globalStore = new Vue({
 
             return newVisualState
         },
-        newShapeCreated(aShapeModel) {
-            this.stateMachine.addShape(aShapeModel)
-        },
         setSelectionMode() {
             this.toolbarState.rectangleMode = false;
             this.toolbarState.circleMode = false;
@@ -1622,6 +1619,16 @@ class ShapeModel {
         return false
     }
 
+    get isMaster() {
+        return this.masterVersion === undefined
+    }
+
+    sendToMobile(messageType="NEW_SHAPE",properties) {
+        if (this.isMaster) {
+            globalStore.socket.emit('message-from-desktop', { type: messageType, id: this.id, message: this.toJSON(properties) })
+        }
+    }
+
     static createShape(shapeType,shapeId,protoShape) {
         if (!shapeId) {
             console.log("ShapeModel class >> createShape, I'm pretty sure that shapeId needs to be defined")
@@ -1940,7 +1947,7 @@ class RectangleModel extends ShapeModel {
 
     toJSON(props=['color','top','left','width','height']) {
         let json = {}
-        for (let eachKey of ['id','type','opacity', 'cornerRadius'].concat(props)) {
+        for (let eachKey of ['id','type','opacity','cornerRadius'].concat(props)) {
             json[eachKey] = this[eachKey].valueOf()
         }
         return json
@@ -3327,14 +3334,6 @@ class StateMachine {
 
     sendToMobile(){
         //TODO We need to send the shapes, the measures, the touches and the functions (the functions should include the hardcoded values)
-    }
-
-    addShape(aShape) {
-        // this.shapes.push(aShape);
-
-        if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: aShape.toJSON() })
-        }
     }
 
     addMeasure(aMeasure) {

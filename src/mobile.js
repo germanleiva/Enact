@@ -5,7 +5,7 @@ import CSSJSON from 'cssjson'
 // import App from './App.vue'
 
 require('./mobile.css')
-import {globalStore, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
+import {globalStore, globalBus, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
 
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
@@ -51,6 +51,15 @@ let mobileCanvasVM = new Vue({
             //hack
             return this.currentInputEvent.touchFor(touchId)
         }
+    },
+    mounted: function() {
+        globalBus.$on('TEMPLATE_CREATE',function(shapeModel) {
+            createShapeVM(shapeModel.id, shapeModel.toJSON())
+        });
+
+        globalBus.$on('TEMPLATE_DELETE',function(shapeModel){
+
+        })
     }
 })
 
@@ -359,7 +368,7 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_SHAPE":{
-            // console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
+            console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             let editedShapeVM = mobileCanvasVM.interactiveShapes[data.id]
