@@ -91,7 +91,7 @@ export default {
 
     globalBus.$on('message-from-device-SHAPE_DELETED',function(data) {
         //If the deviceVisualState has the shape then we edit else we create
-        // console.log("SHAPE_DELETED json: " + JSON.stringify(data))
+        console.log("SHAPE_DELETED json: " + JSON.stringify(data))
         let deviceEditedShapeId = data.id
 
         if (this.deviceVisualState.shapesDictionary[deviceEditedShapeId]) {

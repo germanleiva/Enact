@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = false;
+let isLoggerActive = true;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -791,6 +791,7 @@ class VisualStateModel {
     changeProperty(shapeModel,propertyName,previousValue,newValue) {
         if (shapeModel.isFollowingMaster(propertyName) && shapeModel.areEqualValues(propertyName, previousValue, newValue)) {
             //Don't do anything, keep following master and do not propagate
+            logger("Don't do anything, keep following master and do not propagate")
         } else {
             shapeModel.changeOwnProperty(propertyName,newValue)
             if (this.nextState) {
@@ -1986,20 +1987,18 @@ class PolygonModel extends ShapeModel {
 
     snapVertexPosition(plainPositionObject) {
         for (let eachVertex of Object.values(this.vertices)) {
-            if (Math.abs(plainPositionObject.x - eachVertex.position.x) < 5 && Math.abs(plainPositionObject.y - eachVertex.position.y) < 5) {
-                plainPositionObject.x = eachVertex.position.x.valueOf()
-                plainPositionObject.y = eachVertex.position.y.valueOf()
+            if (Math.abs(plainPositionObject.x - eachVertex.x) < 5 && Math.abs(plainPositionObject.y - eachVertex.y) < 5) {
+                plainPositionObject.x = eachVertex.x.valueOf()
+                plainPositionObject.y = eachVertex.y.valueOf()
                 return
             }
         }
     }
 
     prepareForDeletion() {
-        //Nothing to clean, the vertex doesn't know the Polygon
-
-        // for (let vertex of this._vertices) {
-        //     vertex.shape = undefined
-        // }
+        for (let vertex of Object.values(this._vertices)) {
+            vertex.prepareForDeletion()
+        }
     }
     get handlers() {
         return this.vertices
@@ -2018,7 +2017,7 @@ class PolygonModel extends ShapeModel {
             // changes.push('Changed size from ' + JSON.stringify(this.size) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.size))
             changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "size", before: this.size, after: nextShapeWithTheSameModel.size } })
         }
-        for (let i of this.vertexIndexes) {
+        for (let i of this.vertexNames) {
             if (!nextShapeWithTheSameModel.isFollowingMaster(i) && !this.areEqualValues(i, this.vertexFor(i), nextShapeWithTheSameModel.vertexFor(i))) {
                 changes.push({ id: this.id, name: this.name, type: 'shape', property:{ name: "vertex", before: this.vertexFor(i), after: nextShapeWithTheSameModel.vertexFor(i) } })
             }
@@ -2026,12 +2025,12 @@ class PolygonModel extends ShapeModel {
 
         return changes
     }
-    get vertexIndexes() {
+    get vertexNames() {
         return [...Array(this.amountOfVertices).keys()].map((i) => "V"+i)
     }
     get vertices() {
         let result = {}
-        for (let vertexKey of this.vertexIndexes) {
+        for (let vertexKey of this.vertexNames) {
             result[vertexKey] = this.vertexFor(vertexKey)
         }
         return result
@@ -2057,7 +2056,7 @@ class PolygonModel extends ShapeModel {
         if (!vertexId) {
             vertexId = "V"+this.amountOfVertices
         }
-        let newVertex = new Vertex(vertexId,canvasPosition)
+        let newVertex = new Vertex(this,vertexId,canvasPosition)
         Vue.set(this._vertices,vertexId,newVertex)
         Vue.set(this,vertexId,newVertex)
     }
@@ -2085,7 +2084,7 @@ class PolygonModel extends ShapeModel {
     setOwnPropertiesFromMaster(property) {
         if (this.isVertexProperty(property)) {
             // Vue.set(target,key,value)
-            Vue.set(this._vertices,property,new Vertex(property,this.vertexFor(property)))
+            Vue.set(this._vertices,property,new Vertex(this,property,this.vertexFor(property)))
             // this._vertices[property] = new Vertex(this,this.vertexFor(property))
         } else {
             super.setOwnPropertiesFromMaster(property)
@@ -2115,18 +2114,27 @@ class PolygonModel extends ShapeModel {
     }
     changeOwnProperty(changedPropertyName,changedValue) {
         if (this.isVertexProperty(changedPropertyName)) {
-            //It's a number => It's a vertex
+            //It's a vertex
             let correspondingVertex = this._vertices[changedPropertyName]
             if (!correspondingVertex) {
                 // Vue.set(target,key,value)
-                Vue.set(this._vertices,changedPropertyName,new Vertex(changedPropertyName,changedValue))
-                // this._vertices[changedPropertyName] = new Vertex(this,changedValue)
+                Vue.set(this._vertices,changedPropertyName,new Vertex(this,changedPropertyName,changedValue))
             } else {
                 correspondingVertex.x = changedValue.x
                 correspondingVertex.y = changedValue.y
             }
         } else {
             super.changeOwnProperty(changedPropertyName,changedValue)
+
+            if (changedPropertyName == "position") {
+                //If we change position, let's create our own vertices
+                for (let vertexName of this.vertexNames) {
+                    if (this.isFollowingMaster(vertexName)) {
+                        let protoVertex = this.vertexFor(vertexName)
+                        Vue.set(this._vertices,vertexName,new Vertex(this,vertexName,{x:protoVertex.relativeX,y:protoVertex.relativeY}))
+                    }
+                }
+            }
         }
     }
     valueForProperty(property) {
@@ -2186,37 +2194,55 @@ class PolygonModel extends ShapeModel {
             }
         }
     }
+
+    positionOfHandler(handlerName) {
+        let vertex = this.vertexFor(handlerName)
+        if (vertex) {
+            return {x: vertex.x, y: vertex.y}
+        }
+        return undefined
+    }
 }
 
 class Vertex {
-    constructor(id,{x:canvasX,y:canvasY}) {
+    constructor(polygon,id,{x:canvasX,y:canvasY}) {
+        this.polygon = polygon
         this.id = id
         this.position = new Position(canvasX,canvasY)
         this.highlight = false
     }
+    get relativeX() {
+        return this.position.x.valueOf()
+    }
+    get relativeY() {
+        return this.position.y.valueOf()
+    }
     get x() {
-        return this.position.x
+        return this.position.x + this.polygon.left
     }
     set x(value) {
-        this.position.x = value
+        this.position.x = value - this.polygon.left
     }
     get y() {
-        return this.position.y
+        return this.position.y + this.polygon.top
     }
     set y(value) {
-        this.position.y = value
+        this.position.y = value - this.polygon.top
     }
     top(aShape) {
-        return this.y + aShape.position.y
+        return this.y
     }
     left(aShape) {
-        return this.x + aShape.position.x
+        return this.x
     }
     get namePrefix() {
         return this.id
     }
     toJSON() {
         return {id:this.id,x:this.x,y:this.y}
+    }
+    prepareForDeletion() {
+        this.polygon = undefined
     }
 }
 

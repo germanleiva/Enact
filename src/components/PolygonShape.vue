@@ -5,10 +5,9 @@
             <path :d="pathData" :transform="pathTransform" v-show="shapeModel.highlight" v-bind:style="overlayStyleObject"/>
         </svg>
         <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers || eachHandler.highlight" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
+        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.vertices" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
+        </div>
     </div>
-<!--           <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
-          </div> -->
-
 </template>
 <script>
 
@@ -58,10 +57,10 @@ export default {
         pathData: function() {
             let dataString = ""
             if (this.shapeModel.amountOfVertices > 0) {
-                dataString += `M${this.shapeModel.vertexFor("V0").x} ${this.shapeModel.vertexFor("V0").y} `
+                dataString += `M${this.shapeModel.vertexFor("V0").relativeX} ${this.shapeModel.vertexFor("V0").relativeY} `
                 for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
                     let otherVertex = this.shapeModel.vertexFor("V"+i)
-                    dataString += `L ${otherVertex.x} ${otherVertex.y} `
+                    dataString += `L ${otherVertex.relativeX} ${otherVertex.relativeY} `
                 }
                 dataString += "Z"
             }
@@ -140,31 +139,45 @@ export default {
         console.log("WE DESTROYED POLYGON (the original props of this has: " + this.shapeModel.id +")")
     },
     watch: {
-        shapeModel: {
+        "shapeModel.color": {
             deep:true,
             handler: function(newVal,oldVal) {
-            if (!this.isTestShape) {
-                if (globalStore.visualStates[0] === this.parentVisualState) {
-
-        //             let changes = {}
-        //             for (let eachKey in newVal) {
-        //                 if (eachKey != "border" && newVal[eachKey] != oldVal[eachKey]) {
-        //                     if (eachKey == 'backgroundColor' || eachKey == 'background-color') {
-        //                         changes['color'] = newVal[eachKey]
-        //                     } else {
-        //                         changes[eachKey] = parseFloat(newVal[eachKey]) //Trimming the px from the string
-        //                     }
-        //                 }
-        //             }
-                    // console.log("message-from-desktop EDIT_SHAPE")
-                    globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: newVal.id, message: newVal.toJSON() })
-               }
-            } else {
-                //I WAS DELETED
-                console.log("Should i worry? Polygon shapeModel watcher")
+                if (!this.isTestShape) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: newVal.id, message: this.shapeModel.toJSON(['color']) })
+                   }
+                } else {
+                    //I WAS DELETED
+                    console.log("Should i worry? Polygon shapeModel watcher color")
+                }
             }
-        }
-    }
+        },
+        "shapeModel.position": {
+            deep:true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['top','left']) })
+                   }
+                } else {
+                    //I WAS DELETED
+                    console.log("Should i worry? Polygon shapeModel watcher position")
+                }
+            }
+        },
+        "shapeModel.size": {
+            deep:true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['width','height']) })
+                   }
+                } else {
+                    //I WAS DELETED
+                    console.log("Should i worry? Polygon shapeModel watcher size")
+                }
+            }
+        },
     },
     methods: {
         isPointInside(x,y) {
@@ -188,18 +201,26 @@ export default {
             return {
                 'position':'absolute',
                 'border-radius': '50%',
-                'left': aPoint.left(size) + 'px',
-                'top': aPoint.top(size) + 'px',
+                'left': (aPoint.left(this.shapeModel) - size / 2) + 'px',
+                'top': (aPoint.top(this.shapeModel) - size / 2) + 'px',
                 'width': size+'px',
                 'height': size+'px',
                 'background-color': 'red'
             }
         },
         handlerFor(x,y) {
+            let size = 10
+            let vertex = Object.values(this.shapeModel.vertices).find(vertex => Math.abs(x - vertex.x) < (size / 2) && Math.abs(y - vertex.y) < (size / 2) )
+
+            if (vertex) {
+                return {type:'shape',id:this.shapeModel.id,handler:vertex.namePrefix}
+            }
+            return undefined
+
             for(let eachHandlerDOMElement of this.$refs.relevantPointsElements) {
                 let isInside = x > this.shapeModel.left + eachHandlerDOMElement.offsetLeft && x < this.shapeModel.left + eachHandlerDOMElement.offsetLeft + eachHandlerDOMElement.offsetWidth && y > this.shapeModel.top + eachHandlerDOMElement.offsetTop && y < this.shapeModel.top + eachHandlerDOMElement.offsetTop + eachHandlerDOMElement.offsetHeight
                 if (isInside) {
-                    return {type:'shape',id: this.shapeModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
+                    return {type:'vertex',id: this.shapeModel.id, handler: eachHandlerDOMElement.getAttribute('id').split('-')[0]}
                 }
             }
             return undefined
