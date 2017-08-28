@@ -183,10 +183,10 @@ let PolygonVM = Vue.extend({
         pathData: function() {
             let dataString = ""
             if (this.shapeModel.amountOfVertices > 0) {
-                dataString += `M${this.shapeModel.vertexFor('V0').x} ${this.shapeModel.vertexFor('V0').y} `
+                dataString += `M${this.shapeModel.vertexFor('V0').relativeX} ${this.shapeModel.vertexFor('V0').relativeY} `
                 for (let i = 1; i < this.shapeModel.amountOfVertices; i++) {
                     let otherVertex = this.shapeModel.vertexFor('V'+i)
-                    dataString += `L ${otherVertex.x} ${otherVertex.y} `
+                    dataString += `L ${otherVertex.relativeX} ${otherVertex.relativeY} `
                 }
                 dataString += "Z"
             }
@@ -264,7 +264,7 @@ function createShapeVM(id, message) {
 }
 
 globalStore.socket.on('message-from-server', function(data) {
-    console.log("Received something from server: " + JSON.stringify(data));
+    // console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
         case "CLEAN":{
             console.log("Cleaning up ... aka deleting everything")

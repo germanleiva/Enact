@@ -144,7 +144,7 @@ export default {
             handler: function(newVal,oldVal) {
                 if (!this.isTestShape) {
                     if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: newVal.id, message: this.shapeModel.toJSON(['color']) })
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['color']) })
                    }
                 } else {
                     //I WAS DELETED
@@ -178,6 +178,19 @@ export default {
                 }
             }
         },
+        "shapeModel.vertices": {
+            deep:true,
+            handler: function(newVal,oldVal) {
+                if (!this.isTestShape) {
+                    if (globalStore.visualStates[0] === this.parentVisualState) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['vertices']) })
+                   }
+                } else {
+                    //I WAS DELETED
+                    console.log("Should i worry? Polygon shapeModel watcher size")
+                }
+            }
+        }
     },
     methods: {
         isPointInside(x,y) {

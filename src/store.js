@@ -18,7 +18,7 @@ import _ from 'lodash';
 import tinyColor from 'tinycolor2';
 import JSONfn from 'json-fn';
 
-let isLoggerActive = true;
+let isLoggerActive = false;
 let logger = function(text) {
     if (isLoggerActive) {
         console.log(text);
@@ -84,6 +84,7 @@ export const globalStore = new Vue({
     },
     methods: {
         refreshMobile() {
+            //TODO This is not actually cleaning the mobile. Instantiated shapes are not deleted
             let firstStateShapes = globalStore.visualStates[0].shapesDictionary
             for (let eachShapeId in firstStateShapes) {
                 globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
@@ -1913,6 +1914,14 @@ class ShapeModel {
     deselect() {
         this.isSelected = false
     }
+
+    create() {
+        globalBus.$emit("TEMPLATE_CREATE",this)
+    }
+
+    delete() {
+        globalBus.$emit("TEMPLATE_DELETE",this)
+    }
 }
 
 class RectangleModel extends ShapeModel {
@@ -2152,13 +2161,26 @@ class PolygonModel extends ShapeModel {
             return super.areEqualValues(property, value1, value2)
         }
     }
-    toJSON() {
-        let verticesJSON = {}
-        for (let eachVertexKey in this.vertices) {
-            let eachVertex = this.vertices[eachVertexKey]
-            verticesJSON[eachVertexKey] = eachVertex.toJSON()
+    toJSON(properties = ['color','position','vertices']) {
+        let json = {id:this.id,type:this.type}
+
+        if (properties.includes('color')) {
+            json.color = this.color
         }
-        return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
+
+        if (properties.includes('position')) {
+            json.position = {x:this.position.x,y:this.position.y}
+        }
+
+        if (properties.includes('vertices')) {
+            json.vertices = {}
+            for (let eachVertexKey in this.vertices) {
+                let eachVertex = this.vertices[eachVertexKey]
+                json.vertices[eachVertexKey] = eachVertex.toJSON()
+            }
+        }
+
+        return json
     }
     fromJSON(json) {
             // this.id = json.id
@@ -2176,21 +2198,30 @@ class PolygonModel extends ShapeModel {
         if (json.vertices) {
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
+                let shouldCreate = false
                 let vertex = this.vertexFor(eachJSONVertex.id)
-                if (vertex && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
-                    //Do i actually has the vertex or was I following master?
+
+                if (!vertex) {
+                    shouldCreate = true
+                }
+
+                if (!shouldCreate && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
                     let vertex = this._vertices[vertexKey]
+                    //Do i actually has the vertex or was I following master?
                     if (vertex) {
                         //I actually has a vertex
                         vertex.x = eachJSONVertex.x
                         vertex.y = eachJSONVertex.y
                     } else {
-                        this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                        shouldCreate = true
                     }
-                } else {
+                }
+
+                if (shouldCreate) {
                     this.addVertex(eachJSONVertex,eachJSONVertex.id)
                     // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
                 }
+
             }
         }
     }
