@@ -161,8 +161,7 @@ export default {
         let propertyDictionary = {'position':['left','top'],'color':['color'],'size':['width','height']}
         for (let key in propertyDictionary) {
             this.$watch(`shapeModel.${key}`, function (newVal, oldVal) {
-                let isHidden = globalStore.visualStates[0] != this.parentVisualState
-                this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key],isHidden)
+                this.parentVisualState.sendShapeToMobile(this.shapeModel,"EDIT_SHAPE",propertyDictionary[key])
             },{deep:true});
         }
     },

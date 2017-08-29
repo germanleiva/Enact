@@ -135,10 +135,7 @@ export default {
                                 newVisualState.nextState.didCreateShape(newShape, newVisualState);
                             }
 
-                            if (newShape.masterVersion === undefined) {
-                                let isHidden = globalStore.visualStates[0] != newVisualState
-                                newShape.sendToMobile("NEW_SHAPE",undefined,isHidden)
-                            }
+                            newVisualState.sendShapeToMobile(newShape,"NEW_SHAPE")
                         } else {
                             newShape.fromJSON(shapeDesc)
                         }

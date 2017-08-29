@@ -70,16 +70,13 @@ export const globalStore = new Vue({
     },
     methods: {
         refreshMobile() {
-            //TODO This is not actually cleaning the mobile. Instantiated shapes are not deleted
             globalStore.socket.emit('message-from-desktop', { type: "CLEAN_SHAPES_AND_MEASURES" })
+            globalStore.socket.emit('message-from-desktop', { type: "STATE_MACHINE_RESET" })
 
             let sentMeasureIds = []
             for (let visualState of globalStore.visualStates) {
-                for (let shapeId in visualState.shapesDictionary) {
-                    let masterShape = visualState.shapesDictionary[eachShapeId]
-                    if (masterShape.masterVersion === undefined) {
-                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", id: shapeId, message: masterShape.toJSON() })
-                    }
+                for (let masterShape of Object.values(visualState.shapesDictionary)) {
+                    visualState.sendShapeToMobile(masterShape,"NEW_SHAPE")
                 }
                 for (let measure of visualState.measures) {
                     if (sentMeasureIds.indexOf(measure.id) < 0) {
@@ -609,9 +606,10 @@ class MeasureModel {
         return changes
     }
     positionOfHandler(handlerName) {
+        debugger;
         if (handlerName == 'center') {
             if (this.fromObject) {
-                return { x: this.initialPoint.x + (this.deltaX / 2), y: this.initialPoint.y + (this.deltaY / 2) }
+                return this.initialPoint.shifted(this.deltaX / 2,this.deltaY / 2)
             }
             return undefined
         }
@@ -740,6 +738,11 @@ class VisualStateModel {
 
     get name() {
         return 'VS' + (globalStore.visualStates.indexOf(this) + 1)
+    }
+
+    sendShapeToMobile(shapeModel,messageType="NEW_SHAPE",properties) {
+        let imNotTheFirstVisualState = globalStore.visualStates[0] != this
+        shapeModel.sendToMobile(messageType,properties,imNotTheFirstVisualState)
     }
 
     get allObjects() {
@@ -1264,8 +1267,7 @@ class Property {
         if (typeof deltaValue == "number") {
             if (xProperty && yProperty) {
                 //the delta is unidimensional and I need to apply to a 2D value
-                abort()
-                return
+                //We are allowing this
             }
             deltaX = deltaValue
             deltaY = deltaValue
@@ -1622,7 +1624,9 @@ class ShapeModel {
             get(target,key) {
                 if (key == "create") {
                     let timestamp = (new Date()).getTime()
-                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,target.toJSON()).shapeModel
+                    let json = target.toJSON()
+                    json.isHidden = false
+                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,json).shapeModel
                 }
                 if (key == "destroy") {
                     return globalStore.mobileCanvasVM.deleteShapeVM(target.id)
@@ -1639,12 +1643,8 @@ class ShapeModel {
         return false
     }
 
-    get isMaster() {
-        return this.masterVersion === undefined
-    }
-
     sendToMobile(messageType="NEW_SHAPE",properties,isHidden=false) {
-        if (this.isMaster) {
+        if (this.masterVersion === undefined) {
             let message = this.toJSON(properties)
             if (isHidden) {
                 message.isHidden = true
@@ -1753,6 +1753,10 @@ class ShapeModel {
             return this.masterVersion.position;
         }
         return this._position;
+    }
+    set position(value) {
+        this.left = value.x
+        this.top = value.y
     }
     get size() {
         if (this.isFollowingMaster('size')) {
@@ -2269,6 +2273,7 @@ class PolygonModel extends ShapeModel {
     positionOfHandler(handlerName) {
         let vertex = this.vertexFor(handlerName)
         if (vertex) {
+            //TODO check, vertex.position has any issue?
             return {x: vertex.x, y: vertex.y}
         }
         return undefined
@@ -3535,7 +3540,6 @@ class StateMachine {
     // Find the first available slot in touchInfo, initialize the info record
     // and add it to the event
     recordTouchStart(event) {
-
             //hack
             globalStore.mobileCanvasVM.currentInputEvent = new InputEvent(event)
             globalStore.mobileCanvasVM.currentInputEvent.touches = []
@@ -3545,8 +3549,7 @@ class StateMachine {
         this.firstIndex = 0;
 
 
-        for (let i=0;i<event.changedTouches.length;i++) {
-            let touch = event.changedTouches[i];
+        let addToCurrentInputEvent = (touch) => {
             this.numTouches++;
             while (this.touchInfo[index])
                 index++;
@@ -3564,6 +3567,16 @@ class StateMachine {
             let newTouch = new InputEventTouch(touch);
             this.touchInfo[index] = newTouch;
             globalStore.mobileCanvasVM.currentInputEvent.touches.push(newTouch)
+        }
+
+        for (let i=0;i<event.changedTouches.length;i++) {
+            let touch = event.changedTouches[i];
+            addToCurrentInputEvent(touch)
+        }
+
+        for (let i=0;i<event.touches.length;i++) {
+            let touch = event.touches[i];
+            addToCurrentInputEvent(touch)
         }
 
         // console.log("-- done");
@@ -3655,6 +3668,9 @@ class StateMachine {
         // call the guard, if any
         if (transition.guard) {
             try {
+                if (transition.name == "touchstart" && transition.target.name == "Pinch") {
+                    debugger;
+                }
                 if (! transition.guard.call(machine, event, transition, state))
                     return false;
             } catch (e) {

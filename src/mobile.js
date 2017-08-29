@@ -77,6 +77,9 @@ let mobileCanvasVM = new Vue({
         },
         deleteShapeVM(id) {
             let shapeVMToDelete = this.interactiveShapes[id]
+            if (!shapeVMToDelete) {
+                console.log("Trying to delete a shape that we don't have ... id = " + id)
+            }
             document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
             shapeVMToDelete.$destroy()
             delete this.interactiveShapes[id]
@@ -272,7 +275,7 @@ globalStore.socket.on('message-from-server', function(data) {
                 mobileCanvasVM.deleteShapeVM(shapeId)
             }
 
-            for (let aMeasure of mobileCanvasVM.measures) {
+            for (let aMeasure of Array.from(mobileCanvasVM.measures)) {
                 aMeasure.deleteYourself()
             }
             break;
@@ -284,7 +287,7 @@ globalStore.socket.on('message-from-server', function(data) {
                 mobileCanvasVM.deleteShapeVM(shapeId)
             }
 
-            for (let aMeasure of mobileCanvasVM.measures) {
+            for (let aMeasure of Array.from(mobileCanvasVM.measures)) {
                 aMeasure.deleteYourself()
             }
 
@@ -297,6 +300,10 @@ globalStore.socket.on('message-from-server', function(data) {
 
             // stateMachine.deleteYourself()
 
+            break;
+        }
+        case "STATE_MACHINE_RESET": {
+            stateMachine.currentState = stateMachine.firstState
             break;
         }
         case "START_RECORDING":{
@@ -370,7 +377,7 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_SHAPE":{
-            console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
+            // console.log("EDIT_SHAPE:" + JSON.stringify(data.message));
             // var parentDOM = document.getElementById("mobileCanvas")
             // parentDOM.innerHTML = data.message;
             let editedShapeVM = mobileCanvasVM.interactiveShapes[data.id]
