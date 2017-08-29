@@ -136,7 +136,8 @@ export default {
                             }
 
                             if (newShape.masterVersion === undefined) {
-                                globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShape.toJSON() })
+                                let isHidden = globalStore.visualStates[0] != newVisualState
+                                newShape.sendToMobile("NEW_SHAPE",undefined,isHidden)
                             }
                         } else {
                             newShape.fromJSON(shapeDesc)
@@ -150,7 +151,9 @@ export default {
                         //TODO AWFUL!!
                         insertMeasureInVisualState(globalStore.deviceVisualState)
 
-                        globalStore.stateMachine.addMeasure(presentAndFutureMeasures[0])
+                        let aMeasure = presentAndFutureMeasures[0]
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: aMeasure.toJSON() });
+
                     }
                 }
 

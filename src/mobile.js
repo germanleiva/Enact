@@ -267,6 +267,16 @@ let PolygonVM = Vue.extend({
 globalStore.socket.on('message-from-server', function(data) {
     // console.log("Received something from server: " + JSON.stringify(data));
     switch(data.type) {
+        case "CLEAN_SHAPES_AND_MEASURES": {
+            for (let shapeId of Object.keys(mobileCanvasVM.interactiveShapes)) {
+                mobileCanvasVM.deleteShapeVM(shapeId)
+            }
+
+            for (let aMeasure of mobileCanvasVM.measures) {
+                aMeasure.deleteYourself()
+            }
+            break;
+        }
         case "CLEAN":{
             console.log("Cleaning up ... aka deleting everything")
 

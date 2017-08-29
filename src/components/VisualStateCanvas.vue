@@ -141,7 +141,7 @@ export default {
                         eachPresentAndFutureMeasure.to.handler = objectForMouseEvent.handler
                     }
 
-                    globalStore.stateMachine.addMeasure(newMeasure)
+                    globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: newMeasure.toJSON() });
                 } else {
                     //delete measure?
                     for (let eachPresentAndFutureMeasure of presentAndFutureMeasures) {

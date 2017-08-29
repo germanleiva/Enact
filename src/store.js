@@ -71,11 +71,20 @@ export const globalStore = new Vue({
     methods: {
         refreshMobile() {
             //TODO This is not actually cleaning the mobile. Instantiated shapes are not deleted
+            globalStore.socket.emit('message-from-desktop', { type: "CLEAN_SHAPES_AND_MEASURES" })
+
+            let sentMeasureIds = []
             for (let visualState of globalStore.visualStates) {
                 for (let shapeId in visualState.shapesDictionary) {
                     let masterShape = visualState.shapesDictionary[eachShapeId]
                     if (masterShape.masterVersion === undefined) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: shapeId, message: masterShape.toJSON() })
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", id: shapeId, message: masterShape.toJSON() })
+                    }
+                }
+                for (let measure of visualState.measures) {
+                    if (sentMeasureIds.indexOf(measure.id) < 0) {
+                        globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: measure.toJSON() });
+                        sentMeasureIds.push(measure.id)
                     }
                 }
             }
@@ -3358,14 +3367,6 @@ class StateMachine {
 
     sendToMobile(){
         //TODO We need to send the shapes, the measures, the touches and the functions (the functions should include the hardcoded values)
-    }
-
-    addMeasure(aMeasure) {
-        // this.measures.push(aMeasure);
-
-        if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_MEASURE", message: aMeasure.toJSON() });
-        }
     }
 
     addNewFunction(named) {
