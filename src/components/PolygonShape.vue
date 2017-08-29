@@ -54,6 +54,9 @@ export default {
         }
     },
     computed: {
+        isMirrorShape() {
+            return globalStore.deviceVisualState === this.parentVisualState
+        },
         pathData: function() {
             let dataString = ""
             if (this.shapeModel.amountOfVertices > 0) {
@@ -138,59 +141,21 @@ export default {
     destroyed: function() {
         console.log("WE DESTROYED POLYGON (the original props of this has: " + this.shapeModel.id +")")
     },
-    watch: {
-        "shapeModel.color": {
-            deep:true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['color']) })
-                   }
-                } else {
-                    //I WAS DELETED
-                    console.log("Should i worry? Polygon shapeModel watcher color")
-                }
-            }
-        },
-        "shapeModel.position": {
-            deep:true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['top','left']) })
-                   }
-                } else {
-                    //I WAS DELETED
-                    console.log("Should i worry? Polygon shapeModel watcher position")
-                }
-            }
-        },
-        "shapeModel.size": {
-            deep:true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['width','height']) })
-                   }
-                } else {
-                    //I WAS DELETED
-                    console.log("Should i worry? Polygon shapeModel watcher size")
-                }
-            }
-        },
-        "shapeModel.vertices": {
-            deep:true,
-            handler: function(newVal,oldVal) {
-                if (!this.isTestShape) {
-                    if (globalStore.visualStates[0] === this.parentVisualState) {
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: this.shapeModel.id, message: this.shapeModel.toJSON(['vertices']) })
-                   }
-                } else {
-                    //I WAS DELETED
-                    console.log("Should i worry? Polygon shapeModel watcher size")
-                }
-            }
+    mounted: function() {
+        //We only send to mobile if we are not a mirror visual state or a test shape
+        if (this.isMirrorShape || this.isTestShape) {
+            return
         }
+
+        let propertyDictionary = {'position':['left','top'],'color':['color'],'size':['width','height'],'vertices':['vertices']}
+        for (let key in propertyDictionary) {
+            this.$watch(`shapeModel.${key}`, function (newVal, oldVal) {
+                this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key])
+            },{deep:true});
+        }
+    },
+    watch: {
+
     },
     methods: {
         isPointInside(x,y) {

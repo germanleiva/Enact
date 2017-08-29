@@ -60,7 +60,7 @@ export default {
         }
     },
     computed: {
-        isMirror() {
+        isMirrorShape() {
             return globalStore.deviceVisualState === this.parentVisualState
         },
         shouldShowHandlers: function() {
@@ -134,13 +134,15 @@ export default {
         console.log("WE DESTROYED RECTANGLE (the original props of this has: " + this.shapeModel.id +")")
     },
     mounted: function() {
+        //We only send to mobile if we are not a mirror visual state or a test shape
+        if (this.isMirrorShape || this.isTestShape) {
+            return
+        }
+
         let propertyDictionary = {'position':['left','top'],'color':['color'],'size':['width','height']}
         for (let key in propertyDictionary) {
             this.$watch(`shapeModel.${key}`, function (newVal, oldVal) {
-                if (!this.isMirror && !this.isTestShape) {
-                    //We only send to mobile if we are not a mirror visual state or a test shape
-                    this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key])
-                }
+                this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key])
             },{deep:true});
         }
     },
