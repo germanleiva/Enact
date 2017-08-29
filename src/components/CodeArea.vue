@@ -527,7 +527,7 @@ export default {
                         extraMessage = ` and ${relevantTransitions.length} transition${relevantTransitions.length>1?"s":""}`
                     }
 
-                    if (confirm(`Do you want to delete state ${stateToDelete.name}${extraMessage}?`)) {
+                    if (relevantTransitions.length == 0 || confirm(`Do you want to delete state ${stateToDelete.name}${extraMessage}?`)) {
                         stateToDelete.deleteYourself()
                     }
                 }
@@ -680,6 +680,7 @@ export default {
 #stateMachineTitle{
     position: absolute;
     margin-top: 5px;
+    user-select:none
 }
 
 </style>

@@ -435,7 +435,7 @@ class MeasureModel {
     }
 
     propertyMap() {
-        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"]}
+        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"],"width":[],"height":[]}
     }
 
     get allProperties() {
@@ -451,25 +451,29 @@ class MeasureModel {
                 return null
             },
             get(target,key) {
+                let subproperties = target.propertyMap()[key]
+                if (subproperties && subproperties.length > 0) {
+                    return target[key].proxy
+                }
                 return target[key]
             }
         })
     }
 
     get distance() {
-        let algo = MeasureModel.calculateDistance(this.initialPoint,this.finalPoint)
+        let innerValue = MeasureModel.calculateDistance(this.initialPoint,this.finalPoint)
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
           applyDelta: (input,min,max,ratio) => {
             console.log("MeasureModel >> distance")
             abort("Distances are inmutable")
           },
-          delta: () => algo - (MeasureModel.calculateDistance(this.initialPoint.previous,this.finalPoint.previous))
+          delta: () => innerValue - (MeasureModel.calculateDistance(this.initialPoint.previous,this.finalPoint.previous))
         }
     }
 
@@ -561,13 +565,20 @@ class MeasureModel {
         return this.finalPoint.x - this.initialPoint.x
     }
     get width() {
-        return Math.abs(this.finalPoint.x - this.initialPoint.x)
+        return this.size.width
     }
     get deltaY() {
         return this.finalPoint.y - this.initialPoint.y
     }
     get height() {
-        return Math.abs(this.finalPoint.y - this.initialPoint.y)
+        return this.size.height
+    }
+    get size() {
+        let width = Math.abs(this.finalPoint.x - this.initialPoint.x)
+        let height = Math.abs(this.finalPoint.y - this.initialPoint.y)
+        let previousWidth = Math.abs(this.finalPoint.previousX - this.initialPoint.previousX)
+        let previousHeight = Math.abs(this.finalPoint.previousY - this.initialPoint.previousY)
+        return new Size(width,height,previousWidth,previousHeight)
     }
     diffArray(nextMeasureWithTheSameModel) {
         let changes = []
@@ -1187,7 +1198,7 @@ class InputEventTouch {
     }
 
     propertyMap() {
-        return {"position":["x","y"],"size":["width","height"],"force":[],"angularRotation":[]}
+        return {"position":["x","y"],"size":["width","height"],"x":[],"y":[]}
     }
 
     get allProperties() {
@@ -1203,6 +1214,10 @@ class InputEventTouch {
                 return null
             },
             get(target,key) {
+                let subproperties = target.propertyMap()[key]
+                if (subproperties && subproperties.length > 0) {
+                    return target[key].proxy
+                }
                 return target[key]
             }
         })
@@ -1315,6 +1330,20 @@ class Property {
             this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
         }
     }
+
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return target.allProperties
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                return target[key]
+            }
+        })
+    }
 }
 
 class Position extends Property {
@@ -1330,20 +1359,23 @@ class Position extends Property {
         this.previousX = previousX == undefined || Number.isNaN(previousX)?x:previousX
         this.previousY = previousY == undefined || Number.isNaN(previousY)?y:previousY
     }
+    get allProperties() {
+        return ["x","y"]
+    }
     get x(){
-        let algo = this._x
+        let innerValue = this._x
 
-        if (!algo) {
-            return algo
+        if (!innerValue) {
+            return innerValue
         }
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
           applyDelta: (input,min,max,ratio) => {
             this.basicApplyDelta(input,min,max,ratio,"x",undefined)
           },
@@ -1360,19 +1392,19 @@ class Position extends Property {
         this._x = value
     }
     get y(){
-        let algo = this._y
+        let innerValue = this._y
 
-        if (!algo) {
-            return algo
+        if (!innerValue) {
+            return innerValue
         }
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
           applyDelta: (input,min,max,ratio) => {
              this.basicApplyDelta(input,min,max,ratio,undefined,"y")
           },
@@ -1421,20 +1453,24 @@ class Size extends Property {
         this.previousHeight = previousHeight == undefined || Number.isNaN(previousHeight)?height:previousHeight
     }
 
-    get width(){
-        let algo = this._width
+    get allProperties() {
+        return ["width","height"]
+    }
 
-        if (!algo) {
-            return algo
+    get width(){
+        let innerValue = this._width
+
+        if (!innerValue) {
+            return innerValue
         }
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
           applyDelta: (input,min,max,ratio) => {
             this.basicApplyDelta(input,min,max,ratio,"width",undefined)
           },
@@ -1455,19 +1491,19 @@ class Size extends Property {
     }
 
     get height(){
-        let algo = this._height
+        let innerValue = this._height
 
-        if (!algo) {
-            return algo
+        if (!innerValue) {
+            return innerValue
         }
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
           applyDelta: (input,min,max,ratio) => {
             this.basicApplyDelta(input,min,max,ratio,undefined,"height")
           },
@@ -1505,6 +1541,10 @@ class Distance extends Property {
         return Math.sqrt( Math.pow(p1.x-p2.x,2) + Math.pow(p1.y-p2.y,2))
     }
 
+    get allProperties() {
+        return []
+    }
+
     [Symbol.toPrimitive](hint) {
         return this.value;
     }
@@ -1514,7 +1554,7 @@ class Distance extends Property {
     }
 
     toString() {
-        return "" + this.value
+        return this.value.toString()
     }
 
     toJSON() {
@@ -1537,30 +1577,30 @@ class Distance extends Property {
     }
 
     get distanceX() {
-        let algo = this.initialPoint.x - this.finalPoint.x
+        let innerValue = this.initialPoint.x - this.finalPoint.x
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
-          delta: () => algo - (this.initialPoint.previous.x - this.finalPoint.previous.x)
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
+          delta: () => innerValue - (this.initialPoint.previous.x - this.finalPoint.previous.x)
         }
     }
 
     get distanceY() {
-        let algo = this.initialPoint.y - this.finalPoint.y
+        let innerValue = this.initialPoint.y - this.finalPoint.y
 
         return {
           [Symbol.toPrimitive](hint) {
-            return algo;
+            return innerValue;
           },
-          valueOf: () => algo,
-          toString: () => "" + algo,
-          toJSON: () => algo,
-          delta: () => algo - (this.initialPoint.previous.y - this.finalPoint.previous.y)
+          valueOf: () => innerValue,
+          toString: () => innerValue.toString(),
+          toJSON: () => innerValue,
+          delta: () => innerValue - (this.initialPoint.previous.y - this.finalPoint.previous.y)
         }
     }
 }
@@ -1606,7 +1646,7 @@ class ShapeModel {
     }
 
     propertyMap() {
-        return {"position":["x","y"],"size":["width","height"],"color":[]}
+        return {"position":["x","y"],"size":["width","height"],"color":[],"top":[],"left":[],"width":[],"height":[]}
     }
 
     get allProperties() {
@@ -1623,16 +1663,28 @@ class ShapeModel {
             },
             get(target,key) {
                 if (key == "create") {
-                    let timestamp = (new Date()).getTime()
-                    let json = target.toJSON()
-                    json.isHidden = false
-                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,json).shapeModel
+                    if (globalStore.mobileCanvasVM) {
+                        let timestamp = (new Date()).getTime()
+                        let json = target.toJSON()
+                        json.isHidden = false
+                        return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,json).shapeModel
+                    } else {
+                        return target.proxy
+                    }
                 }
                 if (key == "destroy") {
-                    return globalStore.mobileCanvasVM.deleteShapeVM(target.id)
+                    if (globalStore.mobileCanvasVM) {
+                        return globalStore.mobileCanvasVM.deleteShapeVM(target.id).proxy
+                    } else {
+                        return target.proxy
+                    }
                 }
                 if (target.isVertexProperty(key)) {
-                    return target.vertexFor(key)
+                    return target.vertexFor(key).proxy
+                }
+                let subproperties = target.propertyMap()[key]
+                if (subproperties && subproperties.length > 0) {
+                    return target[key].proxy
                 }
                 return target[key]
             }
@@ -2144,7 +2196,7 @@ class PolygonModel extends ShapeModel {
     propertyMap() {
         let newPropertyMap = super.propertyMap()
         for (let key in this.vertices) {
-            newPropertyMap[key] = {"position":["x","y"]}
+            newPropertyMap[key] = {"position":["x","y"],"x":[],"y":[]}
         }
         return newPropertyMap
     }
@@ -2294,13 +2346,13 @@ class Vertex {
         return this.position.y.valueOf()
     }
     get x() {
-        return this.position.x + this.polygon.left
+        return this.position.shifted(this.polygon.left,0).x
     }
     set x(value) {
         this.position.x = value - this.polygon.left
     }
     get y() {
-        return this.position.y + this.polygon.top
+        return this.position.shifted(0,this.polygon.top).y
     }
     set y(value) {
         this.position.y = value - this.polygon.top
@@ -3239,7 +3291,6 @@ class StateMachine {
                 if (foundFunction) {
                     return foundFunction.func
                 }
-
                 return target[key]
             }
         });

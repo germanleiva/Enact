@@ -61,13 +61,14 @@ export default {
         },
         hardcodedValue() {
             if (this.object && this.propertyName) {
+                let value = this.object[this.propertyName]
                 if (this.extraPropertyName) {
+                    value = value[this.extraPropertyName]
                     if (this.subExtraPropertyName) {
-                        return JSON.stringify(this.object[this.propertyName][this.extraPropertyName][this.subExtraPropertyName])
+                        value = value[this.subExtraPropertyName]
                     }
-                    return JSON.stringify(this.object[this.propertyName][this.extraPropertyName])
                 }
-                return JSON.stringify(this.object[this.propertyName])
+                return JSON.stringify(value)
             }
             console.log("TextMark >> hardcodedValue")
             abort()
