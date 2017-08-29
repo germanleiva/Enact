@@ -1957,7 +1957,13 @@ class RectangleModel extends ShapeModel {
     toJSON(props=['color','top','left','width','height']) {
         let json = {}
         for (let eachKey of ['id','type','opacity','cornerRadius'].concat(props)) {
-            json[eachKey] = this[eachKey].valueOf()
+            let value = this[eachKey]
+            if (value == null || value == undefined) {
+                //Ok ...
+            } else {
+                value = value.valueOf()
+            }
+            json[eachKey] = value
         }
         return json
     }
