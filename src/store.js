@@ -31,6 +31,7 @@ export const globalBus = new Vue();
 
 export const globalStore = new Vue({
     data: {
+        socket: undefined,
         mobileCanvasVM: undefined,
         visualStates: [],
         deviceVisualState: undefined,
@@ -65,28 +66,18 @@ export const globalStore = new Vue({
     computed: {
         isDrawMode() {
             return this.toolbarState.rectangleMode || this.toolbarState.circleMode || this.toolbarState.polygonMode
-        },
-        socket() {
-            let address = window.location.href.split('/')[2]
-
-            //TODO check if putting this as a computed property is legit
-            // let newSocket = io.connect('http://localhost:3000')
-            let newSocket = io.connect(address)
-
-            if (address.includes("localhost")) {
-                //isServer
-                newSocket.on('message-from-device', function(data) {
-                    globalBus.$emit('message-from-device-'+data.type,data)
-                });
-            }
-            return newSocket
         }
     },
     methods: {
         refreshMobile() {
-            let firstStateShapes = globalStore.visualStates[0].shapesDictionary
-            for (let eachShapeId in firstStateShapes) {
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
+            //TODO This is not actually cleaning the mobile. Instantiated shapes are not deleted
+            for (let visualState of globalStore.visualStates) {
+                for (let shapeId in visualState.shapesDictionary) {
+                    let masterShape = visualState.shapesDictionary[eachShapeId]
+                    if (masterShape.masterVersion === undefined) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: shapeId, message: masterShape.toJSON() })
+                    }
+                }
             }
         },
         addVisualState(){
@@ -114,9 +105,6 @@ export const globalStore = new Vue({
             newVisualState.currentInputEvent = globalStore.inputEvents[correspondingIndex]
 
             return newVisualState
-        },
-        newShapeCreated(aShapeModel) {
-            this.stateMachine.addShape(aShapeModel)
         },
         setSelectionMode() {
             this.toolbarState.rectangleMode = false;
@@ -246,6 +234,19 @@ export const globalStore = new Vue({
             if (newValue == false) {
                 globalBus.$emit('polygonModeOff')
             }
+        }
+    },
+    created: function() {
+        let address = window.location.href.split('/')[2]
+
+        // let newSocket = io.connect('http://localhost:3000')
+        this.socket = io.connect(address)
+
+        if (address.includes("localhost")) {
+            //isServer
+            this.socket.on('message-from-device', function(data) {
+                globalBus.$emit('message-from-device-'+data.type,data)
+            });
         }
     }
 })
@@ -791,6 +792,7 @@ class VisualStateModel {
     changeProperty(shapeModel,propertyName,previousValue,newValue) {
         if (shapeModel.isFollowingMaster(propertyName) && shapeModel.areEqualValues(propertyName, previousValue, newValue)) {
             //Don't do anything, keep following master and do not propagate
+            logger("Don't do anything, keep following master and do not propagate")
         } else {
             shapeModel.changeOwnProperty(propertyName,newValue)
             if (this.nextState) {
@@ -835,7 +837,7 @@ class VisualStateModel {
                 for (let shapeKey in this.shapesDictionary) {
                     if (previousMeasure.from.id == shapeKey) {
                         //This VisualState has the starting Shape so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -844,7 +846,7 @@ class VisualStateModel {
                 for (let aMeasure of this.measures) {
                     if (previousMeasure.from.id == aMeasure.id) {
                         //This VisualState has the starting measure so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     }
                 }
                 break;
@@ -853,7 +855,7 @@ class VisualStateModel {
                 // if (this.currentInputEvent) {
                     // if (this.currentInputEvent.touches.some(aTouch => aTouch.id == previousMeasure.from.id)) {
                         //This VisualState has the starting event so we import the measure
-                        return this.addNewMeasureUntilLastState(undefined,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
+                        return this.addNewMeasureUntilLastState(previousMeasure.idCount,previousMeasure.from.type, previousMeasure.from.id, previousMeasure.from.handler, previousMeasure.to.type, previousMeasure.to.id, previousMeasure.to.handler, previousMeasure.cachedFinalPosition)
                     // }
                 // }
                 break;
@@ -878,7 +880,7 @@ class VisualStateModel {
         }
         newMeasure.idCount = idCount;
         result.push(newMeasure)
-        this.measures.push(newMeasure)
+        this.measures.push(newMeasure);console.log("ADDED MEASURE " + newMeasure.id)
         if (this.nextState) {
             let importedMeasures = this.nextState.importMeasureUntilLastVisualState(newMeasure)
             for (let anImportedMeasure of importedMeasures) {
@@ -968,6 +970,7 @@ class VisualStateModel {
         }
     }
     deleteShape(aShapeModel) {
+        let wasMasterShape = aShapeModel.masterVersion === undefined
         aShapeModel.unfollowMaster()
 
         let involvedMeasures = this.measures.filter(aMeasure => aMeasure.from.id == aShapeModel.id || aMeasure.to.id == aShapeModel.id)
@@ -993,10 +996,8 @@ class VisualStateModel {
         Vue.delete(this.shapesDictionary, aShapeModel.id)
             // this.shapesDictionary[aShapeModel.id] = undefined
 
-        if (globalStore.visualStates[0] === this) {
+        if (wasMasterShape) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
-        } else {
-            console.log("DELETED NOT FROM 1st VS")
         }
     }
     toggleHighlightForInvolvedElement(diffData, aBoolean) {
@@ -1244,6 +1245,64 @@ class Property {
     constructor() {
 
     }
+    basicApplyDelta(input,min,max,ratio,xProperty=undefined,yProperty=undefined) {
+        //'this' is the output
+        let deltaValue = input.delta()
+        let deltaX
+        let deltaY
+
+        if (typeof deltaValue == "number") {
+            if (xProperty && yProperty) {
+                //the delta is unidimensional and I need to apply to a 2D value
+                abort()
+                return
+            }
+            deltaX = deltaValue
+            deltaY = deltaValue
+        } else {
+            let {x:dx,y:dy} = deltaValue
+
+            deltaX = dx
+            deltaY = dy
+        }
+
+        if (deltaX == undefined && deltaY == undefined) {
+            console.log("Property >> applyDelta")
+            abort()
+            return
+        }
+
+        let ratioX = 1
+        let ratioY = 1
+        if (typeof ratio == "number") {
+            ratioX = ratioY = ratio
+        } else {
+            let {x:ratioX,y:ratioY} = ratio
+        }
+
+        let maxX = Number.POSITIVE_INFINITY
+        let maxY = Number.POSITIVE_INFINITY
+        if (typeof max == "number") {
+            maxX = maxY = max
+        } else {
+            let {x:maxX,y:maxY} = max
+        }
+
+        let minX = Number.NEGATIVE_INFINITY
+        let minY = Number.NEGATIVE_INFINITY
+        if (typeof min == "number") {
+            minX = minY = min
+        } else {
+            let {x:minX,y:minY} = min
+        }
+
+        if (xProperty) {
+            this[xProperty] = Math.max(Math.min(this[xProperty] + deltaX * ratioX, maxX), minX)
+        }
+        if (yProperty) {
+            this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
+        }
+    }
 }
 
 class Position extends Property {
@@ -1274,13 +1333,7 @@ class Position extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaX) {
-                deltaValue = deltaX
-            }
-
-            this.x += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,"x",undefined)
           },
           delta: () => this.x - this.previousX
         }
@@ -1309,13 +1362,7 @@ class Position extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaX,y:deltaY} = deltaValue
-            if (deltaY) {
-                deltaValue = deltaY
-            }
-
-            this.y += deltaValue
+             this.basicApplyDelta(input,min,max,ratio,undefined,"y")
           },
           delta: () => this.y - this.previousY
         }
@@ -1331,40 +1378,8 @@ class Position extends Property {
         return {x: this.previousX,y:this.previousY}
     }
 
-    applyDelta(input,min,max,ratio,onlyToX=false,onlyToY=false) {
-        let {x:deltaX,y:deltaY} = input.delta()
-
-        if (deltaX == undefined || deltaY == undefined) {
-            console.log("Position >> applyDelta")
-            abort()
-        }
-
-        let ratioX = 1
-        let ratioY = 1
-        if (typeof ratio == "number") {
-            ratioX = ratioY = ratio
-        } else {
-            let {ratioX,ratioY} = ratio
-        }
-
-        let maxX = Number.POSITIVE_INFINITY
-        let maxY = Number.POSITIVE_INFINITY
-        if (typeof max == "number") {
-            maxX = maxY = max
-        } else {
-            let {maxX,maxY} = max
-        }
-
-        let minX = Number.NEGATIVE_INFINITY
-        let minY = Number.NEGATIVE_INFINITY
-        if (typeof min == "number") {
-            minX = minY = min
-        } else {
-            let {minX,minY} = min
-        }
-
-        this.x = Math.max(Math.min(this.x + deltaX * ratioX, maxX), minX)
-        this.y = Math.max(Math.min(this.y + deltaY * ratioY, maxY), minY)
+    applyDelta(input,min,max,ratio) {
+        this.basicApplyDelta(input,min,max,ratio,"x","y")
     }
 
     delta() {
@@ -1409,13 +1424,7 @@ class Size extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaWidth,y:deltaHeight} = deltaValue
-            if (deltaWidth) {
-                deltaValue = deltaWidth
-            }
-
-            this.width += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,"width",undefined)
           },
           delta: () => this.width - this.previousWidth
         }
@@ -1448,13 +1457,7 @@ class Size extends Property {
           toString: () => "" + algo,
           toJSON: () => algo,
           applyDelta: (input,min,max,ratio) => {
-            let deltaValue = input.delta()
-            let {x:deltaWidth,y:deltaHeight} = deltaValue
-            if (deltaHeight) {
-                deltaValue = deltaHeight
-            }
-
-            this.height += deltaValue
+            this.basicApplyDelta(input,min,max,ratio,undefined,"height")
           },
           delta: () => this.height - this.previousHeight
         }
@@ -1473,49 +1476,7 @@ class Size extends Property {
     }
 
     applyDelta(input,min,max,ratio) {
-        let {x:deltaX,y:deltaY} = input.delta()
-
-        let ratioX = 1
-        let ratioY = 1
-        if (typeof ratio == "number") {
-            ratioX = ratioY = ratio
-        } else {
-            let {x:rx,y:ry} = ratio
-            if (!rx && !ry) {
-                abort()
-            }
-            ratioX = rx
-            ratioY = ry
-        }
-
-        let maxX = Number.POSITIVE_INFINITY
-        let maxY = Number.POSITIVE_INFINITY
-        if (typeof max == "number") {
-            maxX = maxY = max
-        } else {
-            let {x:mx,y:my} = max
-            if (!mx && !my) {
-                abort()
-            }
-            maxX = mx
-            maxY = my
-        }
-
-        let minX = Number.NEGATIVE_INFINITY
-        let minY = Number.NEGATIVE_INFINITY
-        if (typeof min == "number") {
-            minX = minY = min
-        } else {
-            let {x:mx,y:my} = min
-            if (!mx && !my) {
-                abort()
-            }
-            minX = mx
-            minY = my
-        }
-
-        this.width = Math.max(Math.min(this.width + deltaX * ratioX, maxX), minX)
-        this.height = Math.max(Math.min(this.height + deltaY * ratioY, maxY), minY)
+        this.basicApplyDelta(input,min,max,ratio,"width","height")
     }
 
     delta() {
@@ -1642,12 +1603,19 @@ class ShapeModel {
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return target.allProperties
+                return target.allProperties.concat(["create","destroy"])
             },
             getPrototypeOf(target) {
                 return null
             },
             get(target,key) {
+                if (key == "create") {
+                    let timestamp = (new Date()).getTime()
+                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,target.toJSON())
+                }
+                if (key == "destroy") {
+                    return globalStore.mobileCanvasVM.deleteShapeVM(target.id)
+                }
                 if (target.isVertexProperty(key)) {
                     return target.vertexFor(key)
                 }
@@ -1658,6 +1626,16 @@ class ShapeModel {
 
     isVertexProperty(prop) {
         return false
+    }
+
+    get isMaster() {
+        return this.masterVersion === undefined
+    }
+
+    sendToMobile(messageType="NEW_SHAPE",properties) {
+        if (this.isMaster) {
+            globalStore.socket.emit('message-from-desktop', { type: messageType, id: this.id, message: this.toJSON(properties) })
+        }
     }
 
     static createShape(shapeType,shapeId,protoShape) {
@@ -1952,6 +1930,14 @@ class ShapeModel {
     deselect() {
         this.isSelected = false
     }
+
+    create() {
+        globalBus.$emit("TEMPLATE_CREATE",this)
+    }
+
+    delete() {
+        globalBus.$emit("TEMPLATE_DELETE",this)
+    }
 }
 
 class RectangleModel extends ShapeModel {
@@ -1970,7 +1956,7 @@ class RectangleModel extends ShapeModel {
 
     toJSON(props=['color','top','left','width','height']) {
         let json = {}
-        for (let eachKey of ['id','type','opacity', 'cornerRadius'].concat(props)) {
+        for (let eachKey of ['id','type','opacity','cornerRadius'].concat(props)) {
             json[eachKey] = this[eachKey].valueOf()
         }
         return json
@@ -2026,20 +2012,18 @@ class PolygonModel extends ShapeModel {
 
     snapVertexPosition(plainPositionObject) {
         for (let eachVertex of Object.values(this.vertices)) {
-            if (Math.abs(plainPositionObject.x - eachVertex.position.x) < 5 && Math.abs(plainPositionObject.y - eachVertex.position.y) < 5) {
-                plainPositionObject.x = eachVertex.position.x.valueOf()
-                plainPositionObject.y = eachVertex.position.y.valueOf()
+            if (Math.abs(plainPositionObject.x - eachVertex.x) < 5 && Math.abs(plainPositionObject.y - eachVertex.y) < 5) {
+                plainPositionObject.x = eachVertex.x.valueOf()
+                plainPositionObject.y = eachVertex.y.valueOf()
                 return
             }
         }
     }
 
     prepareForDeletion() {
-        //Nothing to clean, the vertex doesn't know the Polygon
-
-        // for (let vertex of this._vertices) {
-        //     vertex.shape = undefined
-        // }
+        for (let vertex of Object.values(this._vertices)) {
+            vertex.prepareForDeletion()
+        }
     }
     get handlers() {
         return this.vertices
@@ -2058,7 +2042,7 @@ class PolygonModel extends ShapeModel {
             // changes.push('Changed size from ' + JSON.stringify(this.size) + ' to ' + JSON.stringify(nextShapeWithTheSameModel.size))
             changes.push({ id: this.id, name: this.name, type: 'shape', property: { name: "size", before: this.size, after: nextShapeWithTheSameModel.size } })
         }
-        for (let i of this.vertexIndexes) {
+        for (let i of this.vertexNames) {
             if (!nextShapeWithTheSameModel.isFollowingMaster(i) && !this.areEqualValues(i, this.vertexFor(i), nextShapeWithTheSameModel.vertexFor(i))) {
                 changes.push({ id: this.id, name: this.name, type: 'shape', property:{ name: "vertex", before: this.vertexFor(i), after: nextShapeWithTheSameModel.vertexFor(i) } })
             }
@@ -2066,12 +2050,12 @@ class PolygonModel extends ShapeModel {
 
         return changes
     }
-    get vertexIndexes() {
+    get vertexNames() {
         return [...Array(this.amountOfVertices).keys()].map((i) => "V"+i)
     }
     get vertices() {
         let result = {}
-        for (let vertexKey of this.vertexIndexes) {
+        for (let vertexKey of this.vertexNames) {
             result[vertexKey] = this.vertexFor(vertexKey)
         }
         return result
@@ -2097,7 +2081,7 @@ class PolygonModel extends ShapeModel {
         if (!vertexId) {
             vertexId = "V"+this.amountOfVertices
         }
-        let newVertex = new Vertex(vertexId,canvasPosition)
+        let newVertex = new Vertex(this,vertexId,canvasPosition)
         Vue.set(this._vertices,vertexId,newVertex)
         Vue.set(this,vertexId,newVertex)
     }
@@ -2125,7 +2109,7 @@ class PolygonModel extends ShapeModel {
     setOwnPropertiesFromMaster(property) {
         if (this.isVertexProperty(property)) {
             // Vue.set(target,key,value)
-            Vue.set(this._vertices,property,new Vertex(property,this.vertexFor(property)))
+            Vue.set(this._vertices,property,new Vertex(this,property,this.vertexFor(property)))
             // this._vertices[property] = new Vertex(this,this.vertexFor(property))
         } else {
             super.setOwnPropertiesFromMaster(property)
@@ -2155,18 +2139,27 @@ class PolygonModel extends ShapeModel {
     }
     changeOwnProperty(changedPropertyName,changedValue) {
         if (this.isVertexProperty(changedPropertyName)) {
-            //It's a number => It's a vertex
+            //It's a vertex
             let correspondingVertex = this._vertices[changedPropertyName]
             if (!correspondingVertex) {
                 // Vue.set(target,key,value)
-                Vue.set(this._vertices,changedPropertyName,new Vertex(changedPropertyName,changedValue))
-                // this._vertices[changedPropertyName] = new Vertex(this,changedValue)
+                Vue.set(this._vertices,changedPropertyName,new Vertex(this,changedPropertyName,changedValue))
             } else {
                 correspondingVertex.x = changedValue.x
                 correspondingVertex.y = changedValue.y
             }
         } else {
             super.changeOwnProperty(changedPropertyName,changedValue)
+
+            if (changedPropertyName == "position") {
+                //If we change position, let's create our own vertices
+                for (let vertexName of this.vertexNames) {
+                    if (this.isFollowingMaster(vertexName)) {
+                        let protoVertex = this.vertexFor(vertexName)
+                        Vue.set(this._vertices,vertexName,new Vertex(this,vertexName,{x:protoVertex.relativeX,y:protoVertex.relativeY}))
+                    }
+                }
+            }
         }
     }
     valueForProperty(property) {
@@ -2184,13 +2177,26 @@ class PolygonModel extends ShapeModel {
             return super.areEqualValues(property, value1, value2)
         }
     }
-    toJSON() {
-        let verticesJSON = {}
-        for (let eachVertexKey in this.vertices) {
-            let eachVertex = this.vertices[eachVertexKey]
-            verticesJSON[eachVertexKey] = eachVertex.toJSON()
+    toJSON(properties = ['color','position','vertices']) {
+        let json = {id:this.id,type:this.type}
+
+        if (properties.includes('color')) {
+            json.color = this.color
         }
-        return {id:this.id,type: this.type, color:this.color,position:{x:this.position.x,y:this.position.y},vertices:verticesJSON}
+
+        if (properties.includes('position')) {
+            json.position = {x:this.position.x,y:this.position.y}
+        }
+
+        if (properties.includes('vertices')) {
+            json.vertices = {}
+            for (let eachVertexKey in this.vertices) {
+                let eachVertex = this.vertices[eachVertexKey]
+                json.vertices[eachVertexKey] = eachVertex.toJSON()
+            }
+        }
+
+        return json
     }
     fromJSON(json) {
             // this.id = json.id
@@ -2208,55 +2214,82 @@ class PolygonModel extends ShapeModel {
         if (json.vertices) {
             for (let vertexKey in json.vertices) {
                 let eachJSONVertex = json.vertices[vertexKey]
+                let shouldCreate = false
                 let vertex = this.vertexFor(eachJSONVertex.id)
-                if (vertex && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
-                    //Do i actually has the vertex or was I following master?
+
+                if (!vertex) {
+                    shouldCreate = true
+                }
+
+                if (!shouldCreate && !this.areEqualValues(vertexKey,vertex,eachJSONVertex)) {
                     let vertex = this._vertices[vertexKey]
+                    //Do i actually has the vertex or was I following master?
                     if (vertex) {
                         //I actually has a vertex
                         vertex.x = eachJSONVertex.x
                         vertex.y = eachJSONVertex.y
                     } else {
-                        this.addVertex(eachJSONVertex,eachJSONVertex.id)
+                        shouldCreate = true
                     }
-                } else {
+                }
+
+                if (shouldCreate) {
                     this.addVertex(eachJSONVertex,eachJSONVertex.id)
                     // Vue.set(this._vertices,eachJSONVertex.id,new Vertex(eachJSONVertex.id,eachJSONVertex))
                 }
+
             }
         }
+    }
+
+    positionOfHandler(handlerName) {
+        let vertex = this.vertexFor(handlerName)
+        if (vertex) {
+            return {x: vertex.x, y: vertex.y}
+        }
+        return undefined
     }
 }
 
 class Vertex {
-    constructor(id,{x:canvasX,y:canvasY}) {
+    constructor(polygon,id,{x:canvasX,y:canvasY}) {
+        this.polygon = polygon
         this.id = id
         this.position = new Position(canvasX,canvasY)
         this.highlight = false
     }
+    get relativeX() {
+        return this.position.x.valueOf()
+    }
+    get relativeY() {
+        return this.position.y.valueOf()
+    }
     get x() {
-        return this.position.x
+        return this.position.x + this.polygon.left
     }
     set x(value) {
-        this.position.x = value
+        this.position.x = value - this.polygon.left
     }
     get y() {
-        return this.position.y
+        return this.position.y + this.polygon.top
     }
     set y(value) {
-        this.position.y = value
+        this.position.y = value - this.polygon.top
     }
     top(aShape) {
-        return this.y + aShape.position.y
+        return this.y
     }
     left(aShape) {
-        return this.x + aShape.position.x
+        return this.x
     }
     get namePrefix() {
         return this.id
     }
     toJSON() {
         return {id:this.id,x:this.x,y:this.y}
+    }
+    prepareForDeletion() {
+        this.polygon = undefined
     }
 }
 
@@ -3310,14 +3343,6 @@ class StateMachine {
 
     sendToMobile(){
         //TODO We need to send the shapes, the measures, the touches and the functions (the functions should include the hardcoded values)
-    }
-
-    addShape(aShape) {
-        // this.shapes.push(aShape);
-
-        if (this.isServer) {
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: aShape.toJSON() })
-        }
     }
 
     addMeasure(aMeasure) {

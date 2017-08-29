@@ -110,20 +110,6 @@ export default {
     destroyed: function() {
         console.log("WE DESTROYED MEASURE")
     },
-    // watch: {
-    //     styleObject: function(val) {
-    //         if (this.shapeModel()) {
-    //             // console.log("IN COMPUTED styleObject the shapeModel().color is "+ this.shapeModel().color)
-
-    //             if (globalStore.visualStates[0] === this.visualState) {
-    //                 globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", message: { id: this.shapeModel().id, color: this.shapeModel().color, width: this.shapeModel().width, height: this.shapeModel().height, top: this.shapeModel().top, left: this.shapeModel().left, opacity: this.shapeModel().opacity } })
-    //            }
-    //         } else {
-    //             //I WAS DELETED
-    //             console.log("Should i worry? " + this.shapeModelId)
-    //         }
-    //     }
-    // },
     methods: {
         onMouseOver(e) {
             // console.log("Distance >> onMouseOver")
