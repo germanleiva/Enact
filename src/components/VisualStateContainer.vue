@@ -197,10 +197,7 @@ export default {
             event.preventDefault();
             console.log("dropMirrorMobile")
 
-            //TODO AWFUL!!!
-            let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
-
-            globalStore.insertVisualStateAfter(currentDeviceVisualState.shapesDictionary,this.visualStateModel)
+            globalStore.insertVisualStateAfter(globalStore.deviceVisualState,this.visualStateModel)
         },
         allowDropMirrorMobile(event) {
             var dataType = event.dataTransfer.types;

@@ -115,9 +115,7 @@ export default {
             let newMeasure = presentAndFutureMeasures[0]
 
             //Let's add the measure to the deviceVisualState
-            //TODO AWFUL!!! Can we avoid talking with root?
-            let currentDeviceVisualState = this.$root.$children[0].deviceVisualState
-            let aDeviceMeasure = currentDeviceVisualState.addNewMeasureUntilLastState(newMeasure.idCount,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
+            let aDeviceMeasure = globalStore.deviceVisualState.addNewMeasureUntilLastState(newMeasure.idCount,fromEntityType,fromId,fromHandlerName,undefined,undefined,undefined, sharedCachedFinalPosition)[0]
             presentAndFutureMeasures.push(aDeviceMeasure)
 
             var mouseMoveHandler

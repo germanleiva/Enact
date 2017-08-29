@@ -70,15 +70,34 @@ export default {
             return !this.isTestShape && globalStore.toolbarState.measureMode
         },
         styleObject: function() {
-            let testColor = tinyColor(this.shapeModel.color).setAlpha(0.1)
+            let color = this.shapeModel.color
+
+            if (this.isTestShape) {
+                color = tinyColor(color).setAlpha(0.1)
+            }
+
+            if (this.shapeModel.isHidden) {
+                color = 'rgba(0,0,0,0)'
+            }
+
+            let border = '1px solid #cccccc'
+
+            if (this.isTestShape) {
+                border = '2px dotted #ff8800'
+            }
+
+            if (this.shapeModel.isHidden) {
+                border = '2px dotted #999'
+            }
+
             return {
-                'backgroundColor': this.isTestShape? testColor: this.shapeModel.color,
+                'backgroundColor': color,
                 'position': 'absolute',
                 'left': this.shapeModel.left + 'px',
                 'top': this.shapeModel.top + 'px',
                 'width': this.shapeModel.width /*+ border*/ + 'px',
                 'height': this.shapeModel.height /*+ border*/ + 'px',
-                'border': this.isTestShape? '2px dotted #ff8800':'1px solid #cccccc',
+                'border': border,
                 'overflow': 'visible',
                 'opacity': '1',
                 'borderRadius': this.shapeModel.cornerRadius,
@@ -142,7 +161,8 @@ export default {
         let propertyDictionary = {'position':['left','top'],'color':['color'],'size':['width','height']}
         for (let key in propertyDictionary) {
             this.$watch(`shapeModel.${key}`, function (newVal, oldVal) {
-                this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key])
+                let isHidden = globalStore.visualStates[0] != this.parentVisualState
+                this.shapeModel.sendToMobile("EDIT_SHAPE",propertyDictionary[key],isHidden)
             },{deep:true});
         }
     },

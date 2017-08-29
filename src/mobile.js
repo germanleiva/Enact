@@ -80,6 +80,7 @@ let mobileCanvasVM = new Vue({
             document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
             shapeVMToDelete.$destroy()
             delete this.interactiveShapes[id]
+            return shapeVMToDelete.shapeModel
         }
     },
     mounted: function() {
@@ -178,7 +179,7 @@ let RectangleVM = Vue.extend({
                     'height': this.shapeModel.size.height + 'px',
                     'border': '1px solid #cccccc',
                     'overflow': 'visible',
-                    'opacity': this.shapeModel.opacity,
+                    'opacity': this.shapeModel.isHidden?0:this.shapeModel.opacity,
                     'position': 'absolute'
                 }
             }

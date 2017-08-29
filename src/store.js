@@ -151,7 +151,8 @@ export const globalStore = new Vue({
                 eachVisualState.deselectShapes()
             }
         },
-        insertVisualStateAfter(aShapeDictionary,previousVisualState) {
+        insertVisualStateAfter(insertedVisualState,previousVisualState) {
+            let aShapeDictionary = insertedVisualState.shapesDictionary
             var newVisualState = new VisualStateModel()
 
             for (let eachShapeKey in aShapeDictionary) {
@@ -166,7 +167,7 @@ export const globalStore = new Vue({
                 // clonedShapeModel.width = referenceShape.width
                 // clonedShapeModel.height = referenceShape.height
                 //Cheating to account for rectangles and polygons
-                clonedShapeModel.fromJSON(referenceShape)
+                clonedShapeModel.fromJSON(referenceShape.toJSON())
             }
 
             let previousVisualStateIndex = this.visualStates.indexOf(previousVisualState)
@@ -1566,6 +1567,7 @@ class ShapeModel {
             this.cornerRadius = cornerRadius;
         }
 
+        this.isHidden = false
         this._color = aColor
         // this._position = {
         //     x: left,
@@ -1611,7 +1613,7 @@ class ShapeModel {
             get(target,key) {
                 if (key == "create") {
                     let timestamp = (new Date()).getTime()
-                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,target.toJSON())
+                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,target.toJSON()).shapeModel
                 }
                 if (key == "destroy") {
                     return globalStore.mobileCanvasVM.deleteShapeVM(target.id)
@@ -1632,9 +1634,13 @@ class ShapeModel {
         return this.masterVersion === undefined
     }
 
-    sendToMobile(messageType="NEW_SHAPE",properties) {
+    sendToMobile(messageType="NEW_SHAPE",properties,isHidden=false) {
         if (this.isMaster) {
-            globalStore.socket.emit('message-from-desktop', { type: messageType, id: this.id, message: this.toJSON(properties) })
+            let message = this.toJSON(properties)
+            if (isHidden) {
+                message.isHidden = true
+            }
+            globalStore.socket.emit('message-from-desktop', { type: messageType, id: this.id, message: message })
         }
     }
 
@@ -1956,7 +1962,7 @@ class RectangleModel extends ShapeModel {
 
     toJSON(props=['color','top','left','width','height']) {
         let json = {}
-        for (let eachKey of ['id','type','opacity','cornerRadius'].concat(props)) {
+        for (let eachKey of ['id','type','isHidden','opacity','cornerRadius'].concat(props)) {
             let value = this[eachKey]
             if (value == null || value == undefined) {
                 //Ok ...
@@ -1971,14 +1977,14 @@ class RectangleModel extends ShapeModel {
     fromJSON(json) {
         //     this.id = json.id
         //     this.type = json.type
-        for (let eachKey of ['color','top','left','width','height','opacity','cornerRadius']) {
+        for (let eachKey of ['color','top','left','width','height','isHidden','opacity','cornerRadius']) {
             if (json.hasOwnProperty(eachKey)) {
                 if (this.valueForProperty(eachKey) != json[eachKey]) {
-                    // console.log("RectangleModel >> fromJSON, NOT ignoring " + eachKey + " " + json[eachKey])
+                    // console.log("RectangleModel >> fromJSON, NOT ignoring " + eachKey + " " + json[eachKey] + " (" + this.valueForProperty(eachKey) + ")")
                     this[eachKey] = json[eachKey]
-                }// else {
-                    // console.log("RectangleModel >> fromJSON, ignoring " + eachKey + " " + json[eachKey])
-                // }
+                } else {
+                    // console.log("RectangleModel >> fromJSON, ignoring " + eachKey + " " + json[eachKey] + " (" + this.valueForProperty(eachKey) + ")")
+                }
             }
         }
     }
@@ -2184,7 +2190,7 @@ class PolygonModel extends ShapeModel {
         }
     }
     toJSON(properties = ['color','position','vertices']) {
-        let json = {id:this.id,type:this.type}
+        let json = {id:this.id,type:this.type,isHidden: this.isHidden}
 
         if (properties.includes('color')) {
             json.color = this.color
@@ -2207,6 +2213,9 @@ class PolygonModel extends ShapeModel {
     fromJSON(json) {
             // this.id = json.id
             // this.type = json.type
+        if (json.isHidden) {
+            this.isHidden = json.isHidden
+        }
         if (json.color) {
             if (!this.areEqualValues("color",this.color,json.color)) {
                 this.changeOwnProperty("color",json.color)
