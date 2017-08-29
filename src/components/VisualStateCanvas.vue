@@ -266,7 +266,7 @@ export default {
                     }
                     this.currentPolygon = newShapeModel
 
-                    if (globalStore.visualStates[0] === this.visualStateModel) {
+                    if (newShapeModel.masterVersion === undefined) {
                         globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShapeModel.toJSON() })
                     }
                 }

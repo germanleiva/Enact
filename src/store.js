@@ -31,6 +31,7 @@ export const globalBus = new Vue();
 
 export const globalStore = new Vue({
     data: {
+        socket: undefined,
         mobileCanvasVM: undefined,
         visualStates: [],
         deviceVisualState: undefined,
@@ -65,29 +66,18 @@ export const globalStore = new Vue({
     computed: {
         isDrawMode() {
             return this.toolbarState.rectangleMode || this.toolbarState.circleMode || this.toolbarState.polygonMode
-        },
-        socket() {
-            let address = window.location.href.split('/')[2]
-
-            //TODO check if putting this as a computed property is legit
-            // let newSocket = io.connect('http://localhost:3000')
-            let newSocket = io.connect(address)
-
-            if (address.includes("localhost")) {
-                //isServer
-                newSocket.on('message-from-device', function(data) {
-                    globalBus.$emit('message-from-device-'+data.type,data)
-                });
-            }
-            return newSocket
         }
     },
     methods: {
         refreshMobile() {
             //TODO This is not actually cleaning the mobile. Instantiated shapes are not deleted
-            let firstStateShapes = globalStore.visualStates[0].shapesDictionary
-            for (let eachShapeId in firstStateShapes) {
-                globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: eachShapeId, message: firstStateShapes[eachShapeId].toJSON() })
+            for (let visualState of globalStore.visualStates) {
+                for (let shapeId in visualState.shapesDictionary) {
+                    let masterShape = visualState.shapesDictionary[eachShapeId]
+                    if (masterShape.masterVersion === undefined) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_SHAPE", id: shapeId, message: masterShape.toJSON() })
+                    }
+                }
             }
         },
         addVisualState(){
@@ -244,6 +234,19 @@ export const globalStore = new Vue({
             if (newValue == false) {
                 globalBus.$emit('polygonModeOff')
             }
+        }
+    },
+    created: function() {
+        let address = window.location.href.split('/')[2]
+
+        // let newSocket = io.connect('http://localhost:3000')
+        this.socket = io.connect(address)
+
+        if (address.includes("localhost")) {
+            //isServer
+            this.socket.on('message-from-device', function(data) {
+                globalBus.$emit('message-from-device-'+data.type,data)
+            });
         }
     }
 })
@@ -967,6 +970,7 @@ class VisualStateModel {
         }
     }
     deleteShape(aShapeModel) {
+        let wasMasterShape = aShapeModel.masterVersion === undefined
         aShapeModel.unfollowMaster()
 
         let involvedMeasures = this.measures.filter(aMeasure => aMeasure.from.id == aShapeModel.id || aMeasure.to.id == aShapeModel.id)
@@ -992,10 +996,8 @@ class VisualStateModel {
         Vue.delete(this.shapesDictionary, aShapeModel.id)
             // this.shapesDictionary[aShapeModel.id] = undefined
 
-        if (globalStore.visualStates[0] === this) {
+        if (wasMasterShape) {
             globalStore.socket.emit('message-from-desktop', { type: "DELETE_SHAPE", message: { id: aShapeModel.id } })
-        } else {
-            console.log("DELETED NOT FROM 1st VS")
         }
     }
     toggleHighlightForInvolvedElement(diffData, aBoolean) {
@@ -1601,12 +1603,19 @@ class ShapeModel {
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return target.allProperties
+                return target.allProperties.concat(["create","destroy"])
             },
             getPrototypeOf(target) {
                 return null
             },
             get(target,key) {
+                if (key == "create") {
+                    let timestamp = (new Date()).getTime()
+                    return globalStore.mobileCanvasVM.createShapeVM(target.id+'-'+timestamp,target.toJSON())
+                }
+                if (key == "destroy") {
+                    return globalStore.mobileCanvasVM.deleteShapeVM(target.id)
+                }
                 if (target.isVertexProperty(key)) {
                     return target.vertexFor(key)
                 }

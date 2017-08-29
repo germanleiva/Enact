@@ -135,7 +135,7 @@ export default {
                                 newVisualState.nextState.didCreateShape(newShape, newVisualState);
                             }
 
-                            if (globalStore.visualStates[0] === newVisualState) {
+                            if (newShape.masterVersion === undefined) {
                                 globalStore.socket.emit('message-from-desktop', { type: "NEW_SHAPE", message: newShape.toJSON() })
                             }
                         } else {
