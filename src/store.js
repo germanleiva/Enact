@@ -241,7 +241,16 @@ export const globalStore = new Vue({
             if (newValue == false) {
                 globalBus.$emit('polygonModeOff')
             }
-        }
+        },
+        // 'stateMachine.hardcodedValues': function(newValue,oldValue) {
+        //     //Find differences
+        //     for (let newHardcodedValue of newValue) {
+        //         if (oldValue.every(v => v.visualStateId != newHardcodedValue.visualStateId && v.path != newHardcodedValue.path && v.value != newHardcodedValue.value)) {
+        //             //Then it is actually new
+        //             globalStore.socket.emit('message-from-desktop', { type: "EDIT_HARDCODED_VALUE", message: JSON.stringify(newHardcodedValue) })
+        //         }
+        //     }
+        // }
     },
     created: function() {
         let address = window.location.href.split('/')[2]
@@ -3226,7 +3235,7 @@ class StateMachine {
         this.firstState = undefined;
 
         this.isServer = isServer
-        // this.hardcodedValues = {}
+        this.hardcodedValues = []
 
         let self = this;
         this.globalScope = new Proxy({}, {
@@ -3332,6 +3341,10 @@ class StateMachine {
         for (let transition of this.transitions) {
             result.transitions.push(transition.toJSONString())
         }
+        result.hardcodedValues = []
+        for (let hardcodedValue of this.hardcodedValues) {
+            result.hardcodedValues.push(hardcodedValue.toJSON())
+        }
         return result
     }
 
@@ -3357,6 +3370,79 @@ class StateMachine {
             eval(`transitionDesc = ${transitionString}`);
             this.insertNewTransition(transitionDesc)
         }
+
+        for (let hardcodedValueString of json.hardcodedValues) {
+            this.addHardcodedValue(JSON.stringify(hardcodedValueString))
+        }
+    }
+
+    addHardcodedValueFor({visualStateId,objectId,propertyName,extraPropertyName,subExtraPropertyName}) {
+        // let existingHardcodedValue = this.hardcodedValues.find(v => v.visualStateId == visualStateId && v.objectId == objectId && v.propertyName == propertyName && v.extraPropertyName == extraPropertyName && v.subExtraPropertyName == subExtraPropertyName)
+
+        // if (!existingHardcodedValue) {
+            let activeValue = new Vue({
+                data: function() {
+                    return {
+                        visualStateId: visualStateId,
+                        objectId: objectId,
+                        propertyName: propertyName,
+                        extraPropertyName: extraPropertyName,
+                        subExtraPropertyName: subExtraPropertyName,
+                    }
+                },
+                computed: {
+                    object() {
+                        let parentVisualState = globalStore.visualStates.find(vs => vs.name == this.visualStateId)
+                        return parentVisualState.objectFor(this.objectId)
+                    },
+                    value() {
+                        let value = this.object[this.propertyName]
+                        if (this.extraPropertyName) {
+                            value = value[this.extraPropertyName]
+                            if (this.subExtraPropertyName) {
+                                value = value[this.subExtraPropertyName]
+                            }
+                        }
+                        return JSON.stringify(value)
+                    }
+                },
+                methods: {
+                    sendValueToMobile(aValue) {
+                        let path = this.objectId
+                        if (this.propertyName) {
+                            path += "." + this.propertyName
+                        }
+                        if (this.extraPropertyName) {
+                            path += "." + this.extraPropertyName
+                        }
+                        if (this.subExtraPropertyName) {
+                            path += "." + this.subExtraPropertyName
+                        }
+
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_HARDCODED_VALUE", message: JSON.stringify({visualStateId:this.visualStateId, path: path, value: aValue}) })
+                    }
+                },
+                watch: {
+                    'value': function(newValue,oldValue) {
+                        this.sendValueToMobile(newValue)
+                    }
+                },
+                created() {
+                    this.sendValueToMobile(this.value)
+                }
+            })
+            this.hardcodedValues.push(activeValue)
+            return activeValue
+            // existingHardcodedValue = activeValue
+        // }
+
+        // return existingHardcodedValue
+    }
+
+    deleteHardcodedValue(activeValue) {
+        activeValue.$destroy()
+        this.hardcodedValues.remove(activeValue)
+        // globalStore.socket.emit('message-from-desktop', { type: "DELETE_HARDCODED_VALUE", message: JSON.stringify(existingHardcodedValue) })
     }
 
     deleteYourself() {

@@ -7,6 +7,10 @@
         <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers || eachHandler.highlight" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler"></div>
         <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.vertices" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
         </div>
+<!--         <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
+            <div draggable="true" @dragstart="dragPositionY" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionYStyleObject">{{shapeModel.top}}px</div>
+            <div draggable="true" @dragstart="dragPositionX" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionXStyleObject">{{shapeModel.left}}px</div>
+        </div> -->
     </div>
 </template>
 <script>

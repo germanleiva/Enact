@@ -15,7 +15,8 @@ export default {
     props: ['visualStateId','objectId','propertyName','extraPropertyName','subExtraPropertyName'],
     data: function() {
         return {
-            textMarkerModel: undefined
+            textMarkerModel: undefined,
+            activeValue: undefined
         }
     },
     computed: {
@@ -60,7 +61,7 @@ export default {
             return parentVisualState.objectFor(this.objectId)
         },
         hardcodedValue() {
-            if (this.object && this.propertyName) {
+            if (this.visualStateId && this.object && this.propertyName) {
                 let value = this.object[this.propertyName]
                 if (this.extraPropertyName) {
                     value = value[this.extraPropertyName]
@@ -114,45 +115,19 @@ export default {
         doubleClick: function(e) {
             this.toggleObjects(false)
             this.textMarkerModel.clear()
-        },
-        sendToMobileHardcodedValue: _.debounce(
-            function () {
-                if (this.objectId) {
-                    let path = this.objectId
-                    if (this.propertyName) {
-                        path += "." + this.propertyName
-                    }
-                    if (this.extraPropertyName) {
-                        path += "." + this.extraPropertyName
-                    }
-                    if (this.subExtraPropertyName) {
-                        path += "." + this.subExtraPropertyName
-                    }
-
-                    let dataToSend = {visualStateId:this.visualStateId, path: path, value: this.hardcodedValue}
-
-                    globalStore.socket.emit('message-from-desktop', { type: "NEW_HARDCODED_VALUE", message: JSON.stringify(dataToSend) })
-                }
-            },
-        // This is the number of milliseconds we wait for the
-        // user to stop typing.
-        300)
-    },
-    watch: {
-        codeToShow: function() {
-            if (this.visualStateId) {
-                this.sendToMobileHardcodedValue()
-            }
         }
     },
     mounted: function() {
-        if (this.visualStateId) {
-            this.sendToMobileHardcodedValue()
+        if (this.visualStateId && this.object && this.propertyName) {
+            this.activeValue = globalStore.stateMachine.addHardcodedValueFor({visualStateId:this.visualStateId,objectId:this.objectId,propertyName:this.propertyName,extraPropertyName:this.extraPropertyName,subExtraPropertyName:this.subExtraPropertyName})
         }
     },
     destroyed: function(){
         console.log("TextMark destroyed")
         this.textMarkerModel.clear();
+        if (this.visualStateId && this.object && this.propertyName) {
+            globalStore.stateMachine.deleteHardcodedValue(this.activeValue)
+        }
     }
 }
 </script>

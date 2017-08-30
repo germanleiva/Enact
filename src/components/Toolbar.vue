@@ -104,7 +104,7 @@ export default {
                 globalStore.measureCounter = json.measureCounter;
                 globalStore.stateCounter = json.stateCounter;
                 globalStore.transitionCounter = json.transitionCounter;
-                globalStore.functionCounte = json.functionCounter;
+                globalStore.functionCounter = json.functionCounter;
 
                 globalStore.toolbarState.currentColor = json.currentColor;
 

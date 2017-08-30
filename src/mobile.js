@@ -340,8 +340,8 @@ globalStore.socket.on('message-from-server', function(data) {
 
             break;
         }
-        case "NEW_HARDCODED_VALUE":{
-            console.log(`NEW_HARDCODED_VALUE: ${data.message}`);
+        case "EDIT_HARDCODED_VALUE":{
+            console.log(`EDIT_HARDCODED_VALUE: ${data.message}`);
             let {visualStateId,path,value} = JSON.parse(data.message)
 
             let hardcodedValue = mobileCanvasVM.hardcodedValues[visualStateId]
@@ -366,6 +366,50 @@ globalStore.socket.on('message-from-server', function(data) {
                     }
                     currentObject = newObject
                 }
+            }
+
+            break;
+        }
+        case "DELETE_HARDCODED_VALUE": {
+            console.log(`DELETE_HARDCODED_VALUE: ${data.message}`);
+
+            let {visualStateId,path,value} = JSON.parse(data.message)
+
+            let visitedObjectsToDelete = []
+
+            let hardcodedValue = mobileCanvasVM.hardcodedValues[visualStateId]
+            if (!hardcodedValue) {
+                console.log("Deleting a value that I don't have ...")
+                return
+            }
+
+            let keys = path.split('.')
+            let currentObject = hardcodedValue
+debugger;
+            if (Object.values(currentObject).length == 1) {
+                visitedObjectsToDelete.push({object:mobileCanvasVM.hardcodedValues,key:visualStateId})
+            }
+
+            for (var i = 0; i < keys.length; i++) {
+                let key = keys[i]
+
+                if (i == keys.length - 1) {
+                    //Last key in the path, let's insert the value
+                    Vue.delete(currentObject,key)
+                } else {
+                    let newObject = currentObject[key]
+                    if (!newObject) {
+                        console.log("Pretty sure this shouldn't happen")
+                    }
+                    if (Object.values(newObject).length == 1) {
+                        visitedObjectsToDelete.push({object:currentObject,key:key})
+                    }
+                    currentObject = newObject
+                }
+            }
+
+            for (let {object,key} of visitedObjectsToDelete.reverse()) {
+                Vue.delete(object,key)
             }
 
             break;
