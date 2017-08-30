@@ -212,7 +212,7 @@ export default {
             if (this.isMirror) {
                 return
             }
-            e.preventDefault()
+            // e.preventDefault() //TODO CHECK if removing this as side-effects, removed for drag position/width
             if (globalStore.isDrawMode) {
                 this.drawingStarted(e);
             } else if (globalStore.toolbarState.selectionMode) {

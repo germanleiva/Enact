@@ -2001,14 +2001,6 @@ class ShapeModel {
     deselect() {
         this.isSelected = false
     }
-
-    create() {
-        globalBus.$emit("TEMPLATE_CREATE",this)
-    }
-
-    delete() {
-        globalBus.$emit("TEMPLATE_DELETE",this)
-    }
 }
 
 class RectangleModel extends ShapeModel {

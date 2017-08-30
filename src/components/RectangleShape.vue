@@ -1,19 +1,20 @@
 <template>
-    <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult">
-        <div v-show="shapeModel.highlight" v-bind:style="overlayStyleObject">
+    <div>
+        <div :id="shapeModel.id" v-bind:style="styleObject" v-on:mousedown="mouseDownStartedOnShape" v-on:mouseover.prevent="isHovered = true" v-on:mouseout.prevent="isHovered = false" v-on:drop="dropForShape" v-on:dragover="dragOverForShape" v-on:dragenter="shapeModel.highlight = true" v-on:dragleave="shapeModel.highlight = false" v-show="!isTestShape || !testResult">
+            <div v-if="shapeModel.highlight" v-bind:style="overlayStyleObject">
+            </div>
+            <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
+            </div>
+            <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
+            </div>
         </div>
-        <div ref="handlerElements" v-for="eachHandler in shapeModel.handlers" v-if="shouldShowHandlers" :id="eachHandler.namePrefix + '-' + shapeModel.id" :style="handlerStyleObject(eachHandler)" @mousedown="mouseDownStartedOnHandler">
+        <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
+            <div draggable="true" @dragstart="dragPositionY" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionYStyleObject">{{shapeModel.top}}px</div>
+            <div draggable="true" @dragstart="dragPositionX" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
-        <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
-        </div>
-        <div :style="positionStyleObject" v-if="shouldShowHandlers || shapeModel.isMoving">
-            <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
-            <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
-        </div>
-        <div style="position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999" v-if="shouldShowHandlers || shapeModel.isResizing">{{shapeModel.width}}px</div>
-        <div style="position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999" v-if="shouldShowHandlers || shapeModel.isResizing">{{shapeModel.height}}px</div>
+        <div draggable="true" @dragstart="dragWidth" @mouseover.prevent="isHoveringWidth = true" @mouseout.prevent="isHoveringWidth = false" :style="widthStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringWidth">{{shapeModel.width}}px</div>
+        <div draggable="true" @dragstart="dragHeight" @mouseover.prevent="isHoveringHeight = true" @mouseout.prevent="isHoveringHeight = false" :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div>
     </div>
-
 </template>
 <script>
 
@@ -57,6 +58,9 @@ export default {
         return {
             isHovered: false,
             isMoving: false,
+            isHoveringPosition: false,
+            isHoveringWidth: false,
+            isHoveringHeight: false,
         }
     },
     computed: {
@@ -108,8 +112,8 @@ export default {
         positionStyleObject: function() {
             return {
                 'position':'absolute',
-                'top': -this.shapeModel.top -1 + 'px',
-                'left': -this.shapeModel.left -1 + 'px',
+                'top': -1 + 'px',
+                'left': -1 + 'px',
                 'width': this.shapeModel.left + 'px',
                 'height': this.shapeModel.top + 'px',
                 'border-right': '1px black dotted',
@@ -132,6 +136,24 @@ export default {
                 'top': this.shapeModel.top / 2 + 'px',
                 'left': this.shapeModel.left + 'px',
                 'z-index':999
+            }
+        },
+        widthStyleObject: function() {
+            // position:absolute;top:100%;left:50%;width:40px;margin-left:-20px;z-index:999
+            return {
+                'position': 'absolute',
+                'top': this.shapeModel.top + this.shapeModel.height + 'px',
+                'left': this.shapeModel.left + this.shapeModel.width / 2 + 'px',
+                'margin-left': '-20px'
+            }
+        },
+        heightStyleObject: function() {
+            // position:absolute;top:50%;height:30px;margin-top:-15px;right:-50px;z-index:999
+            return {
+                'position': 'absolute',
+                'top': this.shapeModel.top + this.shapeModel.height / 2 + 'px',
+                'left': this.shapeModel.left + this.shapeModel.width + 'px',
+                'margin-top': '-15px'
             }
         },
         overlayStyleObject: function() {
@@ -517,7 +539,19 @@ export default {
                 this.shapeModel.highlight = true
                 event.preventDefault()
             }
-        }
+        },
+        dragPositionX(event) {
+            event.dataTransfer.setData("text/plain", this.shapeModel.left);
+        },
+        dragPositionY(event) {
+            event.dataTransfer.setData("text/plain", this.shapeModel.top);
+        },
+        dragWidth(event) {
+            event.dataTransfer.setData("text/plain", this.shapeModel.width);
+        },
+        dragHeight(event) {
+            event.dataTransfer.setData("text/plain", this.shapeModel.height);
+        },
     }
 }
 </script>
