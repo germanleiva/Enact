@@ -61,7 +61,8 @@ export const globalStore = new Vue({
         context: undefined,
         rulesPlaceholders: [],
         mobileWidth: 410 + 2, //iPhone 375 Nexus 5X 410
-        mobileHeight: 660//iPhone 667 Nexus 5X 660
+        mobileHeight: 660,//iPhone 667 Nexus 5X 660
+        lastFileName: 'example'
     },
     computed: {
         isDrawMode() {

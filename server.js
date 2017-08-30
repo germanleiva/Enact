@@ -44,14 +44,18 @@ io.on('connection', function(socket){
   socket.on('message-save-file', function(data) {
     // const content = JSON.stringify(data);
 
-    let filePath = "./savedProjects/" + data.fileName
-    fs.writeFile(filePath, JSON.stringify(data.content), 'utf8', function (err) {
-        if (err) {
-            return console.log(err);
-        }
+    let fileContent = JSON.stringify(data.content)
+    let filePath = `./savedProjects/${data.fileName}.json`
+    let backupFilePath = `./savedProjects/${data.fileName}-${(new Date()).getTime()}.json`
 
-        console.log(`File ${filePath} was saved!`);
-    });
+    for (let path of [filePath,backupFilePath]) {
+      fs.writeFile(path, fileContent, 'utf8', function (err) {
+          if (err) {
+              return console.log(err);
+          }
+          console.log(`File ${path} was saved!`);
+      });
+    }
   })
   socket.on('message-from-device',function(data) {
     // console.log('Received data from the device ' + socket.id + ', sending to Enact-tool');

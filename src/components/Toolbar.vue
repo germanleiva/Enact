@@ -190,8 +190,9 @@ export default {
             //Let's save the currentColor
             jsonFile.currentColor = globalStore.toolbarState.currentColor
 
-            globalStore.socket.emit('message-save-file', { fileName: "example.json", content: jsonFile })
-
+            let fileName = prompt("Please enter the file name:", globalStore.lastFileName)
+            globalStore.socket.emit('message-save-file', { fileName: fileName, content: jsonFile })
+            globalStore.lastFileName = fileName
         }
     },
     computed: {
