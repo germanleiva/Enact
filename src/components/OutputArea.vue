@@ -9,7 +9,6 @@ import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
 import VisualStateContainer from './VisualStateContainer.vue'
-import _ from 'lodash'
 
 export default {
     name: 'output-area',

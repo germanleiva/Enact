@@ -79,6 +79,7 @@ let mobileCanvasVM = new Vue({
             let shapeVMToDelete = this.interactiveShapes[id]
             if (!shapeVMToDelete) {
                 console.log("Trying to delete a shape that we don't have ... id = " + id)
+                return
             }
             document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
             shapeVMToDelete.$destroy()
@@ -341,7 +342,7 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "EDIT_HARDCODED_VALUE":{
-            console.log(`EDIT_HARDCODED_VALUE: ${data.message}`);
+            // console.log(`EDIT_HARDCODED_VALUE: ${data.message}`);
             let {visualStateId,path,value} = JSON.parse(data.message)
 
             let hardcodedValue = mobileCanvasVM.hardcodedValues[visualStateId]
@@ -385,7 +386,7 @@ globalStore.socket.on('message-from-server', function(data) {
 
             let keys = path.split('.')
             let currentObject = hardcodedValue
-debugger;
+
             if (Object.values(currentObject).length == 1) {
                 visitedObjectsToDelete.push({object:mobileCanvasVM.hardcodedValues,key:visualStateId})
             }

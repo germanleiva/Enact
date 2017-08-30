@@ -3371,15 +3371,15 @@ class StateMachine {
             this.insertNewTransition(transitionDesc)
         }
 
-        for (let hardcodedValueString of json.hardcodedValues) {
-            this.addHardcodedValue(JSON.stringify(hardcodedValueString))
+        for (let hardcodedValue of json.hardcodedValues) {
+            this.addHardcodedValue(hardcodedValue)
         }
     }
 
-    addHardcodedValueFor({visualStateId,objectId,propertyName,extraPropertyName,subExtraPropertyName}) {
-        // let existingHardcodedValue = this.hardcodedValues.find(v => v.visualStateId == visualStateId && v.objectId == objectId && v.propertyName == propertyName && v.extraPropertyName == extraPropertyName && v.subExtraPropertyName == subExtraPropertyName)
+    addHardcodedValueFor({visualStateId,objectId,propertyName,extraPropertyName,subExtraPropertyName,count}) {
+        let existingHardcodedValue = this.hardcodedValues.find(v => v.visualStateId == visualStateId && v.objectId == objectId && v.propertyName == propertyName && v.extraPropertyName == extraPropertyName && v.subExtraPropertyName == subExtraPropertyName)
 
-        // if (!existingHardcodedValue) {
+        if (!existingHardcodedValue) {
             let activeValue = new Vue({
                 data: function() {
                     return {
@@ -3388,6 +3388,7 @@ class StateMachine {
                         propertyName: propertyName,
                         extraPropertyName: extraPropertyName,
                         subExtraPropertyName: subExtraPropertyName,
+                        count: count?count:1
                     }
                 },
                 computed: {
@@ -3404,10 +3405,17 @@ class StateMachine {
                             }
                         }
                         return JSON.stringify(value)
+                    },
+                    isDeletable() {
+                        return this.count == 0
                     }
                 },
                 methods: {
-                    sendValueToMobile(aValue) {
+                    objectToSend(aValue) {
+                        if (!aValue) {
+                            aValue = this.value
+                        }
+
                         let path = this.objectId
                         if (this.propertyName) {
                             path += "." + this.propertyName
@@ -3419,7 +3427,26 @@ class StateMachine {
                             path += "." + this.subExtraPropertyName
                         }
 
-                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_HARDCODED_VALUE", message: JSON.stringify({visualStateId:this.visualStateId, path: path, value: aValue}) })
+                        return JSON.stringify({visualStateId:this.visualStateId, path: path, value: aValue})
+                    },
+                    sendValueToMobile(aValue) {
+                        globalStore.socket.emit('message-from-desktop', { type: "EDIT_HARDCODED_VALUE", message: this.objectToSend(aValue) })
+                    },
+                    increaseCount() {
+                        this.count += 1
+                    },
+                    decreaseCount() {
+                        this.count -= 1
+                    },
+                    toJSON() {
+                        return {
+                            visualStateId:          this.visualStateId,
+                            objectId:               this.objectId,
+                            propertyName:           this.propertyName,
+                            extraPropertyName:      this.extraPropertyName,
+                            subExtraPropertyName:   this.subExtraPropertyName,
+                            count:                  this.count
+                        }
                     }
                 },
                 watch: {
@@ -3432,17 +3459,23 @@ class StateMachine {
                 }
             })
             this.hardcodedValues.push(activeValue)
-            return activeValue
-            // existingHardcodedValue = activeValue
-        // }
+            existingHardcodedValue = activeValue
+        } else {
+            existingHardcodedValue.increaseCount()
+        }
 
-        // return existingHardcodedValue
+        return existingHardcodedValue
     }
 
-    deleteHardcodedValue(activeValue) {
-        activeValue.$destroy()
-        this.hardcodedValues.remove(activeValue)
-        // globalStore.socket.emit('message-from-desktop', { type: "DELETE_HARDCODED_VALUE", message: JSON.stringify(existingHardcodedValue) })
+    deleteHardcodedValue({visualStateId,objectId,propertyName,extraPropertyName,subExtraPropertyName}) {
+        let activeValue = this.hardcodedValues.find(v => v.visualStateId == visualStateId && v.objectId == objectId && v.propertyName == propertyName && v.extraPropertyName == extraPropertyName && v.subExtraPropertyName == subExtraPropertyName)
+        activeValue.decreaseCount()
+        if (activeValue.isDeletable) {
+            let message = activeValue.objectToSend()
+            activeValue.$destroy()
+            this.hardcodedValues.remove(activeValue)
+            globalStore.socket.emit('message-from-desktop', { type: "DELETE_HARDCODED_VALUE", message: message })
+        }
     }
 
     deleteYourself() {
@@ -3453,6 +3486,10 @@ class StateMachine {
         this.event = undefined;
         this.currentState = undefined;
         this.firstState = undefined;
+
+        for (let activeValue of Array.from(this.hardcodedValues)) {
+            this.deleteHardcodedValue(activeValue.toJSON())
+        }
 
         if (this.isServer) {
             globalStore.socket.emit('message-from-desktop', { type: "MACHINE_DELETED" });

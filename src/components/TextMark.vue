@@ -16,7 +16,6 @@ export default {
     data: function() {
         return {
             textMarkerModel: undefined,
-            activeValue: undefined
         }
     },
     computed: {
@@ -119,14 +118,14 @@ export default {
     },
     mounted: function() {
         if (this.visualStateId && this.object && this.propertyName) {
-            this.activeValue = globalStore.stateMachine.addHardcodedValueFor({visualStateId:this.visualStateId,objectId:this.objectId,propertyName:this.propertyName,extraPropertyName:this.extraPropertyName,subExtraPropertyName:this.subExtraPropertyName})
+            globalStore.stateMachine.addHardcodedValueFor({visualStateId:this.visualStateId,objectId:this.objectId,propertyName:this.propertyName,extraPropertyName:this.extraPropertyName,subExtraPropertyName:this.subExtraPropertyName})
         }
     },
     destroyed: function(){
         console.log("TextMark destroyed")
         this.textMarkerModel.clear();
         if (this.visualStateId && this.object && this.propertyName) {
-            globalStore.stateMachine.deleteHardcodedValue(this.activeValue)
+            globalStore.stateMachine.deleteHardcodedValue({visualStateId:this.visualStateId,objectId:this.objectId,propertyName:this.propertyName,extraPropertyName:this.extraPropertyName,subExtraPropertyName:this.subExtraPropertyName})
         }
     }
 }
