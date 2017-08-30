@@ -626,10 +626,10 @@ class MeasureModel {
         return changes
     }
     positionOfHandler(handlerName) {
-        debugger;
+        // debugger;
         if (handlerName == 'center') {
             if (this.fromObject) {
-                return this.initialPoint.shifted(this.deltaX / 2,this.deltaY / 2)
+                return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
             }
             return undefined
         }
@@ -3834,9 +3834,6 @@ class StateMachine {
         // call the guard, if any
         if (transition.guard) {
             try {
-                if (transition.name == "touchstart" && transition.target.name == "Pinch") {
-                    debugger;
-                }
                 if (! transition.guard.call(machine, event, transition, state))
                     return false;
             } catch (e) {
