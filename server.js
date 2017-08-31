@@ -46,7 +46,7 @@ io.on('connection', function(socket){
 
     let fileContent = JSON.stringify(data.content)
     let filePath = `./savedProjects/${data.fileName}.json`
-    let backupFilePath = `./savedProjects/backups/${(new Date()).getTime()-${data.fileName}}.json`
+    let backupFilePath = `./savedProjects/backups/${(new Date()).getTime()}-${data.fileName}.json`
 
     for (let path of [filePath,backupFilePath]) {
       fs.writeFile(path, fileContent, 'utf8', function (err) {

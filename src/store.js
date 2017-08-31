@@ -1372,10 +1372,10 @@ class Property {
         }
 
         if (xProperty) {
-            this[xProperty] = Math.max(Math.min(this[xProperty] + deltaX * ratioX, maxX), minX)
+            this[xProperty] = Math.max(Math.floor(Math.min(this[xProperty] + deltaX * ratioX), maxX), minX)
         }
         if (yProperty) {
-            this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
+            this[yProperty] = Math.max(Math.floor(Math.min(this[yProperty] + deltaY * ratioY), maxY), minY)
         }
     }
 
@@ -1432,7 +1432,7 @@ class Position extends Property {
 
     }
     set x(value) {
-        if (value && !Number.isNaN(value)) {
+        if (value!= null && value != undefined && !Number.isNaN(value)) {
             value = Math.round(value)
         }
 
@@ -1460,7 +1460,7 @@ class Position extends Property {
         }
     }
     set y(value) {
-        if (value && !Number.isNaN(value)) {
+        if (value!= null && value != undefined && !Number.isNaN(value)) {
             value = Math.round(value)
         }
         this.previousY = !Number.isNaN(this._y)?this._y:value
@@ -1979,26 +1979,86 @@ class ShapeModel {
                 return value1 == value2;
             }
             case 'position':{
-                if (value1.x == null || value1.x == undefined || Number.isNaN(value1.x) || value1.y == null || value1.y == undefined || Number.isNaN(value1.y)) {
-                    debugger;
+                let value1X = value1.x
+                let value1Y = value1.y
+                let value2X = value2.x
+                let value2Y = value2.y
+
+                if (value1.x != null && value1.x != undefined) {
+                    if (Number.isNaN(value1.x)) {
+                        debugger;
+                    }
+                    value1X = value1X.valueOf()
                 }
-                if (value2.x == null || value2.x == undefined || Number.isNaN(value2.x) || value2.y == null || value2.y == undefined || Number.isNaN(value2.y)) {
-                    debugger;
+                if (value1.y != null && value1.y != undefined) {
+                    if (Number.isNaN(value1.y)) {
+                        debugger;
+                    }
+                    value1Y = value1Y.valueOf()
                 }
-                return value1.x.valueOf() == value2.x.valueOf() && value1.y.valueOf() == value2.y.valueOf();
+                if (value2.x != null && value2.x != undefined) {
+                    if (Number.isNaN(value2.x)) {
+                        debugger;
+                    }
+                    value2X = value2X.valueOf()
+                }
+                if (value2.y != null && value2.y != undefined) {
+                    if (Number.isNaN(value2.y)) {
+                        debugger;
+                    }
+                    value2Y = value2Y.valueOf()
+                }
+
+                return value1X == value2X && value1Y == value2Y;
             }
             case 'size':{
-                if (value1.width == null || value1.width == undefined || Number.isNaN(value1.width) || value1.height == null || value1.height == undefined || Number.isNaN(value1.height)) {
-                    debugger;
+                let value1X = value1.width
+                let value1Y = value1.height
+                let value2X = value2.width
+                let value2Y = value2.height
+
+                if (value1.width != null && value1.width != undefined) {
+                    if (Number.isNaN(value1.width)) {
+                        debugger;
+                    }
+                    value1X = value1X.valueOf()
                 }
-                if (value2.width == null || value2.width == undefined || Number.isNaN(value2.width) || value2.height == null || value2.height == undefined || Number.isNaN(value2.height)) {
-                    debugger;
+                if (value1.height != null && value1.height != undefined) {
+                    if (Number.isNaN(value1.height)) {
+                        debugger;
+                    }
+                    value1Y = value1Y.valueOf()
                 }
-                return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
-                // return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
+                if (value2.width != null && value2.width != undefined) {
+                    if (Number.isNaN(value2.width)) {
+                        debugger;
+                    }
+                    value2X = value2X.valueOf()
+                }
+                if (value2.height != null && value2.height != undefined) {
+                    if (Number.isNaN(value2.height)) {
+                        debugger;
+                    }
+                    value2Y = value2Y.valueOf()
+                }
+
+                return value1X == value2X && value1Y == value2Y;
             }
             default: {
                 console.log("Unrecognized property " + property+ ". Using simple equality.")
+                if (value1 != null && value1 != undefined) {
+                    if (Number.isNaN(value1)) {
+                        debugger;
+                    }
+                    value1 = value1.valueOf()
+                }
+                if (value2 != null && value2 != undefined) {
+                    if (Number.isNaN(value2)) {
+                        debugger;
+                    }
+                    value2 = value2.valueOf()
+                }
+
                 return value1 == value2
             }
         }
@@ -2419,6 +2479,20 @@ class Vertex {
     }
     prepareForDeletion() {
         this.polygon = undefined
+    }
+
+    get proxy() {
+        return new Proxy(this,{
+            ownKeys(target) {
+                return {"x":[],"y":[]}
+            },
+            getPrototypeOf(target) {
+                return null
+            },
+            get(target,key) {
+                return target[key].valueOf()
+            }
+        })
     }
 }
 
