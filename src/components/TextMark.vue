@@ -92,7 +92,10 @@ export default {
                 this.toggleOneObject(this.object,boolean)
             } else {
                 for (let eachVS of globalStore.visualStates) {
-                    this.toggleOneObject(eachVS.objectFor(this.objectId),boolean)
+                    let objectToToggle = eachVS.objectFor(this.objectId)
+                    if (objectToToggle) {
+                        this.toggleOneObject(objectToToggle,boolean)
+                    }
                 }
             }
         },
