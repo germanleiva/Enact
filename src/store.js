@@ -628,6 +628,7 @@ class MeasureModel {
     }
     get center() {
         return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
+        // return new Position(this.initialPoint.x + (this.finalPoint.x - this.initialPoint.x) / 2,this.initialPoint.y + (this.finalPoint.y - this.initialPoint.y) / 2,this.initialPoint.previousX + (this.finalPoint.previousX - this.initialPoint.previousX) / 2, this.initialPoint.previousY + (this.finalPoint.previousY - this.initialPoint.previousY) / 2)
     }
     positionOfHandler(handlerName) {
         // debugger;
@@ -1372,10 +1373,12 @@ class Property {
         }
 
         if (xProperty) {
-            this[xProperty] = Math.max(Math.floor(Math.min(this[xProperty] + deltaX * ratioX), maxX), minX)
+            // this[xProperty] = Math.max(Math.floor(Math.min(this[xProperty] + deltaX * ratioX), maxX), minX)
+            this[xProperty] = Math.max(Math.min(this[xProperty] + deltaX * ratioX, maxX), minX)
         }
         if (yProperty) {
-            this[yProperty] = Math.max(Math.floor(Math.min(this[yProperty] + deltaY * ratioY), maxY), minY)
+            // this[yProperty] = Math.max(Math.floor(Math.min(this[yProperty] + deltaY * ratioY), maxY), minY)
+            this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
         }
     }
 
@@ -1413,7 +1416,7 @@ class Position extends Property {
     get x(){
         let innerValue = this._x
 
-        if (!innerValue) {
+        if (innerValue == null || innerValue == undefined) {
             return innerValue
         }
 
@@ -1433,7 +1436,7 @@ class Position extends Property {
     }
     set x(value) {
         if (value!= null && value != undefined && !Number.isNaN(value)) {
-            value = Math.round(value)
+            // value = Math.round(value)
         }
 
         this.previousX = !Number.isNaN(this._x)?this._x:value
@@ -1442,7 +1445,7 @@ class Position extends Property {
     get y(){
         let innerValue = this._y
 
-        if (!innerValue) {
+        if (innerValue == null || innerValue == undefined) {
             return innerValue
         }
 
@@ -1461,7 +1464,7 @@ class Position extends Property {
     }
     set y(value) {
         if (value!= null && value != undefined && !Number.isNaN(value)) {
-            value = Math.round(value)
+           // value = Math.round(value)
         }
         this.previousY = !Number.isNaN(this._y)?this._y:value
         this._y = value
@@ -1508,7 +1511,7 @@ class Size extends Property {
     get width(){
         let innerValue = this._width
 
-        if (!innerValue) {
+        if (innerValue == null || innerValue == undefined) {
             return innerValue
         }
 
@@ -1529,9 +1532,9 @@ class Size extends Property {
     set width(value) {
         if (value && !Number.isNaN(value)) {
             if (value < 0) {
-                value = 0
+                value = value
             } else {
-                value = Math.round(value)
+                // value = Math.round(value)
             }
         }
         this.previousWidth = !Number.isNaN(this._width)?this._width:value
@@ -1541,7 +1544,7 @@ class Size extends Property {
     get height(){
         let innerValue = this._height
 
-        if (!innerValue) {
+        if (innerValue == null || innerValue == undefined) {
             return innerValue
         }
 
@@ -1562,9 +1565,9 @@ class Size extends Property {
     set height(value) {
         if (value && !Number.isNaN(value)) {
             if (value < 0) {
-                value = 0
+                value = value
             } else {
-                value = Math.round(value)
+                // value = Math.round(value)
             }
         }
         this.previousHeight = !Number.isNaN(this._height)?this._height:value
