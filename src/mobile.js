@@ -549,7 +549,10 @@ globalStore.socket.on('message-from-server', function(data) {
                         // if (relevantEventIndexes.indexOf(currentEventIndex) >= 0) {
                             let shapeStates = {}
                             for (let eachShapeKey in mobileCanvasVM.interactiveShapes) {
-                                shapeStates[eachShapeKey] = mobileCanvasVM.shapeFor(eachShapeKey).toJSON()
+                                let aShape = mobileCanvasVM.shapeFor(eachShapeKey)
+                                if (aShape.isHidden == false) {
+                                    shapeStates[eachShapeKey] = aShape.toJSON()
+                                }
                             }
                             savedShapesStatesPerEvent[currentEventIndex] = shapeStates
                         // }

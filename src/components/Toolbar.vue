@@ -191,6 +191,10 @@ export default {
             jsonFile.currentColor = globalStore.toolbarState.currentColor
 
             let fileName = prompt("Please enter the file name:", globalStore.lastFileName)
+            if (!fileName) {
+                //Prompt cancelled
+                return
+            }
             globalStore.socket.emit('message-save-file', { fileName: fileName, content: jsonFile })
             globalStore.lastFileName = fileName
         }
