@@ -17,7 +17,7 @@ export default {
         }
     },
     computed: {
-        classObject() {
+        classObject: function() {
             let testExist = this.visualState.testShapes.length > 0
             return {
                 'is-dark' : !testExist,

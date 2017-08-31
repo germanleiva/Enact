@@ -445,7 +445,7 @@ class MeasureModel {
     }
 
     propertyMap() {
-        return {"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"],"width":[],"height":[]}
+        return {"center":["x","y"],"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"],"width":[],"height":[]}
     }
 
     get allProperties() {
@@ -626,11 +626,14 @@ class MeasureModel {
 
         return changes
     }
+    get center() {
+        return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
+    }
     positionOfHandler(handlerName) {
         // debugger;
         if (handlerName == 'center') {
             if (this.fromObject) {
-                return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
+                return this.center
             }
             return undefined
         }
@@ -811,17 +814,52 @@ class VisualStateModel {
         }
         return []
     }
+    shouldHideTestShape(aTestShape) {
+        if (!aTestShape) {
+            debugger;
+        }
+        // for (let testShape of this.testShapes) {
+        //     if (testShape.id == shapeModel.id || testShape.isCopy) {
+        //         if (shapeModel.testAgainst(testShape)) {
+        //             return true
+        //         }
+        //     }
+        // }
+        // // debugger;
+        // return false
+        return Object.values(this.shapesDictionary).some(myShape => (myShape.id == aTestShape.id || aTestShape.isCopy) && myShape.testAgainst(aTestShape))
+    }
     get testPassed() {
+        console.log(this.name + " >> testPassed")
+        let untestedMyShapes = Object.values(this.shapesDictionary)
+        let unusedCopyShapes = this.testShapes.filter(aTestShape => aTestShape.isCopy)
+
         for (let testShape of this.testShapes) {
             let myShape = this.shapesDictionary[testShape.id]
-
-            if (myShape != undefined && myShape.testAgainst(testShape)) {
-
+            if (myShape) {
+                if (myShape.testAgainst(testShape)) {
+                    untestedMyShapes.remove(myShape)
+                } else {
+                    return false
+                }
             } else {
-                return false
+                if (unusedCopyShapes.indexOf(testShape) > 0) {
+                    let untestedMyShapeMatch = untestedMyShapes.find(untestedMyShape => untestedMyShape.testAgainst(testShape))
+                    if (untestedMyShapeMatch) {
+                        untestedMyShapes.remove(untestedMyShapeMatch)
+                        unusedCopyShapes.remove(testShape)
+                    }
+                } else {
+                    return false
+                }
             }
+
+            //Copied shapes has a dash (-) on their names
+
+
         }
-        return true
+        console.log(this.name + " >> untested my shapes lenght " + untestedMyShapes.length)
+        return untestedMyShapes.length == 0
     }
     changeProperty(shapeModel,propertyName,previousValue,newValue) {
         if (shapeModel.isFollowingMaster(propertyName) && shapeModel.areEqualValues(propertyName, previousValue, newValue)) {
@@ -1542,7 +1580,7 @@ class Size extends Property {
     }
 
     toJSON() {
-        return {width:this.x,height:this.height}
+        return {width:this.width,height:this.height}
     }
 }
 
@@ -1647,6 +1685,10 @@ class ShapeModel {
         this.isMoving = false
     }
 
+    get isCopy() {
+        return this.id.indexOf('-') > 0
+    }
+
     snapVertexPosition(plainPosition) {
         //Empty implementation
     }
@@ -1656,7 +1698,7 @@ class ShapeModel {
     }
 
     propertyMap() {
-        return {"position":["x","y"],"size":["width","height"],"color":[],"top":[],"left":[],"width":[],"height":[]}
+        return {"position":["x","y"],"size":["width","height"],"color":[]}
     }
 
     get allProperties() {
@@ -1666,7 +1708,7 @@ class ShapeModel {
     get proxy() {
         return new Proxy(this,{
             ownKeys(target) {
-                return target.allProperties.concat(["create","destroy"])
+                return target.allProperties.concat(["top","left","width","height","create","destroy"])
             },
             getPrototypeOf(target) {
                 return null
@@ -1954,6 +1996,10 @@ class ShapeModel {
                 }
                 return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
                 // return value1.width.valueOf() == value2.width.valueOf() && value1.height.valueOf() == value2.height.valueOf();
+            }
+            default: {
+                console.log("Unrecognized property " + property+ ". Using simple equality.")
+                return value1 == value2
             }
         }
     }

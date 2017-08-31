@@ -167,8 +167,16 @@ export default {
             }
         },
         testResult() {
+            if (this.isTestShape) {
+                return this.parentVisualState.shouldHideTestShape(this.shapeModel)
+            }
+            return true
+            if (this.shapeModel.isCopy) {
+                debugger;
+            }
             let myShape = this.parentVisualState.shapesDictionary[this.shapeModel.id]
-            return myShape != undefined && myShape.testAgainst(this.shapeModel)
+            return myShape != undefined && this.parentVisualState.testShape(myShape)
+            // return myShape != undefined && myShape.testAgainst(this.shapeModel)
         }
     },
     destroyed: function() {
@@ -373,7 +381,7 @@ export default {
             // }
 
             for (let testShape of [...this.parentVisualState.testShapes]) {
-                if (testShape.id == this.shapeModel.id) {
+                if (testShape.id == this.shapeModel.id || testShape.isCopy) {
                     if (Math.abs(newValue.x - testShape.position.x) < 5) {
                         logger('insideTheX testing')
                         newValue.x = testShape.position.x.valueOf()
@@ -492,7 +500,7 @@ export default {
             }
 
             for (let testShape of this.parentVisualState.testShapes) {
-                if (testShape.id == this.shapeModel.id) {
+                if (testShape.id == this.shapeModel.id || testShape.isCopy) {
                     testShape.snap(this.shapeModel.position,newValue)
                 }
             }
