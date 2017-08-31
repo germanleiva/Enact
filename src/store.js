@@ -627,7 +627,9 @@ class MeasureModel {
         return changes
     }
     get center() {
-        return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
+         //Emergency fix
+        return this.initialPoint.shifted(this.deltaX / 2,this.deltaY / 2)
+        // return this.initialPoint.shifted(Math.floor(this.deltaX / 2),Math.floor(this.deltaY / 2))
         // return new Position(this.initialPoint.x + (this.finalPoint.x - this.initialPoint.x) / 2,this.initialPoint.y + (this.finalPoint.y - this.initialPoint.y) / 2,this.initialPoint.previousX + (this.finalPoint.previousX - this.initialPoint.previousX) / 2, this.initialPoint.previousY + (this.finalPoint.previousY - this.initialPoint.previousY) / 2)
     }
     positionOfHandler(handlerName) {
@@ -1226,10 +1228,10 @@ class InputEventTouch {
     }
 
     get x() {
-        return this.position.x
+        return this.position.x.valueOf()
     }
     get y() {
-        return this.position.y
+        return this.position.y.valueOf()
     }
 
     set x(value) {
@@ -1374,11 +1376,17 @@ class Property {
 
         if (xProperty) {
             // this[xProperty] = Math.max(Math.floor(Math.min(this[xProperty] + deltaX * ratioX), maxX), minX)
-            this[xProperty] = Math.max(Math.min(this[xProperty] + deltaX * ratioX, maxX), minX)
+            let valueX = this[xProperty] + deltaX * ratioX
+            if (valueX <= maxX && valueX >= minX) {
+                this[xProperty] = valueX
+            }
         }
         if (yProperty) {
             // this[yProperty] = Math.max(Math.floor(Math.min(this[yProperty] + deltaY * ratioY), maxY), minY)
-            this[yProperty] = Math.max(Math.min(this[yProperty] + deltaY * ratioY, maxY), minY)
+            let valueY = this[yProperty] + deltaY * ratioY
+            if (valueY <= maxY && valueY >= minY) {
+                this[yProperty] = valueY
+            }
         }
     }
 
@@ -3496,7 +3504,7 @@ class StateMachine {
         }
 
         for (let hardcodedValue of json.hardcodedValues) {
-            this.addHardcodedValue(hardcodedValue)
+            this.addHardcodedValueFor(hardcodedValue)
         }
     }
 

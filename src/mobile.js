@@ -179,8 +179,8 @@ let RectangleVM = Vue.extend({
                     // 'translation': 'absolute',
                     'left': this.shapeModel.position.x + 'px',
                     'top': this.shapeModel.position.y + 'px',
-                    'width': this.shapeModel.size.width + 'px',
-                    'height': this.shapeModel.size.height + 'px',
+                    'width': this.shapeModel.size.width.valueOf() + 'px', //Emergency fix
+                    'height': this.shapeModel.size.height.valueOf() + 'px', //Emergency fix
                     'border': '1px solid #cccccc',
                     'overflow': 'visible',
                     'opacity': this.shapeModel.isHidden?0:this.shapeModel.opacity,
