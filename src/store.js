@@ -2061,6 +2061,10 @@ class ShapeModel {
 
                 return value1 == value2
             }
+            default: {
+                console.log("Unrecognized property " + property+ ". Using simple equality.")
+                return value1 == value2
+            }
         }
     }
     isPointInside(x, y) {

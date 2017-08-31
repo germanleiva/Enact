@@ -171,7 +171,13 @@ export default {
                 return this.parentVisualState.shouldHideTestShape(this.shapeModel)
             }
             return true
+<<<<<<< HEAD
 
+=======
+            if (this.shapeModel.isCopy) {
+                debugger;
+            }
+>>>>>>> ec5f92ab559f1b21eb60887025437fcbe6097694
             let myShape = this.parentVisualState.shapesDictionary[this.shapeModel.id]
             return myShape != undefined && this.parentVisualState.testShape(myShape)
             // return myShape != undefined && myShape.testAgainst(this.shapeModel)
