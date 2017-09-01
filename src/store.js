@@ -488,17 +488,19 @@ class MeasureModel {
     }
 
     get id() {
-        switch (this.type) {
-            case "point":{
-                return "P"+this.idCount
-            }
-            case "distance":{
-                return "D"+this.idCount
-            }
-            default:{
-                console.log("Unrecognized type for measure with name: "+ this.name);
-            }
-        }
+        return "D"+this.idCount
+
+        // switch (this.type) {
+        //     case "point":{
+        //         return "P"+this.idCount
+        //     }
+        //     case "distance":{
+        //         return "D"+this.idCount
+        //     }
+        //     default:{
+        //         console.log("Unrecognized type for measure with name: "+ this.name);
+        //     }
+        // }
     }
     get type() {
         if (this.from.type == this.to.type && this.from.id == this.to.id && this.from.handler == this.to.handler) {
@@ -764,7 +766,7 @@ class VisualStateModel {
     }
 
     get name() {
-        return 'VS' + (globalStore.visualStates.indexOf(this) + 1)
+        return 'S' + (globalStore.visualStates.indexOf(this) + 1)
     }
 
     sendShapeToMobile(shapeModel,messageType="NEW_SHAPE",properties) {
@@ -975,7 +977,25 @@ class VisualStateModel {
                 correspondingVersion = ShapeModel.createShape(shapeType,shapeId);
             } else {
                 let newShapeCount = globalStore.shapeCounter++;
-                correspondingVersion = ShapeModel.createShape(shapeType,'S' + newShapeCount);
+                let prefix = 'X'
+                switch (shapeType) {
+                    case 'rectangle': {
+                        prefix = 'R'
+                        break;
+                    }
+                    case 'circle': {
+                        prefix = 'C';
+                        break;
+                    }
+                    case 'polygon': {
+                        prefix = 'P';
+                        break;
+                    }
+                    default: {
+                        console.log("Unrecognized shapeType " + shapeType + " . Cannot create prefix id")
+                    }
+                }
+                correspondingVersion = ShapeModel.createShape(shapeType,prefix + newShapeCount);
             }
         }
 
