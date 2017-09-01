@@ -1881,15 +1881,27 @@ class ShapeModel {
     }
     set top(value) {
         this._position.y = value;
+        if (this._position.x == null) {
+            this._position.x = this.masterVersion.left.valueOf()
+        }
     }
     set left(value) {
         this._position.x = value;
+        if (this._position.y == null) {
+            this._position.y = this.masterVersion.top.valueOf()
+        }
     }
     set width(value) {
         this._size.width = value;
+        if (this._size.height == null) {
+            this._size.height = this.masterVersion.height.valueOf()
+        }
     }
     set height(value) {
         this._size.height = value;
+        if (this._size.width == null) {
+            this._size.width = this.masterVersion.width.valueOf()
+        }
     }
     set color(value) {
         this._color = value;
@@ -1979,7 +1991,7 @@ class ShapeModel {
     }
     valueForProperty(property) {
         let value = this[property]
-        if (value) {
+        if (value != null && value != undefined) {
             return value.valueOf()
         }
         return value

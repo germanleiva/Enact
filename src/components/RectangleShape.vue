@@ -9,11 +9,17 @@
             </div>
         </div>
         <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
+            <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
+            <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
+        </div>
+        <div :style="widthStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringWidth">{{shapeModel.width}}px</div>
+        <div :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div>
+        <!-- <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
             <div draggable="true" @dragstart="dragPositionY" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionYStyleObject">{{shapeModel.top}}px</div>
             <div draggable="true" @dragstart="dragPositionX" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
         <div draggable="true" @dragstart="dragWidth" @mouseover.prevent="isHoveringWidth = true" @mouseout.prevent="isHoveringWidth = false" :style="widthStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringWidth">{{shapeModel.width}}px</div>
-        <div draggable="true" @dragstart="dragHeight" @mouseover.prevent="isHoveringHeight = true" @mouseout.prevent="isHoveringHeight = false" :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div>
+        <div draggable="true" @dragstart="dragHeight" @mouseover.prevent="isHoveringHeight = true" @mouseout.prevent="isHoveringHeight = false" :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div> -->
     </div>
 </template>
 <script>
@@ -119,7 +125,8 @@ export default {
                 'border-right': '1px black dotted',
                 'border-bottom': '1px black dotted',
                 'text-align': 'center',
-                'z-index': 999
+                'z-index': 999,
+                'user-select': 'none'
             }
         },
         positionXStyleObject: function() {
@@ -144,7 +151,8 @@ export default {
                 'position': 'absolute',
                 'top': this.shapeModel.top + this.shapeModel.height + 'px',
                 'left': this.shapeModel.left + this.shapeModel.width / 2 + 'px',
-                'margin-left': '-20px'
+                'margin-left': '-20px',
+                'user-select': 'none'
             }
         },
         heightStyleObject: function() {
@@ -153,7 +161,8 @@ export default {
                 'position': 'absolute',
                 'top': this.shapeModel.top + this.shapeModel.height / 2 + 'px',
                 'left': this.shapeModel.left + this.shapeModel.width + 'px',
-                'margin-top': '-15px'
+                'margin-top': '-15px',
+                'user-select': 'none'
             }
         },
         overlayStyleObject: function() {
@@ -251,8 +260,12 @@ export default {
 
             let handlerType = e.target.id.split('-')[0];
 
-            let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft();
-            let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop();
+            // let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft() + document.getElementById('outputArea').scrollLeft;
+            let startingShapePositionXInWindowCoordinates = this.shapeModel.left + this.$parent.canvasOffsetLeft()
+
+            // let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop() + document.getElementById('outputArea').scrollTop;
+            let startingShapePositionYInWindowCoordinates = this.shapeModel.top + this.$parent.canvasOffsetTop()
+
             let startingShapeWidth = this.shapeModel.size.width
             let startingShapeHeight = this.shapeModel.size.height
 
@@ -410,9 +423,17 @@ export default {
         scalingChanged(e, handlerType, startingShapePositionXInWindowCoordinates, startingShapePositionYInWindowCoordinates, startingShapeWidth, startingShapeHeight) {
             let previousValue = { width: this.shapeModel.size.width.valueOf(), height: this.shapeModel.size.height.valueOf() };
 
-            let currentWindowMousePositionX = e.pageX;
-            let currentWindowMousePositionY = e.pageY;
+            // console.log("pageX " + e.pageX)
+            // console.log("pageY " + e.pageY)
+            // let currentWindowMousePositionX = e.pageX + document.getElementById('outputArea').scrollLeft - this.$parent.canvasOffsetLeft();
+            // let currentWindowMousePositionY = e.pageY + document.getElementById('outputArea').scrollTop - this.$parent.canvasOffsetTop();
+            let currentWindowMousePositionX = e.pageX + document.getElementById('outputArea').scrollLeft
+            let currentWindowMousePositionY = e.pageY + document.getElementById('outputArea').scrollTop
 
+            // console.log("currentWindowMousePositionX " + currentWindowMousePositionX)
+            // console.log("currentWindowMousePositionY " + currentWindowMousePositionY)
+            // console.log("startingShapePositionXInWindowCoordinates " + startingShapePositionXInWindowCoordinates)
+            // console.log("startingShapePositionYInWindowCoordinates " + startingShapePositionYInWindowCoordinates)
             // let currentShapePositionXInWindowCoordinates = this.shapeModel.left + this.visualState.canvasOffsetLeft();
             // let currentShapePositionYInWindowCoordinates = this.shapeModel.top + this.visualState.canvasOffsetTop();
 
@@ -443,6 +464,7 @@ export default {
 
                         let startingShapePositionX = startingShapePositionXInWindowCoordinates - this.$parent.canvasOffsetLeft();
                         this.shapeModel.isMoving = true;
+
                         this.shapeModel.left = startingShapePositionX - offsetX;
 
                         newValue.width = startingShapeWidth + offsetX;
@@ -459,7 +481,8 @@ export default {
                         newValue.height = offsetY;
 
                     } else {
-                        newValue.height = currentWindowMousePositionY - (this.shapeModel.top + this.$parent.canvasOffsetTop());
+                        // newValue.height = currentWindowMousePositionY - (this.shapeModel.top + this.$parent.canvasOffsetTop());
+                        newValue.height = Math.abs(currentWindowMousePositionY - startingShapePositionYInWindowCoordinates)
                     }
 
                     break;
