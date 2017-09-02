@@ -572,17 +572,26 @@ export default {
             }
         },
         dragPositionX(event) {
-            event.dataTransfer.setData("text/plain", this.shapeModel.left);
+            event.stopPropagation()
+            this.setDataForProperty(event,'position.x');
         },
         dragPositionY(event) {
-            event.dataTransfer.setData("text/plain", this.shapeModel.top);
+            event.stopPropagation()
+            this.setDataForProperty(event,'position.y');
         },
         dragWidth(event) {
-            event.dataTransfer.setData("text/plain", this.shapeModel.width);
+            event.stopPropagation()
+            this.setDataForProperty(event,'size.width');
         },
         dragHeight(event) {
-            event.dataTransfer.setData("text/plain", this.shapeModel.height);
+            event.stopPropagation()
+            this.setDataForProperty(event,'size.height');
         },
+        setDataForProperty(event,propertyName) {
+            let data = JSON.stringify({visualStateId:this.parentVisualState.name,objectId:this.shapeModel.id,propertyName:propertyName})
+            event.dataTransfer.setData("text/property", data)
+            this.shapeModel.isSelected = true;
+        }
     }
 }
 </script>

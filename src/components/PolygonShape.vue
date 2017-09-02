@@ -111,7 +111,7 @@ export default {
                 'border-right': '1px black dotted',
                 'border-bottom': '1px black dotted',
                 'text-align': 'center',
-                'z-index': 999
+                'z-index': 900
             }
         },
         positionXStyleObject: function() {
@@ -119,7 +119,7 @@ export default {
                 'position':'absolute',
                 'left': this.shapeModel.left / 2 + 'px',
                 'top': this.shapeModel.top + 'px',
-                'z-index':999
+                'z-index':900
             }
         },
         positionYStyleObject: function() {
@@ -127,7 +127,7 @@ export default {
                 'position':'absolute',
                 'top': this.shapeModel.top / 2 + 'px',
                 'left': this.shapeModel.left + 'px',
-                'z-index':999
+                'z-index':900
             }
         },
         overlayStyleObject: function() {
@@ -183,6 +183,7 @@ export default {
                 'background-color': aHandler.highlight?'#ff0000':'#ffffff',
                 'border': '1px solid #000000',
                 'position':'absolute',
+                'z-index':999
             }
         },
         relevantPointStyleObject: function(aPoint) {

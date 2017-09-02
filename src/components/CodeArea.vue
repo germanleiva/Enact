@@ -86,8 +86,7 @@ let ContextMenu = Vue.extend({
       }
 });
 
-const acceptedInputTypes = ["text/diff-touch","text/diff-measure","text/diff-shape"]
-const acceptedOutputTypes = ["text/diff-shape"]
+const acceptedTypes = ["text/property"]
 
 let orig = CodeMirror.hint.javascript;
 CodeMirror.hint.javascript = function(editor,options) {
@@ -289,25 +288,32 @@ export default {
             }
         },
         dragOverOnCode(editor,event) {
-            if (this.draggedTypeFor(event.dataTransfer,acceptedInputTypes)) {
+            if (this.draggedTypeFor(event.dataTransfer,acceptedTypes)) {
                 this.setEditorCursorAt(editor,event)
                 event.preventDefault(); //To accept the drop
             }
         },
         dropOnCode(editor,event) {
             event.preventDefault();
-            var dataType = this.draggedTypeFor(event.dataTransfer,acceptedInputTypes)
-            var data = event.dataTransfer.getData(dataType);
-            if (!data) {
+            var dataType = this.draggedTypeFor(event.dataTransfer,acceptedTypes)
+            var dataString = event.dataTransfer.getData(dataType);
+            if (!dataString) {
                 console.log("WEIRD, we accepted the drop but there is no data for us =(")
                 return
             }
-            console.log("dropForOutput >> " + data)
 
-            let diffModel = new DiffModel(JSON.parse(data))
+            let newCoordinates = this.setEditorCursorAt(editor,event)
 
+            let {visualStateId,objectId,propertyName} = JSON.parse(dataString)
 
-            debugger;
+            let codeToInsert
+            if (event.shiftKey) {
+                codeToInsert = `$.${visualStateId}.${objectId}.${propertyName}`
+            } else {
+                codeToInsert = `$.${objectId}.${propertyName}`
+            }
+
+            editor.doc.replaceSelection(codeToInsert)
         },
         draggedTypeFor(dataTransfer,acceptedTypes) {
             let receivedTypes = [...dataTransfer.types]
@@ -451,7 +457,7 @@ export default {
 
                     window.document.body.appendChild(newTextMarkVM.$el);
 
-                    let textMarker = this.codeEditor.doc.markText(from, to, {insertLeft:true,replacedWith: newTextMarkVM.$el});
+                    let textMarker = this.codeEditor.doc.markText(from, to, {insertLeft:true,replacedWith: newTextMarkVM.$el,atomic:false});
 
                     newTextMarkVM.textMarkerModel = textMarker
 
