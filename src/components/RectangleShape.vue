@@ -8,18 +8,18 @@
             <div ref="relevantPointsElements" v-for="eachRelevantPoint in shapeModel.relevantPoints" v-if="shouldShowPoints" v-show="isHovered" :id="eachRelevantPoint.namePrefix + '-' + shapeModel.id" :style="relevantPointStyleObject(eachRelevantPoint)" @mousedown="mouseDownStartedOnRelevantPoint($event,eachRelevantPoint)">
             </div>
         </div>
-        <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
+<!--         <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
             <div :style="positionYStyleObject">{{shapeModel.top}}px</div>
             <div :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
         <div :style="widthStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringWidth">{{shapeModel.width}}px</div>
-        <div :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div>
-        <!-- <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
+        <div :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div> -->
+        <div :style="positionStyleObject" v-show="shouldShowHandlers || shapeModel.isMoving || isHoveringPosition">
             <div draggable="true" @dragstart="dragPositionY" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionYStyleObject">{{shapeModel.top}}px</div>
             <div draggable="true" @dragstart="dragPositionX" @mouseover.prevent="isHoveringPosition = true" @mouseout.prevent="isHoveringPosition = false" :style="positionXStyleObject">{{shapeModel.left}}px</div>
         </div>
         <div draggable="true" @dragstart="dragWidth" @mouseover.prevent="isHoveringWidth = true" @mouseout.prevent="isHoveringWidth = false" :style="widthStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringWidth">{{shapeModel.width}}px</div>
-        <div draggable="true" @dragstart="dragHeight" @mouseover.prevent="isHoveringHeight = true" @mouseout.prevent="isHoveringHeight = false" :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div> -->
+        <div draggable="true" @dragstart="dragHeight" @mouseover.prevent="isHoveringHeight = true" @mouseout.prevent="isHoveringHeight = false" :style="heightStyleObject" v-show="shouldShowHandlers || shapeModel.isResizing || isHoveringHeight">{{shapeModel.height}}px</div>
     </div>
 </template>
 <script>
@@ -125,7 +125,7 @@ export default {
                 'border-right': '1px black dotted',
                 'border-bottom': '1px black dotted',
                 'text-align': 'center',
-                'z-index': 999,
+                'z-index': 900,
                 'user-select': 'none'
             }
         },
@@ -134,7 +134,7 @@ export default {
                 'position':'absolute',
                 'left': this.shapeModel.left / 2 + 'px',
                 'top': this.shapeModel.top + 'px',
-                'z-index':999
+                'z-index':900
             }
         },
         positionYStyleObject: function() {
@@ -142,7 +142,7 @@ export default {
                 'position':'absolute',
                 'top': this.shapeModel.top / 2 + 'px',
                 'left': this.shapeModel.left + 'px',
-                'z-index':999
+                'z-index':900
             }
         },
         widthStyleObject: function() {
@@ -219,6 +219,7 @@ export default {
                 'background-color': '#fffffff',
                 'border': '1px solid #333333',
                 'position':'absolute',
+                'z-index': 999
             }
         },
         relevantPointStyleObject: function(aPoint) {
@@ -230,7 +231,8 @@ export default {
                 'top': aPoint.top(size) + 'px',
                 'width': size+'px',
                 'height': size+'px',
-                'background-color': 'red'
+                'background-color': 'red',
+                'z-index': 999
             }
         },
         handlerFor(x,y) {
