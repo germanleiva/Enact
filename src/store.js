@@ -174,7 +174,10 @@ export const globalStore = new Vue({
                 // clonedShapeModel.width = referenceShape.width
                 // clonedShapeModel.height = referenceShape.height
                 //Cheating to account for rectangles and polygons
-                clonedShapeModel.fromJSON(referenceShape.toJSON())
+                let shapeJSON = referenceShape.toJSON()
+                //We do not hide shapes that come from the mirror
+                shapeJSON.isHidden = false
+                clonedShapeModel.fromJSON(shapeJSON)
             }
 
             let previousVisualStateIndex = this.visualStates.indexOf(previousVisualState)
