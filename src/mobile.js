@@ -19,8 +19,8 @@ let mobileCanvasVM = new Vue({
     computed: {
         styleObject() {
             return {
-                width: globalStore.mobileWidth +'px',
-                height: globalStore.mobileHeight + 'px'
+                width: '410px', //globalStore.mobileWidth +'px',
+                height: '660px' //globalStore.mobileHeight + 'px'
             }
         },
         allObjects: {
