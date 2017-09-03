@@ -134,7 +134,8 @@ export default {
                 'position':'absolute',
                 'left': this.shapeModel.left / 2 + 'px',
                 'top': this.shapeModel.top + 'px',
-                'z-index':900
+                'z-index':900,
+                'cursor': this.isHoveringPosition?'pointer':'default'
             }
         },
         positionYStyleObject: function() {
@@ -142,7 +143,8 @@ export default {
                 'position':'absolute',
                 'top': this.shapeModel.top / 2 + 'px',
                 'left': this.shapeModel.left + 'px',
-                'z-index':900
+                'z-index':900,
+                'cursor': this.isHoveringPosition?'pointer':'default'
             }
         },
         widthStyleObject: function() {
@@ -152,7 +154,8 @@ export default {
                 'top': this.shapeModel.top + this.shapeModel.height + 'px',
                 'left': this.shapeModel.left + this.shapeModel.width / 2 + 'px',
                 'margin-left': '-20px',
-                'user-select': 'none'
+                'user-select': 'none',
+                'cursor': this.isHoveringWidth?'pointer':'default'
             }
         },
         heightStyleObject: function() {
@@ -162,7 +165,8 @@ export default {
                 'top': this.shapeModel.top + this.shapeModel.height / 2 + 'px',
                 'left': this.shapeModel.left + this.shapeModel.width + 'px',
                 'margin-top': '-15px',
-                'user-select': 'none'
+                'user-select': 'none',
+                'cursor': this.isHoveringHeight?'pointer':'default'
             }
         },
         overlayStyleObject: function() {
