@@ -447,6 +447,10 @@ class MeasureModel {
         this.idCount = -1
     }
 
+    get color() {
+        return '#cd1b5b'
+    }
+
     propertyMap() {
         return {"center":["x","y"],"initialPoint":["x","y"],"finalPoint":["x","y"],"distance":[],"size":["width","height"],"width":[],"height":[]}
     }
@@ -1254,6 +1258,10 @@ class InputEventTouch {
         this.angularRotation = angularRotation
         this.force = force
         this.highlight = false
+    }
+
+    get color() {
+        return '#555'
     }
 
     get x() {

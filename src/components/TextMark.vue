@@ -1,6 +1,6 @@
 <template>
     <!-- <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick" class="marker">{{codeToShow}}<span class="tooltiptext">Tooltip text</span></span> -->
-    <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick" class="marker">{{codeToShow}}</span>
+    <span @mouseover="mouseOver" @mouseout="mouseOut" @dblclick="doubleClick" class="marker" :style="styleObject">{{codeToShow}}</span>
 
 </template>
 
@@ -9,6 +9,7 @@
 import {extendArray} from '../collections.js'
 extendArray(Array);
 import {globalStore} from '../store.js'
+import tinyColor from 'tinycolor2'
 
 export default {
     name: 'text-mark',
@@ -16,9 +17,27 @@ export default {
     data: function() {
         return {
             textMarkerModel: undefined,
+            isHovered: false
         }
     },
     computed: {
+        styleObject() {
+            let color = tinyColor('#00d1b2')
+            if (this.visualStateId) {
+                color = tinyColor(this.object.color)
+            } else {
+                for (let eachVS of globalStore.visualStates) {
+                    let objectToToggle = eachVS.objectFor(this.objectId)
+                    if (objectToToggle) {
+                        color = tinyColor(objectToToggle.color)
+                        break;
+                    }
+                }
+            }
+            return {
+                'background-color': this.isHovered?color.darken():color
+            }
+        },
         markedSpan() {
             return this.textMarkerModel.lines[0].markedSpans[0];
         },
@@ -79,12 +98,14 @@ export default {
             e.preventDefault()
             e.stopPropagation();
 
+            this.isHovered = true;
             this.toggleObjects(true)
         },
         mouseOut: function(e) {
             e.preventDefault()
             e.stopPropagation();
 
+            this.isHovered = false;
             this.toggleObjects(false)
         },
         toggleObjects: function(boolean) {
@@ -141,15 +162,14 @@ export default {
     position: relative;
 /*    padding-left: 5px;
     padding-right: 5px;*/
-    background-color: #00d1b2;
     color: white;
 }
 
-.marker:hover {
+/*.marker:hover {
     background-color: #00BD9E;
     color: white;
 }
-
+*/
 /*.marker .tooltiptext {
     visibility: hidden;
     width: 120px;

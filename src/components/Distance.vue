@@ -43,7 +43,7 @@ export default {
     data: function() {
         return {
             isHovered: false,
-            measureColor: 'red',
+            measureColor: this.measureModel.color,
             pointSize: 10,
         }
     },
