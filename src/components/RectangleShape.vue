@@ -155,7 +155,8 @@ export default {
                 'left': this.shapeModel.left + this.shapeModel.width / 2 + 'px',
                 'margin-left': '-20px',
                 'user-select': 'none',
-                'cursor': this.isHoveringWidth?'pointer':'default'
+                'cursor': this.isHoveringWidth?'pointer':'default',
+                'z-index': 900
             }
         },
         heightStyleObject: function() {
@@ -166,7 +167,8 @@ export default {
                 'left': this.shapeModel.left + this.shapeModel.width + 'px',
                 'margin-top': '-15px',
                 'user-select': 'none',
-                'cursor': this.isHoveringHeight?'pointer':'default'
+                'cursor': this.isHoveringHeight?'pointer':'default',
+                'z-index': 900
             }
         },
         overlayStyleObject: function() {
