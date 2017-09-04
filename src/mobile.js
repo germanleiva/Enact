@@ -201,8 +201,8 @@ let RectangleVM = Vue.extend({
                     'backgroundColor': this.shapeModel.color,
                     'borderRadius': this.shapeModel.cornerRadius,
                     // 'translation': 'absolute',
-                    'left': this.shapeModel.position.x + 'px',
-                    'top': this.shapeModel.position.y + 'px',
+                    'left': this.shapeModel.position.x.valueOf() + 'px',
+                    'top': this.shapeModel.position.y.valueOf() + 'px',
                     'width': this.shapeModel.size.width.valueOf() + 'px', //Emergency fix
                     'height': this.shapeModel.size.height.valueOf() + 'px', //Emergency fix
                     'border': '1px solid #cccccc',

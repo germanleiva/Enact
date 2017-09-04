@@ -33,7 +33,6 @@ export default {
   data () {
     return {
         toolbarState: globalStore.toolbarState,
-        currentColor: globalStore.toolbarState.currentColor
     }
   },
     methods: {
@@ -200,7 +199,14 @@ export default {
         }
     },
     computed: {
-
+        currentColor: {
+            get() {
+                return globalStore.toolbarState.currentColor
+            },
+            set(newValue) {
+                globalStore.toolbarState.currentColor = newValue
+            }
+        }
     },
     created: function() {
         globalStore.addVisualState();

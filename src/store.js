@@ -477,6 +477,9 @@ class MeasureModel {
         let innerValue = MeasureModel.calculateDistance(this.initialPoint,this.finalPoint)
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1456,6 +1459,9 @@ class Position extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1485,6 +1491,9 @@ class Position extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1551,6 +1560,9 @@ class Size extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1584,6 +1596,9 @@ class Size extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1666,6 +1681,9 @@ class Distance extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1680,6 +1698,9 @@ class Distance extends Property {
 
         return {
           [Symbol.toPrimitive](hint) {
+            if (hint == "string") {
+                return innerValue.toString()
+            }
             return innerValue;
           },
           valueOf: () => innerValue,
@@ -1799,6 +1820,7 @@ class ShapeModel {
             console.log("ShapeModel class >> createShape, I'm pretty sure that shapeId needs to be defined")
         }
         let myColor = globalStore.toolbarState.currentColor;
+        console.log("myColor " + myColor)
         switch (shapeType) {
             case 'rectangle': {
                 if (protoShape) {
