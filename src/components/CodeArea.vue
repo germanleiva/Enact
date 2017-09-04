@@ -518,7 +518,7 @@ export default {
             newState.y = e.offsetY
         },
         addNewTransition({source,target}) {
-            this.stateMachine.insertNewTransition({name:'unnamed',source:source,target:target});
+            this.stateMachine.insertNewTransition({name:'touchstart',source:source,target:target});
         },
         deleteSelectedStateMachineItem() {
             let state = this.currentlySelectedState
