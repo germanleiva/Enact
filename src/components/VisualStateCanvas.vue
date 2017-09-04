@@ -1,5 +1,5 @@
 <template>
-    <div v-on:mousedown='actionStarted' :draggable="isMirror" v-on:dragstart="mirrorDragged" class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}">
+    <div v-on:mousedown='actionStarted' :draggable="isMirror" v-on:dragstart="mirrorDragged" class='visualStateCanvas' :style="{width:visualStateModel.maxWidth+'px',height:visualStateModel.maxHeight+'px','min-width':visualStateModel.maxWidth+'px'}" @copy="clipboardCopyShape" @paste="clipboardPasteShape">
         <component ref="shapes" v-for="aShapeModel in shapeModels" :is="aShapeModel.type + '-shape'" v-bind:shape-model="aShapeModel" v-bind:parent-visual-state="visualStateModel" :is-test-shape="false"></component>
         <component ref="measures" v-for="aMeasureModel in measureModels" :is="aMeasureModel.type" :measure-model="aMeasureModel" :parent-visual-state="visualStateModel"></component>
         <input-event-mark v-for="anInputEvent in allInputEvents" v-if="visualStateModel.showAllInputEvents" :initial-input-event="anInputEvent"></input-event-mark>
@@ -354,6 +354,32 @@ export default {
         },
         canvasOffsetTop() {
             return this.canvasElement().offsetTop;
+        },
+        clipboardCopyShape(e) {
+            if (this.selectedShapes().length > 0) {
+                let selectedShape = this.selectedShapes().first();
+                // e.clipboardData.clearData('text/object')
+                e.clipboardData.setData('text/object', JSON.stringify(selectedShape.toJSON()));
+                // e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+            }
+        },
+        clipboardPasteShape(event) {
+            if (this.selectedShapes().length > 0 && event.clipboardData.types.indexOf('text/object') >= 0) {
+                // event.preventDefault()
+                let shapeJSON = JSON.parse(event.clipboardData.getData('text/object'))
+                let newShapeModel = this.visualStateModel.addNewShape(shapeJSON.type);
+
+                if (this.nextState) {
+                    this.nextState.didCreateShape(newShapeModel, this.visualStateModel);
+                }
+
+                newShapeModel.fromJSON(shapeJSON)
+                newShapeModel.left += 10
+                newShapeModel.top += 10
+
+                // newShapeModel.isSelected = true
+                // globalBus.$emit('didSelectShapeVM', newShapeModel)
+            }
         }
     }
 }

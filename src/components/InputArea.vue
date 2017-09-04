@@ -2,7 +2,7 @@
     <div id='inputArea'>
         <a class="button is-medium is-info" id="reset-button" title="Reset" v-on:click="refreshMobile"><span class="icon is-small"><i class="fa fa-refresh"></i></span></a><span>&nbsp;</span>
         <a class="button is-warning is-medium" v-on:click="startTesting"><span class="icon is-medium"><i class="fa fa-bug"></i></span></a><span>&nbsp;</span>
-        <!--<a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>-->
+        <a class="button is-primary is-medium" v-on:click="startPlaying"><span class="icon is-small"><i class="fa fa-play"></i></span></a>
         <div class="inputTimeline">
             <visual-state-mark v-for="vs in visualStates" :visual-state="vs"></visual-state-mark>
         </div>
@@ -116,22 +116,39 @@ export default {
             }
         },
         startPlaying() {
+            let shapesKeysWithoutRepetition = {}
+            for (let visualState of this.visualStates) {
+                let isFirstVisualState = this.visualStates.first() == visualState
+                for (let eachKey in visualState.shapesDictionary) {
+                    if (!shapesKeysWithoutRepetition.hasOwnProperty(eachKey)) {
+                        shapesKeysWithoutRepetition[eachKey] = isFirstVisualState
+                    }
+                }
+            }
+
+            let initialTimeStamp = globalStore.inputEvents.first().timeStamp
+            let lastTimeStamp = globalStore.inputEvents.last().timeStamp
+            let timeInMS = lastTimeStamp - initialTimeStamp
+
             let animation = {}
+            let message = {duration:timeInMS, shapes:animation}
 
             let hiddedShapesKeys = []
-            for (let i = 0; i < globalStore.shapeCounter; i++) {
+
+            for (let eachShapeKey in shapesKeysWithoutRepetition) {
                 let shapeKeyframes = {}
-                let eachShapeKey = 'S'+i
                 animation[eachShapeKey] = shapeKeyframes
 
                 let createKeyframe = function(aVisualState, currentPercentage) {
                     let currentInputEventIndex = globalStore.inputEvents.indexOf(aVisualState.currentInputEvent)
                     if (currentPercentage == undefined) {
-                        currentPercentage = Math.max(Math.floor(currentInputEventIndex * 100 / globalStore.inputEvents.length), 0);
+                        currentPercentage = Math.max(/*Math.round*/(currentInputEventIndex * 100 / globalStore.inputEvents.length - 1), 0);
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     if (shapeInThisVisualState) {
-
+                        if (Object.keys(shapeKeyframes).length >0 && /opacity:\s*?0/.test(shapeKeyframes[Object.keys(shapeKeyframes).last()])) {
+                            shapeKeyframes[(currentPercentage-1) + '%'] = shapeInThisVisualState.cssText(0);
+                        }
                         shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.cssText();
                     } else {
                         if (currentPercentage == 0 || currentPercentage == 100) {
@@ -164,7 +181,145 @@ export default {
                 }
             }
 
-            globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: animation })
+            globalStore.socket.emit('message-from-desktop', { type: "NEW_ANIMATION", message: message })
+
+            //Animate device visual state
+
+            // {
+            //     shape0: {
+            //         {
+            //             0%: {top: ...., left: ...., width: .... , height: ....}
+            //             20%: {top: ...., left: ...., width: .... , height: ....}
+            //             ....
+            //         }
+            //     },
+            //     shape1: {
+            //         {
+            //             0%: {top: ...., left: ...., width: .... , height: ....}
+            //             20%: {top: ...., left: ...., width: .... , height: ....}
+            //             ....
+            //         }
+            //     }
+            //     ....
+            // }
+
+            // var indexCSS = document.styleSheets[document.styleSheets.length - 1];
+            var sheet = (function() {
+                // Create the <style> tag
+
+                var style = document.getElementById('customStyle')
+                if (style) {
+                    console.log("I already have a stylesheet so we are trying to remove the old keyframe rules")
+                        // style.disabled = true
+                        // style.parentElement.removeChild(style);
+                        // loop through all the rules
+
+                    var rules = Array.from(style.sheet.cssRules)
+                    for (var i = 0; i < rules.length; i++) {
+                        let keyframeParentRule = rules[i]
+                        let keyTexts = []
+                        for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
+                            keyTexts.push(keyframeParentRule.cssRules[j].keyText);
+                        }
+                        for (var eachKeyText of keyTexts) {
+                            keyframeParentRule.deleteRule(eachKeyText);
+                            // styleSheet.deleteRule(eachKeyText);
+                            // styleSheet.removeRule(eachKeyText);
+                        }
+
+                        style.sheet.removeRule(keyframeParentRule)
+                            // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
+                            // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
+                            //     return ss[i].cssRules[j];
+                    }
+
+
+                } else {
+
+                    style = document.createElement("style");
+                    style.setAttribute('id', 'customStyle');
+                    // Add a media (and/or media query) here if you'd like!
+                    // style.setAttribute("media", "screen")
+                    // style.setAttribute("media", "only screen and (max-width : 1024px)")
+
+                    // Add the <style> element to the page
+                    document.head.appendChild(style);
+
+                    // WebKit hack :(
+                    // style.appendChild(document.createTextNode(""));
+                }
+
+                return style.sheet;
+            })();
+
+
+            let newAnimation = message.shapes;
+            for (var shapeModelId in newAnimation) {
+                var eachShapeElement = document.getElementById(`S0-${shapeModelId}`)
+                if (!eachShapeElement) {
+                    debugger; //This shouldn't happen
+                    console.log("CURRENT ANIMATION FOR MODEL " + shapeModelId + " JSON: " + JSON.stringify(newAnimation[shapeModelId]))
+
+                    let styleObject = CSSJSON.toJSON(newAnimation[shapeModelId]['0%']);
+
+                    console.log("PARSED JSON: " + newAnimation[shapeModelId]['0%'])
+                    eachShapeElement = mobileCanvasVM.createShapeVM(shapeModelId, styleObject).$el
+                }
+
+                var keyframeAnimationText = '@keyframes mymove' + shapeModelId + ' {\n'
+                for (var percentageTextKey in newAnimation[shapeModelId]) {
+                    var shapeStyleObject = newAnimation[shapeModelId][percentageTextKey]
+                    keyframeAnimationText += '' + percentageTextKey + ' {' + shapeStyleObject + '}\n'
+                }
+                keyframeAnimationText += '}'
+
+                //             sheet.insertRule(`.animatable {
+                //     width: 100px;
+                //     height: 100px;
+                //     background: red;
+                //     position: relative;
+                //     -webkit-animation: mymove 5s infinite; /* Safari 4.0 - 8.0 */
+                //     animation: mymove 5s infinite;
+                // }`, 0);
+
+                //             sheet.insertRule(`@keyframes mymove {
+                //     0%   {top: 0px;}
+                //     25%  {top: 200px;}
+                //     75%  {top: 50px}
+                //     100% {top: 100px;}
+                // }`, 1);
+                // console.log(keyframeAnimationText)
+                sheet.insertRule(keyframeAnimationText, 0)
+
+                if (eachShapeElement.style.animation.length == 0) {
+
+                    eachShapeElement.addEventListener("animationStart", function(e) {
+                        console.log("animationStart")
+                    });
+                    eachShapeElement.addEventListener("animationIteration", function(e) {
+                        console.log("animationIteration")
+                    });
+                    eachShapeElement.addEventListener("animationEnd", function(e) {
+                        eachShapeElement.style.animation = "none"
+                    });
+                }
+                //     // eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s infinite";
+
+                //     // animation: name duration timing-function delay iteration-count direction fill-mode play-state;
+                //     eachShapeElement.style.webkitAnimation = "none"
+                // }
+                // eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
+                eachShapeElement.style.animation = `mymove${shapeModelId} ${timeInMS}ms ease-in 0s 1 normal forwards running`; /* Safari 4.0 - 8.0 */
+            }
+
+            for (let inputEvent of globalStore.inputEvents) {
+                let waitingTime =  inputEvent.timeStamp - initialTimeStamp
+                console.log("WAITING TIME " + waitingTime + " typeof " + typeof waitingTime)
+                setTimeout(function() {
+                    // globalStore.socket.emit('message-from-device', { type:"CURRENT_EVENT", message: eventObject });
+                    globalStore.deviceVisualState.currentInputEvent = inputEvent
+                },waitingTime)
+            }
         },
         startTesting() {
 

@@ -835,6 +835,9 @@ class VisualStateModel {
         // }
         // // debugger;
         // return false
+        if (this == globalStore.deviceVisualState) {
+            return true
+        }
         return Object.values(this.shapesDictionary).some(myShape => (myShape.id == aTestShape.id || aTestShape.isCopy) && myShape.testAgainst(aTestShape))
     }
     get testPassed() {

@@ -5,7 +5,7 @@ import CSSJSON from 'cssjson'
 // import App from './App.vue'
 
 require('./mobile.css')
-import {globalStore, globalBus, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
+import {globalStore, globalBus, logger, ShapeModel, RectangleModel, PolygonModel, MeasureModel, InputEvent, StateMachine, SMFunction} from './store.js'
 
 let mobileCanvasVM = new Vue({
     el: '#mobileCanvas',
@@ -72,7 +72,8 @@ let mobileCanvasVM = new Vue({
             newShapeVM.$mount();
             document.getElementById("shapeContainer").appendChild(newShapeVM.$el);
 
-            this.interactiveShapes[id] = newShapeVM
+            // this.interactiveShapes[id] = newShapeVM
+            Vue.set(this.interactiveShapes,id,newShapeVM)
             return newShapeVM
         },
         deleteShapeVM(id) {
@@ -83,8 +84,31 @@ let mobileCanvasVM = new Vue({
             }
             document.getElementById("shapeContainer").removeChild(shapeVMToDelete.$el)
             shapeVMToDelete.$destroy()
-            delete this.interactiveShapes[id]
+            // delete this.interactiveShapes[id]
+            Vue.delete(this.interactiveShapes,id)
             return shapeVMToDelete.shapeModel
+        },
+        removeAnimationCSSRule() {
+            var style = document.getElementById('customStyle')
+
+            var rules = Array.from(style.sheet.cssRules)
+            for (var i = 0; i < rules.length; i++) {
+                let keyframeParentRule = rules[i]
+                let keyTexts = []
+                for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
+                    keyTexts.push(keyframeParentRule.cssRules[j].keyText);
+                }
+                for (var eachKeyText of keyTexts) {
+                    keyframeParentRule.deleteRule(eachKeyText);
+                    // styleSheet.deleteRule(eachKeyText);
+                    // styleSheet.removeRule(eachKeyText);
+                }
+
+                style.sheet.removeRule(keyframeParentRule)
+                    // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
+                    // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
+                    //     return ss[i].cssRules[j];
+            }
         }
     },
     mounted: function() {
@@ -190,18 +214,20 @@ let RectangleVM = Vue.extend({
         }
     },
     created: function() {
-        console.log("Rectangle created");
+        logger("message-from-device SHAPE_CREATED " + this.shapeModel.id)
         globalStore.socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
         shapeModel: {
             deep: true,
             handler: function(newValue,oldValue) {
+                logger("message-from-device SHAPE_CHANGED " + this.shapeModel.id)
                 globalStore.socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
     },
     destroyed: function() {
+        logger("message-from-device SHAPE_DELETED " + this.shapeModel.id)
         globalStore.socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
     }
 })
@@ -253,17 +279,20 @@ let PolygonVM = Vue.extend({
         }
     },
     created: function() {
+        logger("message-from-device SHAPE_CREATED " + this.shapeModel.id)
         globalStore.socket.emit('message-from-device', { type:"SHAPE_CREATED", shapeType: this.shapeModel.type, shapeJSON: this.shapeModel.toJSON() });
     },
     watch: {
         shapeModel: {
             deep: true,
             handler: function(newValue,oldValue) {
+                logger("message-from-device SHAPE_CHANGED " + this.shapeModel.id)
                 globalStore.socket.emit('message-from-device', { type:"SHAPE_CHANGED", shapeJSON: newValue.toJSON() });
             }
         }
     },
     destroyed: function() {
+        logger("message-from-device SHAPE_DELETED " + this.shapeModel.id)
         globalStore.socket.emit('message-from-device', { type:"SHAPE_DELETED", id: this.shapeModel.id });
     }
 })
@@ -649,7 +678,9 @@ globalStore.socket.on('message-from-server', function(data) {
             break;
         }
         case "NEW_ANIMATION": {
-            var newAnimation = data.message;
+            var message = data.message;
+
+            let timeInMS = message.duration
 
             // {
             //     shape0: {
@@ -679,27 +710,7 @@ globalStore.socket.on('message-from-server', function(data) {
                         // style.disabled = true
                         // style.parentElement.removeChild(style);
                         // loop through all the rules
-
-                    var rules = Array.from(style.sheet.cssRules)
-                    for (var i = 0; i < rules.length; i++) {
-                        let keyframeParentRule = rules[i]
-                        let keyTexts = []
-                        for (var j = 0; j < keyframeParentRule.cssRules.length; j++) {
-                            keyTexts.push(keyframeParentRule.cssRules[j].keyText);
-                        }
-                        for (var eachKeyText of keyTexts) {
-                            keyframeParentRule.deleteRule(eachKeyText);
-                            // styleSheet.deleteRule(eachKeyText);
-                            // styleSheet.removeRule(eachKeyText);
-                        }
-
-                        style.sheet.removeRule(keyframeParentRule)
-                            // find the -webkit-keyframe rule whose name matches our passed over parameter and return that rule
-                            // if (ss[i].cssRules[j].type == window.CSSRule.WEBKIT_KEYFRAMES_RULE && ss[i].cssRules[j].name == rule)
-                            //     return ss[i].cssRules[j];
-                    }
-
-
+                    mobileCanvasVM.removeAnimationCSSRule()
                 } else {
 
                     style = document.createElement("style");
@@ -712,7 +723,7 @@ globalStore.socket.on('message-from-server', function(data) {
                     document.head.appendChild(style);
 
                     // WebKit hack :(
-                    style.appendChild(document.createTextNode(""));
+                    // style.appendChild(document.createTextNode(""));
                 }
 
                 return style.sheet;
@@ -720,9 +731,11 @@ globalStore.socket.on('message-from-server', function(data) {
 
             var shapesElements = Array.from(document.getElementById('mobileCanvas').getElementsByClassName("shape"));
 
+            let newAnimation = message.shapes;
             for (var shapeModelId in newAnimation) {
                 var eachShapeElement = document.getElementById(shapeModelId)
                 if (!eachShapeElement) {
+                    debugger; //This shouldn't happen
                     console.log("CURRENT ANIMATION FOR MODEL " + shapeModelId + " JSON: " + JSON.stringify(newAnimation[shapeModelId]))
 
                     let styleObject = CSSJSON.toJSON(newAnimation[shapeModelId]['0%']);
@@ -731,7 +744,7 @@ globalStore.socket.on('message-from-server', function(data) {
                     eachShapeElement = mobileCanvasVM.createShapeVM(shapeModelId, styleObject).$el
                 }
 
-                var keyframeAnimationText = '@-webkit-keyframes mymove' + shapeModelId + ' {\n'
+                var keyframeAnimationText = '@keyframes mymove' + shapeModelId + ' {\n'
                 for (var percentageTextKey in newAnimation[shapeModelId]) {
                     var shapeStyleObject = newAnimation[shapeModelId][percentageTextKey]
                     keyframeAnimationText += '' + percentageTextKey + ' {' + shapeStyleObject + '}\n'
@@ -756,9 +769,16 @@ globalStore.socket.on('message-from-server', function(data) {
                 // console.log(keyframeAnimationText)
                 sheet.insertRule(keyframeAnimationText, 0)
 
-                if (eachShapeElement.style.webkitAnimation.length == 0) {
-                    eachShapeElement.addEventListener("webkitAnimationEnd", function(e) {
-                        eachShapeElement.style.webkitAnimation = "none"
+                if (eachShapeElement.style.animation.length == 0) {
+
+                    eachShapeElement.addEventListener("animationStart", function(e) {
+                        console.log("animationStart")
+                    }, false);
+                    eachShapeElement.addEventListener("animationIteration", function(e) {
+                        console.log("animationIteration")
+                    }, false);
+                    eachShapeElement.addEventListener("animationEnd", function(e) {
+                        eachShapeElement.style.animation = "none"
                     }, false);
                 }
                 //     // eachShapeElement.style.animation = "mymove"+shapeModelId +" 1s infinite";
@@ -766,8 +786,18 @@ globalStore.socket.on('message-from-server', function(data) {
                 //     // animation: name duration timing-function delay iteration-count direction fill-mode play-state;
                 //     eachShapeElement.style.webkitAnimation = "none"
                 // }
-                eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
+                // eachShapeElement.style.webkitAnimation = "mymove" + shapeModelId + " 2s ease-in 0s 1 normal forwards running"; /* Safari 4.0 - 8.0 */
+                eachShapeElement.style.animation = `mymove${shapeModelId} ${timeInMS}ms ease-in 0s 1 normal forwards running`; /* Safari 4.0 - 8.0 */
             }
+
+            // for (let eventObject of message.inputEvents) {
+            //     let waitingTime =  eventObject.timeStamp - initialTimeStamp
+            //     console.log("WAITING TIME " + waitingTime + " typeof " + typeof waitingTime)
+            //     setTimeout(function() {
+            //         globalStore.socket.emit('message-from-device', { type:"CURRENT_EVENT", message: eventObject });
+            //     },waitingTime)
+            // }
+
             break;
         }
         default: {
