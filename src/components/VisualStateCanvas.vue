@@ -360,12 +360,12 @@ export default {
                 let selectedShape = this.selectedShapes().first();
                 // e.clipboardData.clearData('text/object')
                 e.clipboardData.setData('text/object', JSON.stringify(selectedShape.toJSON()));
-                // e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
+                e.preventDefault(); // We want our data, not data from any selection, to be written to the clipboard
             }
         },
         clipboardPasteShape(event) {
             if (this.selectedShapes().length > 0 && event.clipboardData.types.indexOf('text/object') >= 0) {
-                // event.preventDefault()
+                event.preventDefault()
                 let shapeJSON = JSON.parse(event.clipboardData.getData('text/object'))
                 let newShapeModel = this.visualStateModel.addNewShape(shapeJSON.type);
 
@@ -377,8 +377,12 @@ export default {
                 newShapeModel.left += 10
                 newShapeModel.top += 10
 
-                // newShapeModel.isSelected = true
-                // globalBus.$emit('didSelectShapeVM', newShapeModel)
+                this.visualStateModel.sendShapeToMobile(newShapeModel,"NEW_SHAPE")
+
+                for (let shape of this.selectedShapes()) {
+                    shape.isSelected = false
+                }
+                newShapeModel.isSelected = true
             }
         }
     }
