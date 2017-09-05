@@ -146,7 +146,7 @@ export default {
                     }
                     let shapeInThisVisualState = aVisualState.shapeFor(eachShapeKey)
                     if (shapeInThisVisualState) {
-                        if (Object.keys(shapeKeyframes).length >0 && /opacity:\s*?0/.test(shapeKeyframes[Object.keys(shapeKeyframes).last()])) {
+                        if (Object.keys(shapeKeyframes).length > 0 && /opacity:\s*?0/.test(shapeKeyframes[Object.keys(shapeKeyframes).last()])) {
                             shapeKeyframes[(currentPercentage-1) + '%'] = shapeInThisVisualState.cssText(0);
                         }
                         shapeKeyframes[currentPercentage + '%'] = shapeInThisVisualState.cssText();
@@ -313,7 +313,8 @@ export default {
             }
 
             for (let inputEvent of globalStore.inputEvents) {
-                let waitingTime =  inputEvent.timeStamp - initialTimeStamp
+                let horribleDelay = 100
+                let waitingTime =  inputEvent.timeStamp - initialTimeStamp + horribleDelay
                 console.log("WAITING TIME " + waitingTime + " typeof " + typeof waitingTime)
                 setTimeout(function() {
                     // globalStore.socket.emit('message-from-device', { type:"CURRENT_EVENT", message: eventObject });
