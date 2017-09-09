@@ -498,7 +498,7 @@ class MeasureModel {
     }
 
     get id() {
-        return "D"+this.idCount
+        return "M"+this.idCount
 
         // switch (this.type) {
         //     case "point":{
