@@ -159,6 +159,7 @@ CodeMirror.hint.javascript = function(editor,options) {
 
                jsonParameter = jsonParameter.replace(/{|}|\n|\s*/g,'')
                                             .split(',')
+                                            .filter(argName => argName.indexOf('=') < 0)
                                             .reduce(function(acum,each,index,list,z){
                                                 let cleanedArgName = each
                                                 let defaultValueStart = cleanedArgName.indexOf(':')
